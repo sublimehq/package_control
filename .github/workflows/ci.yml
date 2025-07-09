@@ -31,7 +31,6 @@ jobs:
         arch:
           - x64
         st-version:
-          - 3
           - 4
     steps:
       - uses: actions/checkout@v6
