@@ -1,8 +1,8 @@
 {
 	"name": "Package Control",
-	"version": "4.2.8",
+	"version": "5.0.0-dev",
 	"description": "A full-featured package manager",
 	"platforms": ["*"],
-	"sublime_text": ">=3143",
-	"url": "https://packagecontrol.io"
+	"sublime_text": ">=4107",
+	"url": "https://download.sublimetext.com/Package%20Control.sublime-package"
 }
