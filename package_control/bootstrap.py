@@ -21,21 +21,6 @@ LOADER_PACKAGE_PATH = os.path.join(
 )
 
 
-def disable_package_control():
-    """
-    Disables Package Control
-
-    Disabling is executed with little delay to work around a ST core bug,
-    which causes `sublime.load_resource()` to fail when being called directly
-    by `plugin_loaded()` hook.
-    """
-
-    sublime.set_timeout(
-        lambda: PackageDisabler.disable_packages({PackageDisabler.DISABLE: 'Package Control'}),
-        10
-    )
-
-
 def bootstrap():
     """
     Bootstrap Package Control
