@@ -11,7 +11,7 @@ from .clear_directory import delete_directory
 BUILTIN_LIBRARIES = {
     "3.3": {},
     "3.8": {"enum", "pathlib", "typing"},
-    "3.13": {"enum", "pathlib", "typing"},
+    "3.14": {"enum", "pathlib", "typing"},
 }
 """3rd-party libraries, which are part of stdlib as of certain python version"""
 
@@ -248,7 +248,7 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
          - "st4_{PY}_{OS}_{ARCH}"
 
     :param python_version:
-        A unicode string of "3.3" or "3.8"
+        A unicode string of "3.3", "3.8" or "3.14"
 
     :param name:
         A unicode string of the library name
@@ -278,11 +278,11 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
         # as they are expected to contain compiled libraries
         install_rel_paths.append(("st4_arch", "st4_py{}_{}_{}".format(py, plat, arch)))
         install_rel_paths.append(("st4_plat", "st4_py{}_{}".format(py, plat)))
-        # pure python releases releases for python 3.13+
-        if python_version == "3.13":
-            install_rel_paths.append(("st4_py", "st4_py313".format()))
+        # pure python releases for python 3.14+
+        if python_version == "3.14":
+            install_rel_paths.append(("st4_py", "st4_py314"))
         # pure python releases for python 3.8+
-        install_rel_paths.append(("st4_py", "st4_py38".format()))
+        install_rel_paths.append(("st4_py", "st4_py38"))
         install_rel_paths.append(("st4", "st4"))
 
     # platform/arch specific st3 dependencies are most likely only compatible with python 3.3

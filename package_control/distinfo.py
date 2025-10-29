@@ -157,7 +157,7 @@ class DistInfoDir:
             specific to a platform and optionally architecture
         """
 
-        if python_version is not None and python_version not in ("3.3", "3.8", "3.13"):
+        if python_version is not None and python_version not in ("3.3", "3.8", "3.14"):
             raise ValueError("Invalid python_version %s" % repr(python_version))
 
         version_tag = "py3"
@@ -173,7 +173,7 @@ class DistInfoDir:
                     arch_tag = "macosx_10_7_%s" % arch
                 elif python_version == "3.8":
                     arch_tag = "macosx_10_9_%s" % arch
-                elif python_version == "3.13":
+                elif python_version == "3.14":
                     arch_tag = "macosx_10_13_%s" % arch
             elif sys.platform == "linux":
                 arch_tag = "linux_%s" % os.uname()[4]

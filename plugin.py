@@ -2,7 +2,7 @@ import os
 import sublime
 import sys
 
-# Ensure compatibility with python 3.3 to 3.13+
+# Ensure compatibility with python 3.3 to 3.14+
 if sys.version_info > (3, 8):
     __name__ = __spec__.name
     __package__ = __spec__.parent
