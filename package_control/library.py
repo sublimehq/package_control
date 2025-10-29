@@ -280,9 +280,9 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
         install_rel_paths.append(("st4_plat", "st4_py{}_{}".format(py, plat)))
         # pure python releases releases for python 3.13+
         if python_version == "3.13":
-            install_rel_paths.append(("st4_py", "st4_py313".format()))
+            install_rel_paths.append(("st4_py", "st4_py313"))
         # pure python releases for python 3.8+
-        install_rel_paths.append(("st4_py", "st4_py38".format()))
+        install_rel_paths.append(("st4_py", "st4_py38"))
         install_rel_paths.append(("st4", "st4"))
 
     # platform/arch specific st3 dependencies are most likely only compatible with python 3.3
