@@ -168,7 +168,6 @@ def _install_injectors():
 
         if hasattr(events, "__spec__"):
             events.__spec__.name = events.__name__
-            events.__spec__.origin = events.__package__
 
         sys.modules[events.__name__] = events
         del globals()["sys"]
