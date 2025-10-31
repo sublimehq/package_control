@@ -371,7 +371,7 @@ class PEP440Version:
     @property
     def is_final(self):
         """Version represents a final release."""
-        return self._tup[2][0][0] == 0
+        return self._tup[2][0][0] >= 0
 
     @property
     def is_dev(self):

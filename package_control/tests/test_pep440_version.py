@@ -309,3 +309,24 @@ class PEP440VersionTests(unittest.TestCase):
         va = PEP440Version(a)
         vb = PEP440Version(b)
         self.assertNotEqual(va, vb)
+
+    @data(
+        (
+            ("1.0dev", False),
+            ("1.0a1", False),
+            ("1.0a1.post1", False),
+            ("1.0b1", False),
+            ("1.0b1.post1", False),
+            ("1.0rc", False),
+            ("1.0rc.post1", False),
+            ("1.0rc1", False),
+            ("1.0rc1.post1", False),
+            ("1.0-alpha", False),
+            ("1.0rc1.post1", False),
+            ("1.0", True),
+            ("1.0.post", True),
+            ("1.0.post1", True),
+        )
+    )
+    def is_final(self, ver, result):
+        self.assertEqual(result, PEP440Version(ver).is_final)
