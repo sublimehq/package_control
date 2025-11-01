@@ -90,7 +90,7 @@
 	"remove_orphaned": true,
 
 	// Remove libraries of disabled or absent plugin_hosts at startup.
-	"remove_orphaned_enviornments": true,
+	"remove_orphaned_environments": true,
 
 	// If incompatible packages should be automatically upgraded when ST starts.
 	// If ST is upgraded or moved to other computers, installed packages may
