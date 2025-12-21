@@ -1157,6 +1157,12 @@
 								"schema_version",
 								"libraries"
 							]
+						},
+						{
+							"required": [
+								"schema_version",
+								"includes"
+							]
 						}
 					],
 					"definitions": {
