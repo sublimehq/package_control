@@ -10,14 +10,15 @@ from .clear_directory import delete_directory
 
 BUILTIN_LIBRARIES = {
     "3.3": {},
-    "3.8": {"enum", "pathlib", "typing"},
-    "3.13": {"enum", "pathlib", "typing"},
+    "3.8": {"enum34", "pathlib", "typing"},
+    "3.13": {"enum34", "pathlib", "typing"},
 }
 """3rd-party libraries, which are part of stdlib as of certain python version"""
 
 DEPENDENCY_NAME_MAP = {
     "bs4": "beautifulsoup4",
     "dateutil": "python-dateutil",
+    "enum": "enum34",
     "pymdownx": "pymdown-extensions",
     "python-jinja2": "Jinja2",
     "python-markdown": "Markdown",
