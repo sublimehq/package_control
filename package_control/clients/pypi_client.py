@@ -7,6 +7,14 @@ from ..pep440 import PEP440VersionSpecifier
 from .json_api_client import JSONApiClient
 
 
+class Version(PEP440Version):
+    __slots__ = ["source"]
+
+    def __init__(self, string):
+        self.source = string
+        super().__init__(string)
+
+
 class PyPiClient(JSONApiClient):
     @staticmethod
     def name_and_version(url):
@@ -202,7 +210,7 @@ class PyPiClient(JSONApiClient):
         versions = []
         for version in releases:
             try:
-                versions.append(PEP440Version(version))
+                versions.append(Version(version))
             except PEP440InvalidVersionError:
                 continue
 
@@ -218,12 +226,11 @@ class PyPiClient(JSONApiClient):
             if not version.is_final:
                 continue
 
-            version_string = str(version)
-            assets = releases[version_string]
+            assets = releases[version.source]
             for idx, (pattern, selectors) in enumerate(asset_templates):
                 if max_releases > 0 and num_releases[idx] >= max_releases:
                     continue
-                info = self._make_download_info(pattern, selectors, version_string, assets)
+                info = self._make_download_info(pattern, selectors, version.source, assets)
                 if not info:
                     continue
                 output.append(info)
