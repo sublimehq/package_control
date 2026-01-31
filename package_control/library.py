@@ -12,6 +12,7 @@ BUILTIN_LIBRARIES = {
     "3.3": {},
     "3.8": {"enum34", "pathlib", "typing"},
     "3.13": {"enum34", "pathlib", "typing"},
+    "3.14": {"enum34", "pathlib", "typing"},
 }
 """3rd-party libraries, which are part of stdlib as of certain python version"""
 
