@@ -1410,8 +1410,8 @@ class PyPiClientTests(unittest.TestCase):
                         "date": "2019-06-04 14:00:29",
                         "version": "0.14.2",
                         "url": "https://files.pythonhosted.org/packages"
-                            "/a2/6a/a3d20e80ee4fee7c55c022fb28d52239bd01171edd3c137dd1e2ef8b2a20"
-                            "/arrow-0.14.2-py2.py3-none-any.whl",
+                               "/a2/6a/a3d20e80ee4fee7c55c022fb28d52239bd01171edd3c137dd1e2ef8b2a20"
+                               "/arrow-0.14.2-py2.py3-none-any.whl",
                         "sha256": "03404b624e89ac5e4fc19c52045fa0f3203419fd4dd64f6e8958c522580a574a",
                         "python_versions": ["3.3"]
                     },
