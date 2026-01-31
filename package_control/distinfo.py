@@ -62,8 +62,8 @@ class RecordInfo:
     __slots__ = ["relative_path", "absolute_path", "size", "sha256"]
 
     def __init__(self, rel_path, abs_path, size, sha256):
-        self.relative_path = rel_path
-        self.absolute_path = abs_path
+        self.relative_path = rel_path.replace("\\", "/")
+        self.absolute_path = os.path.normcase(os.path.normpath(abs_path))
         self.size = size
         self.sha256 = sha256
 
@@ -432,7 +432,7 @@ class DistInfoDir:
                 elements = line.split(",")
                 if len(elements) != 3:
                     raise ValueError("Invalid record entry: %s" % line)
-                is_record_path = elements[0] == self.dir_name + "/RECORD"
+                is_record_path = elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
                 if not elements[1].startswith("sha256=") and not is_record_path:
                     raise ValueError("Unabled to parse sha256 hash: %s" % line)
                 ri = RecordInfo(
