@@ -120,7 +120,7 @@ class PackageManager:
             'proxy_password',
             'proxy_username',
             'remove_orphaned',
-            'remove_orphaned_enviornments',
+            'remove_orphaned_environments',
             'renamed_packages',
             'repositories',
             'submit_url',

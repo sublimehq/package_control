@@ -131,7 +131,7 @@ class GitUpgrader(VcsUpgrader):
         if res is False:
             return False
 
-        args = [binary, 'log']
+        args = [binary, 'log', '--']
         args.append('..{}/{}'.format(info['remote'], info['remote_branch']))
         output = self.execute(args, self.working_copy, meaningful_output=True)
         if output is False:

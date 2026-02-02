@@ -62,8 +62,8 @@ class RecordInfo:
     __slots__ = ["relative_path", "absolute_path", "size", "sha256"]
 
     def __init__(self, rel_path, abs_path, size, sha256):
-        self.relative_path = rel_path
-        self.absolute_path = abs_path
+        self.relative_path = rel_path.replace("\\", "/")
+        self.absolute_path = os.path.normcase(os.path.normpath(abs_path))
         self.size = size
         self.sha256 = sha256
 
@@ -157,7 +157,7 @@ class DistInfoDir:
             specific to a platform and optionally architecture
         """
 
-        if python_version is not None and python_version not in ("3.3", "3.8", "3.13"):
+        if python_version is not None and python_version not in ("3.3", "3.8", "3.14"):
             raise ValueError("Invalid python_version %s" % repr(python_version))
 
         version_tag = "py3"
@@ -173,7 +173,7 @@ class DistInfoDir:
                     arch_tag = "macosx_10_7_%s" % arch
                 elif python_version == "3.8":
                     arch_tag = "macosx_10_9_%s" % arch
-                elif python_version == "3.13":
+                elif python_version == "3.14":
                     arch_tag = "macosx_10_13_%s" % arch
             elif sys.platform == "linux":
                 arch_tag = "linux_%s" % os.uname()[4]
@@ -432,7 +432,7 @@ class DistInfoDir:
                 elements = line.split(",")
                 if len(elements) != 3:
                     raise ValueError("Invalid record entry: %s" % line)
-                is_record_path = elements[0] == self.dir_name + "/RECORD"
+                is_record_path = elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
                 if not elements[1].startswith("sha256=") and not is_record_path:
                     raise ValueError("Unabled to parse sha256 hash: %s" % line)
                 ri = RecordInfo(

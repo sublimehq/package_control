@@ -148,7 +148,7 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
         """
         Remove library and cache folders of disabled or absent plugin_hosts.
         """
-        if not self.manager.settings.get('remove_orphaned_enviornments'):
+        if not self.manager.settings.get('remove_orphaned_environments'):
             return
 
         # actual library dir
