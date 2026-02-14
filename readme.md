@@ -15,11 +15,14 @@ The easiest way to install is ...
 
 > [!WARNING]
 >
-> Package Control 3.4.1 is installed up to ST4200,
-> which may fail loading on some modern OSs,
-> if required OpenSSL 1.1.1 libraries are missing.
+> 1. Package Control 3.4.1 is installed up to ST4200,
+> 	 which may fail loading on some modern OSs,
+> 	 if required OpenSSL 1.1.1 libraries are missing.
 > 
-> Please follow manual install steps, then.
+> 	 Please follow manual install steps, then.
+>
+> 2. Run _Package Control: Upgrade/Overwrite All_
+>    or restart Sublime Text to update to Package Control 4
 
 ### Manual Install
 
