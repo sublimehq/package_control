@@ -40,20 +40,22 @@ from urllib.request import urlretrieve;urlretrieve(url="https://download.sublime
 
 ## Usage
 
-All of the primary features of Package Control are exposed through the command palette.
+All primary features are exposed through Command Palette.
 
 To install a package:
 
-1. Open the command palette
-2. Type "Install Package"
-3. Select a package from the list
+1. Open `Command Palette` using <kbd>ctrl+shift+P</kbd> or menu item `Tools → Command Palette...`
+2. Choose `Package Control: Install Package`
+3. Select a package from the list and hit <kbd>Enter</kbd>
 
-For more features, see https://packagecontrol.io/docs/usage
-or https://docs.sublimetext.io/guide/package-control/usage.html.
+For more features, see:
+
+- https://packagecontrol.io/docs/usage
+- [https://docs.sublimetext.io/guide/package-control/usage](https://docs.sublimetext.io/guide/package-control/usage.html)
 
 ## Documentation
 
-The documentation for Package Control can be found at https://packagecontrol.io/docs
+Original documentation can be found at https://packagecontrol.io/docs
 or community driven documentation at https://docs.sublimetext.io.
 
 ## Bug Reports
