@@ -19,7 +19,7 @@ class CachingDownloader:
         :param url:
             The url of the request
         :param max_age:
-            The maximum age of a cache until it is considdered fresh.
+            The maximum age of a cache until it is considered fresh.
 
         :returns:
             True if cache is still fresh.
@@ -33,9 +33,9 @@ class CachingDownloader:
         is_fresh = age < self.settings.get('max_age', 600)
         if self.settings.get('debug'):
             if is_fresh:
-                console_write('Cached repsonse for "%s" is fresh (%ds).', (url, age))
+                console_write('Cached response for "%s" is fresh (%ds).', (url, age))
             else:
-                console_write('Cached repsonse for "%s" is %ds old, needs validation.', (url, age))
+                console_write('Cached response for "%s" is %ds old, needs validation.', (url, age))
         return is_fresh
 
     def add_conditional_headers(self, url, headers):
