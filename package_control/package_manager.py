@@ -1208,6 +1208,8 @@ class PackageManager:
                     break
 
         if available_version is None:
+            if debug:
+                console_write('No version available for %s in %s', (lib.dist_name, available_library))
             is_unavailable = lib.name in self.settings.get('unavailable_libraries', [])
             if is_upgrade and is_unavailable:
                 message = '''
