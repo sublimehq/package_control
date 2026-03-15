@@ -70,10 +70,11 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
         return " v" + versions[0][0]
 
     def show_quick_panel_st3(self, libraries):
-        items = [
-            [info["name"] + self.latest_releases(info["releases"]), info["description"]]
-            for info in libraries
-        ]
+        items = []
+        for info in libraries:
+            versions = self.latest_releases(info["releases"])
+            if versions:
+                items.append([info["name"] + versions, info["description"]])
 
         def on_done(picked):
             if picked > -1:
