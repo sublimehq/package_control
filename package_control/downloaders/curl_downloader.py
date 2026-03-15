@@ -4,6 +4,7 @@ import os
 
 from ..ca_certs import get_ca_bundle_path
 from ..console_write import console_write
+from ..sys_path import shortpath
 from .cli_downloader import CliDownloader
 from .non_clean_exit_error import NonCleanExitError
 from .downloader_exception import DownloaderException
@@ -100,7 +101,7 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
 
         secure_url_match = re.match(r'^https://([^/#?]+)', url)
         if secure_url_match is not None:
-            bundle_path = get_ca_bundle_path(self.settings)
+            bundle_path = shortpath(get_ca_bundle_path(self.settings))
             command.extend(['--cacert', bundle_path])
 
         debug = self.settings.get('debug')
