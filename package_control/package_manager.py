@@ -1238,22 +1238,6 @@ class PackageManager:
                     )
                 return True
 
-            _, modified_ris = installed_library.dist_info.verify_files(missing_ok=True)
-            modified_paths = {mri.absolute_path for mri in modified_ris}
-            if modified_paths:
-                console_write(
-                    '''
-                    Unable to upgrade library "%s" for Python %s because files on disk have been modified:
-                      %s
-                    ''',
-                    (
-                        lib.name,
-                        lib.python_version,
-                        '\n  '.join(sorted(map(sys_path.shortpath, modified_paths), key=lambda s: s.lower()))
-                    )
-                )
-                return False
-
         lib_path = sys_path.lib_paths()[lib.python_version]
         tmp_dir = sys_path.longpath(tempfile.mkdtemp(''))
         tmp_library_dir = os.path.join(tmp_dir, lib.name)
