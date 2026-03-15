@@ -69,6 +69,15 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
 
         return " v" + versions[0][0]
 
+    @staticmethod
+    def latest_release_date(releases):
+        pyver = python_versions()[-1]
+        for release in releases:
+            if pyver in release["python_versions"]:
+                return release["date"].split(" ", 1)[0]
+
+        return releases[0]["date"].split(" ", 1)[0]
+
     def show_quick_panel_st3(self, libraries):
         items = []
         for info in libraries:
@@ -103,7 +112,7 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
                 )
 
             try:
-                date = info["releases"][0]["date"].split(" ", 1)[0]
+                date = self.latest_release_date(info["releases"])
                 annotation = datetime.strptime(date, "%Y-%m-%d").strftime(
                     "Updated on %a %b %d, %Y"
                 )
