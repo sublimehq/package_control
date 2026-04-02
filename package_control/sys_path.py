@@ -75,6 +75,8 @@ if __installed_packages_path is None:
     if __installed_packages_path is None:
         raise FileNotFoundError('Installed Packages')
 
+assert __data_path
+
 if PREFIX:
     __data_path = PREFIX + __data_path
     __default_packages_path = PREFIX + __default_packages_path
@@ -151,28 +153,25 @@ def lib_paths():
     try:
         return lib_paths.cache
     except AttributeError:
+        assert __data_path
         st_version = int(sublime.version())
-        if st_version > 4000:
-            root = os.path.dirname(__executable_path)
-            fext = ".exe" if sublime.platform() == "windows" else ""
-
-            settings = sublime.load_settings("Preferences.sublime-settings")
-            data = (
-                ("3.3", "python33", not settings.get('disable_plugin_host_3.3', False)),
-                ("3.8", "python38", True),
-                ("3.13", "python313", True),
-                ("3.14", "python314", True),
-            )
-            lib_paths.cache = {
-                py_ver: os.path.join(__data_path, "Lib", py_dir)
-                for py_ver, py_dir, enable in data
-                if enable and os.path.isfile(os.path.join(root, "plugin_host-" + py_ver + fext))
-            }
-
+        if st_version >= 4203:
+            lib_paths.cache = {"3.14": os.path.join(__data_path, "Lib", "python314")}
+        elif st_version >= 4201:
+            lib_paths.cache = {"3.13": os.path.join(__data_path, "Lib", "python313")}
+        elif st_version >= 4000:
+            lib_paths.cache = {"3.8": os.path.join(__data_path, "Lib", "python38")}
         else:
-            lib_paths.cache = {
-                "3.3": os.path.join(__data_path, "Lib", "python3.3")
-            }
+            lib_paths.cache = {"3.3": os.path.join(__data_path, "Lib", "python3.3")}
+
+        if st_version >= 4194:
+            settings = sublime.load_settings("Preferences.sublime-settings")
+            if not settings.get("disable_plugin_host_3.3", False):
+                root = os.path.dirname(__executable_path)
+                fext = ".exe" if sublime.platform() == "windows" else ""
+                if os.path.isfile(os.path.join(root, "plugin_host-3.3" + fext)):
+                    lib_paths.cache["3.3"] = os.path.join(__data_path, "Lib", "python33")
+
         return lib_paths.cache
 
 
