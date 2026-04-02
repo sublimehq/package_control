@@ -154,7 +154,9 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
 
         # Check type of existing main keys
         for key in repo_keys:
-            if key in repo_info and not isinstance(repo_info[key], list):
+            if key not in repo_info:
+                repo_info[key] = []
+            elif not isinstance(repo_info[key], list):
                 raise InvalidRepoFileException(self, 'the "%s" key is not an array.' % key)
 
         # Migrate dependencies to libraries
