@@ -159,20 +159,12 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
         cache2 = os.path.join(sys_path.cache_path(), "__pycache__", "data", "Lib", "python")
 
         supported_versions = sys_path.python_versions()
-        if "3.3" not in supported_versions:
-            # Python folder is re-created at each startup, hence just clear it for now.
-            clear_directory(libdir + "33")
-            # Python 3.3 itself doesn't support nor create compiled cache modules,
-            # ST's fallback mechanism might however have created some py38 or py313 cache files
-            # in those directories, which need to be cleared out.
-            delete_directory(cache1 + "33")
-            delete_directory(cache2 + "33")
-
-        if "3.8" not in supported_versions:
-            # if 3.8 is not supported it is not present, delete all folders
-            delete_directory(libdir + "38")
-            delete_directory(cache1 + "38")
-            delete_directory(cache2 + "38")
+        for pyver in ("3.3", "3.8", "3.13", "3.14"):
+            if pyver not in supported_versions:
+                pyver = pyver.replace(".", "")
+                clear_directory(libdir + pyver)
+                delete_directory(cache1 + pyver)
+                delete_directory(cache2 + pyver)
 
     def cleanup_pending_packages(self):
         """
