@@ -147,6 +147,10 @@ def lib_paths():
     """
     Returns a dict of version-specific lib folders
 
+    CAUTION:
+        Keys must be ordered by PEP440 for `python_versions()` function!
+        Hence oder of adding items to dict is important!
+
     :return:
         A dict with the key "3.3" and possibly the key "3.8"
     """
@@ -155,24 +159,26 @@ def lib_paths():
     except AttributeError:
         assert __data_path
         st_version = int(sublime.version())
-        if st_version >= 4203:
-            lib_paths.cache = {"3.14": os.path.join(__data_path, "Lib", "python314")}
-        elif st_version >= 4201:
-            lib_paths.cache = {"3.13": os.path.join(__data_path, "Lib", "python313")}
-        elif st_version >= 4000:
-            lib_paths.cache = {"3.8": os.path.join(__data_path, "Lib", "python38")}
+        if st_version >= 4000:
+            # register plugin_host-3.3
+            have_py33 = st_version < 4193
+            if not have_py33:
+                settings = sublime.load_settings("Preferences.sublime-settings")
+                have_py33 = not settings.get("disable_plugin_host_3.3", False)
+                if have_py33:
+                    root = os.path.dirname(__executable_path)
+                    fext = ".exe" if sublime.platform() == "windows" else ""
+                    have_py33 = os.path.isfile(os.path.join(root, "plugin_host-3.3" + fext))
+            lib_paths.cache = {"3.3": os.path.join(__data_path, "Lib", "python33")} if have_py33 else {}
+            # register plugin_host-3.xx
+            if st_version >= 4203:
+                lib_paths.cache["3.14"] = os.path.join(__data_path, "Lib", "python314")
+            elif st_version >= 4201:
+                lib_paths.cache["3.13"] = os.path.join(__data_path, "Lib", "python313")
+            elif st_version >= 4000:
+                lib_paths.cache["3.8"] = os.path.join(__data_path, "Lib", "python38")
         else:
             lib_paths.cache = {"3.3": os.path.join(__data_path, "Lib", "python3.3")}
-
-        if st_version >= 4194:
-            settings = sublime.load_settings("Preferences.sublime-settings")
-            if not settings.get("disable_plugin_host_3.3", False):
-                root = os.path.dirname(__executable_path)
-                fext = ".exe" if sublime.platform() == "windows" else ""
-                if os.path.isfile(os.path.join(root, "plugin_host-3.3" + fext)):
-                    lib_paths.cache["3.3"] = os.path.join(__data_path, "Lib", "python33")
-        elif st_version >= 4000:
-            lib_paths.cache["3.3"] = os.path.join(__data_path, "Lib", "python33")
 
         return lib_paths.cache
 
