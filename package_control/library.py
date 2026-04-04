@@ -2,6 +2,9 @@ import os
 import re
 import shutil
 
+from datetime import datetime
+from hashlib import sha1
+
 import sublime
 
 from . import sys_path
@@ -401,6 +404,26 @@ def remove(installed_library):
     cache_dir = sys_path.python_libs_cache_path(python_version)
     cache_ext = ".cpython-{}.opt-1.pyc".format(python_version.replace(".", ""))
 
+    # use timestamp as session id, in case library is installed/removed
+    # multiple times to avoid naming conflicts, when moving to trash.
+    session_id = str(datetime.now())
+
+    # Especially on Windows, files may be locked and therefore can't be removed,
+    # while loaded. They can however be renamed, thus moving them to trash directory is
+    # possible in order to simulate deletion for the sense of managing packages/libraries.
+    trash_dir = sys_path.trash_path()
+    os.makedirs(trash_dir, exist_ok=True)
+
+    def remove_file(path):
+        try:
+            os.remove(path)
+        except OSError:
+            trash_path = os.path.join(
+                trash_dir,
+                sha1((session_id + path).encode('utf-8')).hexdigest().lower()
+            )
+            os.rename(path, trash_path)
+
     for rel_path in dist_info.top_level_paths():
         # Remove the .dist-info dir last so we have info for clean-up in case
         # we hit an error along the way
@@ -417,12 +440,12 @@ def remove(installed_library):
                 delete_directory(os.path.join(cache_dir, rel_path))
 
         elif os.path.isfile(abs_path):
-            os.remove(abs_path)
+            remove_file(abs_path)
 
             # remove bytecode cache
             if cache_dir and abs_path.endswith(".py"):
                 try:
-                    os.remove(os.path.join(cache_dir, rel_path[:-3] + cache_ext))
+                    remove_file(os.path.join(cache_dir, rel_path[:-3] + cache_ext))
                 except OSError:
                     pass
 
