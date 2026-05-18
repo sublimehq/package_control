@@ -73,7 +73,6 @@ def clear_directory(directory, ignored_files=None, ignore_errors=True):
                         except EnvironmentError:
                             pass
                     os.remove(path)
-
                 except OSError:
                     trash_path = os.path.join(
                         trash_dir,
@@ -82,12 +81,18 @@ def clear_directory(directory, ignored_files=None, ignore_errors=True):
                     os.rename(path, trash_path)
 
             for d in dirs:
+                path = os.path.join(root, d)
                 try:
-                    os.rmdir(os.path.join(root, d))
+                    if IS_WIN or not os.path.islink(path):
+                        os.rmdir(path)
+                    else:
+                        os.unlink(path)
+                except FileNotFoundError:
+                    pass
                 except OSError as e:
-                    if e.errno == errno.ENOTEMPTY:
-                        continue
-                    raise
+                    if e.errno != errno.ENOTEMPTY:
+                        raise
+                    was_exception = True
 
         except OSError:
             if not ignore_errors:
