@@ -1550,11 +1550,13 @@ class PackageManager:
                 # get best matching python version from upstream release data
                 python_versions = release.get("python_versions")
                 if python_versions:
-                    python_version_raw = str(
-                        max(map(pep440.PEP440Version, set(python_versions) & set(supported_python_versions)))
-                    )
-                    if python_version_raw:
-                        python_version = python_version_raw
+                    matched = set(python_versions) & set(supported_python_versions)
+                    if matched:
+                        python_version_raw = str(
+                            max(map(pep440.PEP440Version, matched))
+                        )
+                        if python_version_raw:
+                            python_version = python_version_raw
 
             original_python_version = python_version
 
