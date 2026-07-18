@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable, Mapping
 from typing import Any, TypeVar, final, overload
 
 from ._exceptions import TypedAttributeLookupError
 
+if sys.version_info < (3, 15):
+    from ...typing_extensions import sentinel
+
 T_Attr = TypeVar("T_Attr")
 T_Default = TypeVar("T_Default")
-undefined = object()
+undefined = sentinel("undefined")
 
 
 def typed_attribute() -> Any:

@@ -3,7 +3,16 @@ from __future__ import annotations
 import math
 import sys
 from abc import ABCMeta, abstractmethod
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Iterable,
+    Mapping,
+    Sequence,
+)
+from contextlib import AbstractContextManager
 from os import PathLike
 from signal import Signals
 from socket import AddressFamily, SocketKind, socket
@@ -11,11 +20,8 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
-    Callable,
-    ContextManager,
-    Sequence,
+    TypeAlias,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -24,16 +30,12 @@ if sys.version_info >= (3, 11):
 else:
     from ...typing_extensions import TypeVarTuple, Unpack
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    from ...typing_extensions import TypeAlias
-
 if TYPE_CHECKING:
+    from _typeshed import FileDescriptorLike
+
     from .._core._synchronization import CapacityLimiter, Event, Lock, Semaphore
     from .._core._tasks import CancelScope
     from .._core._testing import TaskInfo
-    from ..from_thread import BlockingPortal
     from ._sockets import (
         ConnectedUDPSocket,
         ConnectedUNIXDatagramSocket,
@@ -49,8 +51,9 @@ if TYPE_CHECKING:
     from ._testing import TestRunner
 
 T_Retval = TypeVar("T_Retval")
+T_co = TypeVar("T_co", covariant=True)
 PosArgsT = TypeVarTuple("PosArgsT")
-StrOrBytesPath: TypeAlias = Union[str, bytes, "PathLike[str]", "PathLike[bytes]"]
+StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
 
 
 class AsyncBackend(metaclass=ABCMeta):
@@ -80,8 +83,10 @@ class AsyncBackend(metaclass=ABCMeta):
     @abstractmethod
     def current_token(cls) -> object:
         """
+        Return an object that allows other threads to run code inside the event loop.
 
-        :return:
+        :return: a token object, specific to the event loop running in the current
+            thread
         """
 
     @classmethod
@@ -213,10 +218,10 @@ class AsyncBackend(metaclass=ABCMeta):
     @abstractmethod
     def run_async_from_thread(
         cls,
-        func: Callable[[Unpack[PosArgsT]], Awaitable[T_Retval]],
+        func: Callable[[Unpack[PosArgsT]], Coroutine[Any, Any, T_co]],
         args: tuple[Unpack[PosArgsT]],
         token: object,
-    ) -> T_Retval:
+    ) -> T_co:
         pass
 
     @classmethod
@@ -231,11 +236,6 @@ class AsyncBackend(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def create_blocking_portal(cls) -> BlockingPortal:
-        pass
-
-    @classmethod
-    @abstractmethod
     async def open_process(
         cls,
         command: StrOrBytesPath | Sequence[StrOrBytesPath],
@@ -243,6 +243,16 @@ class AsyncBackend(metaclass=ABCMeta):
         stdin: int | IO[Any] | None,
         stdout: int | IO[Any] | None,
         stderr: int | IO[Any] | None,
+        cwd: StrOrBytesPath | None = None,
+        env: Mapping[str, str] | None = None,
+        startupinfo: Any = None,
+        creationflags: int = 0,
+        start_new_session: bool = False,
+        pass_fds: Sequence[int] = (),
+        user: str | int | None = None,
+        group: str | int | None = None,
+        extra_groups: Iterable[str | int] | None = None,
+        umask: int = -1,
         **kwargs: Any,
     ) -> Process:
         pass
@@ -315,13 +325,13 @@ class AsyncBackend(metaclass=ABCMeta):
         type: int | SocketKind = 0,
         proto: int = 0,
         flags: int = 0,
-    ) -> list[
+    ) -> Sequence[
         tuple[
             AddressFamily,
             SocketKind,
             int,
             str,
-            tuple[str, int] | tuple[str, int, int, int],
+            tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes],
         ]
     ]:
         pass
@@ -335,12 +345,54 @@ class AsyncBackend(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    async def wait_socket_readable(cls, sock: socket) -> None:
+    async def wait_readable(cls, obj: FileDescriptorLike) -> None:
         pass
 
     @classmethod
     @abstractmethod
-    async def wait_socket_writable(cls, sock: socket) -> None:
+    async def wait_writable(cls, obj: FileDescriptorLike) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def notify_closing(cls, obj: FileDescriptorLike) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_listener_socket(cls, sock: socket) -> SocketListener:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_stream_socket(cls, sock: socket) -> SocketStream:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_unix_stream_socket(cls, sock: socket) -> UNIXSocketStream:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_udp_socket(cls, sock: socket) -> UDPSocket:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_connected_udp_socket(cls, sock: socket) -> ConnectedUDPSocket:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_unix_datagram_socket(cls, sock: socket) -> UNIXDatagramSocket:
+        pass
+
+    @classmethod
+    @abstractmethod
+    async def wrap_connected_unix_datagram_socket(
+        cls, sock: socket
+    ) -> ConnectedUNIXDatagramSocket:
         pass
 
     @classmethod
@@ -352,7 +404,7 @@ class AsyncBackend(metaclass=ABCMeta):
     @abstractmethod
     def open_signal_receiver(
         cls, *signals: Signals
-    ) -> ContextManager[AsyncIterator[Signals]]:
+    ) -> AbstractContextManager[AsyncIterator[Signals]]:
         pass
 
     @classmethod

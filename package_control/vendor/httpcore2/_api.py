@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
+from collections.abc import Generator
 
 from ._models import URL, Extensions, HeaderTypes, Response
 from ._sync.connection_pool import ConnectionPool
@@ -55,7 +56,7 @@ def stream(
     headers: HeaderTypes = None,
     content: bytes | typing.Iterator[bytes] | None = None,
     extensions: Extensions | None = None,
-) -> typing.Iterator[Response]:
+) -> Generator[Response]:
     """
     Sends an HTTP request, returning the response within a content manager.
 

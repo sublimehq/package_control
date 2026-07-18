@@ -24,8 +24,8 @@ from .connection_pool import ConnectionPool
 from .http11 import HTTP11Connection
 from .interfaces import ConnectionInterface
 
-ByteOrStr = typing.Union[bytes, str]
-HeadersAsSequence = typing.Sequence[typing.Tuple[ByteOrStr, ByteOrStr]]
+ByteOrStr = bytes | str
+HeadersAsSequence = typing.Sequence[tuple[ByteOrStr, ByteOrStr]]
 HeadersAsMapping = typing.Mapping[ByteOrStr, ByteOrStr]
 
 
@@ -42,7 +42,7 @@ def merge_headers(
     """
     default_headers = [] if default_headers is None else list(default_headers)
     override_headers = [] if override_headers is None else list(override_headers)
-    has_override = set(key.lower() for key, value in override_headers)
+    has_override = set(key.lower() for key, _value in override_headers)
     default_headers = [(key, value) for key, value in default_headers if key.lower() not in has_override]
     return default_headers + override_headers
 
@@ -281,7 +281,7 @@ class TunnelHTTPConnection(ConnectionInterface):
                 if connect_response.status < 200 or connect_response.status > 299:
                     reason_bytes = connect_response.extensions.get("reason_phrase", b"")
                     reason_str = reason_bytes.decode("ascii", errors="ignore")
-                    msg = "%d %s" % (connect_response.status, reason_str)
+                    msg = f"{connect_response.status} {reason_str}"
                     self._connection.close()
                     raise ProxyError(msg)
 

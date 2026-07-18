@@ -2,24 +2,9 @@
 Type definitions for type checking purposes.
 """
 
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Iterator, Mapping, Sequence
 from http.cookiejar import CookieJar
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    AsyncIterable,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import IO, TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
     from ._auth import Auth  # noqa: F401
@@ -28,15 +13,15 @@ if TYPE_CHECKING:
     from ._urls import URL, QueryParams  # noqa: F401
 
 
-PrimitiveData = Optional[Union[str, int, float, bool]]
+PrimitiveData = str | int | float | bool | None
 
 URLTypes = Union["URL", str]
 
 QueryParamTypes = Union[
     "QueryParams",
-    Mapping[str, Union[PrimitiveData, Sequence[PrimitiveData]]],
-    List[Tuple[str, PrimitiveData]],
-    Tuple[Tuple[str, PrimitiveData], ...],
+    Mapping[str, PrimitiveData | Sequence[PrimitiveData]],
+    list[tuple[str, PrimitiveData]],
+    tuple[tuple[str, PrimitiveData], ...],
     str,
     bytes,
 ]
@@ -45,44 +30,35 @@ HeaderTypes = Union[
     "Headers",
     Mapping[str, str],
     Mapping[bytes, bytes],
-    Sequence[Tuple[str, str]],
-    Sequence[Tuple[bytes, bytes]],
+    Sequence[tuple[str, str]],
+    Sequence[tuple[bytes, bytes]],
 ]
 
-CookieTypes = Union["Cookies", CookieJar, Dict[str, str], List[Tuple[str, str]]]
+CookieTypes = Union["Cookies", CookieJar, dict[str, str], list[tuple[str, str]]]
 
-TimeoutTypes = Union[
-    Optional[float],
-    Tuple[Optional[float], Optional[float], Optional[float], Optional[float]],
-    "Timeout",
-]
+TimeoutTypes = Union[float | None, tuple[float | None, float | None, float | None, float | None], "Timeout"]
 ProxyTypes = Union["URL", str, "Proxy"]
-CertTypes = Union[str, Tuple[str, str], Tuple[str, str, str]]
+CertTypes = str | tuple[str, str] | tuple[str, str, str]
 
-AuthTypes = Union[
-    Tuple[Union[str, bytes], Union[str, bytes]],
-    Callable[["Request"], "Request"],
-    "Auth",
-]
+AuthTypes = Union[tuple[str | bytes, str | bytes], Callable[["Request"], "Request"], "Auth"]
 
-RequestContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
-ResponseContent = Union[str, bytes, Iterable[bytes], AsyncIterable[bytes]]
+RequestContent = str | bytes | Iterable[bytes] | AsyncIterable[bytes]
+ResponseContent = str | bytes | Iterable[bytes] | AsyncIterable[bytes]
 ResponseExtensions = Mapping[str, Any]
 
 RequestData = Mapping[str, Any]
 
-FileContent = Union[IO[bytes], bytes, str]
-FileTypes = Union[
-    # file (or bytes)
-    FileContent,
-    # (filename, file (or bytes))
-    Tuple[Optional[str], FileContent],
-    # (filename, file (or bytes), content_type)
-    Tuple[Optional[str], FileContent, Optional[str]],
-    # (filename, file (or bytes), content_type, headers)
-    Tuple[Optional[str], FileContent, Optional[str], Mapping[str, str]],
-]
-RequestFiles = Union[Mapping[str, FileTypes], Sequence[Tuple[str, FileTypes]]]
+FileContent = IO[bytes] | bytes | str
+FileTypes = (
+    # # file (or bytes)
+    FileContent
+    # # (filename, file (or bytes))
+    | tuple[str | None, FileContent]
+    # # (filename, file (or bytes), content_type)
+    | tuple[str | None, FileContent, str | None]
+    | tuple[str | None, FileContent, str | None, Mapping[str, str]]
+)
+RequestFiles = Mapping[str, FileTypes] | Sequence[tuple[str, FileTypes]]
 
 RequestExtensions = Mapping[str, Any]
 

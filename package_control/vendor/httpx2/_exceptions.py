@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
+from collections.abc import Generator
 
 if typing.TYPE_CHECKING:
     from ._models import Request, Response  # pragma: no cover
@@ -366,9 +367,7 @@ class RequestNotRead(StreamError):
 
 
 @contextlib.contextmanager
-def request_context(
-    request: Request | None = None,
-) -> typing.Iterator[None]:
+def request_context(request: Request | None = None) -> Generator[None]:
     """
     A context manager that can be used to attach the given request context
     to any `RequestError` exceptions that are raised within the block.

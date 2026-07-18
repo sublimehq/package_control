@@ -12,7 +12,7 @@ import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from h11._headers import Headers as H11Headers
+    from ..h11._headers import Headers as H11Headers
 
     from .events import Event
     from .typing import Headers

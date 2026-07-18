@@ -34,12 +34,12 @@ has_packed = os.path.exists(get_installed_package_path("Package Control"))
 has_unpacked = regular_file_exists("Package Control", "plugin.py")
 
 # Ensure least required ST and python version
-if int(sublime.version()) < 4000 or sys.version_info < (3, 8):
+if int(sublime.version()) < 4201 or sys.version_info < (3, 14):
     message = text.format(
         """
         Package Control
 
-        This package requires Sublime Text 4 and python 3.8 or higher.
+        This package requires Sublime Text 4201 and python 3.14 or higher.
 
         Please consider updating ST or install Package Control 4.
         """

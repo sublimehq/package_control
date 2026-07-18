@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Generator
+from textwrap import dedent
+from typing import Any
 
 if sys.version_info < (3, 11):
-    from ...exceptiongroup import BaseExceptionGroup
+    from exceptiongroup import BaseExceptionGroup
 
 
 class BrokenResourceError(Exception):
@@ -16,9 +18,44 @@ class BrokenResourceError(Exception):
 
 class BrokenWorkerProcess(Exception):
     """
-    Raised by :func:`run_sync_in_process` if the worker process terminates abruptly or
+    Raised by :meth:`~anyio.to_process.run_sync` if the worker process terminates abruptly or
     otherwise misbehaves.
     """
+
+
+class BrokenWorkerInterpreter(Exception):
+    """
+    Raised by :meth:`~anyio.to_interpreter.run_sync` if an unexpected exception is
+    raised in the subinterpreter.
+    """
+
+    def __init__(self, excinfo: Any):
+        # This was adapted from concurrent.futures.interpreter.ExecutionFailed
+        msg = excinfo.formatted
+        if not msg:
+            if excinfo.type and excinfo.msg:
+                msg = f"{excinfo.type.__name__}: {excinfo.msg}"
+            else:
+                msg = excinfo.type.__name__ or excinfo.msg
+
+        super().__init__(msg)
+        self.excinfo = excinfo
+
+    def __str__(self) -> str:
+        try:
+            formatted = self.excinfo.errdisplay
+        except Exception:
+            return super().__str__()
+        else:
+            return dedent(
+                f"""
+                {super().__str__()}
+
+                Uncaught in the interpreter:
+
+                {formatted}
+                """.strip()
+            )
 
 
 class BusyResourceError(Exception):
@@ -33,6 +70,24 @@ class BusyResourceError(Exception):
 
 class ClosedResourceError(Exception):
     """Raised when trying to use a resource that has been closed."""
+
+
+class ConnectionFailed(OSError):
+    """
+    Raised when a connection attempt fails.
+
+    .. note:: This class inherits from :exc:`OSError` for backwards compatibility.
+    """
+
+
+def iterate_exceptions(
+    exception: BaseException,
+) -> Generator[BaseException, None, None]:
+    if isinstance(exception, BaseExceptionGroup):
+        for exc in exception.exceptions:
+            yield from iterate_exceptions(exc)
+    else:
+        yield exception
 
 
 class DelimiterNotFound(Exception):
@@ -79,11 +134,72 @@ class WouldBlock(Exception):
     """Raised by ``X_nowait`` functions if ``X()`` would block."""
 
 
-def iterate_exceptions(
-    exception: BaseException,
-) -> Generator[BaseException, None, None]:
-    if isinstance(exception, BaseExceptionGroup):
-        for exc in exception.exceptions:
-            yield from iterate_exceptions(exc)
-    else:
-        yield exception
+class NoEventLoopError(RuntimeError):
+    """
+    Raised by several functions that require an event loop to be running in the current
+    thread when there is no running event loop.
+
+    This is also raised by :func:`.from_thread.run` and :func:`.from_thread.run_sync`
+    if not calling from an AnyIO worker thread, and no ``token`` was passed.
+    """
+
+
+class RunFinishedError(RuntimeError):
+    """
+    Raised by :func:`.from_thread.run` and :func:`.from_thread.run_sync` if the event
+    loop associated with the explicitly passed token has already finished.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "The event loop associated with the given token has already finished"
+        )
+
+
+class TaskFailed(Exception):
+    """
+    Raised when awaiting on, or attempting to access the return value of, a
+    :class:`.TaskHandle` that raised an exception.
+    """
+
+
+class TaskCancelled(TaskFailed):
+    """
+    Raised when awaiting on, or attempting to access the return value of, a
+    :class:`.TaskHandle` that was cancelled.
+    """
+
+
+class TaskNotFinished(Exception):
+    """
+    Raised when attempting to access the return value or exception of a
+    :class:`.TaskHandle` that is still pending completion.
+    """
+
+
+class FutureFailed(Exception):
+    """
+    Raised when awaiting on, or attempting to access the return value of, a
+    :class:`.Future` that raised an exception.
+    """
+
+
+class FutureCancelled(FutureFailed):
+    """
+    Raised when attempting to access the return value or exception of a
+    :class:`.Future` that was cancelled.
+    """
+
+
+class FutureNotFinished(Exception):
+    """
+    Raised when attempting to access the return value or exception of a
+    :class:`.Future` that is still pending completion.
+    """
+
+
+class FutureAlreadyFinished(Exception):
+    """
+    Raised when attempting set a result of or await a
+    :class:`.Future` that has already completed.
+    """

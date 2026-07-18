@@ -439,7 +439,7 @@ _ORIGIN_DEFAULT_PORTS = {
 }
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True, slots=True, init=False)
 class Origin:
     """
     The scheme, host, and effective port of a URL.

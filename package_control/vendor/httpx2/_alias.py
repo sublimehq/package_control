@@ -64,8 +64,8 @@ def alias_httpx() -> None:
 
     Must be called before anything imports `httpx` or `httpcore`. Calling it again is a no-op.
     """
-    import httpcore2
-    import httpx2
+    from .. import httpcore2
+    from .. import httpx2
 
     _alias("httpx", httpx2)
     _alias("httpcore", httpcore2)
