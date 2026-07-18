@@ -5,7 +5,6 @@ of consecutive integers, compute a representation of the form
 in the original list?" in time O(log(# runs)).
 """
 
-from __future__ import annotations
 import bisect
 
 

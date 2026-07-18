@@ -1,22 +1,43 @@
 from __future__ import annotations
 
+import dataclasses
+import socket
 import sys
-from collections.abc import Generator, Iterator
+from collections.abc import Callable, Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from inspect import isasyncgenfunction, iscoroutinefunction, ismethod
-from typing import Any, Dict, Tuple, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
-from .. import sniffio
-from _pytest.fixtures import SubRequest
+from _pytest.fixtures import FuncFixtureInfo, SubRequest
 from _pytest.outcomes import Exit
+from _pytest.scope import Scope
 
-from ._core._eventloop import get_all_backends, get_async_backend
+from . import get_available_backends
+from ._core._eventloop import (
+    current_async_library,
+    get_async_backend,
+    reset_current_async_library,
+    set_current_async_library,
+)
 from ._core._exceptions import iterate_exceptions
-from .abc import TestRunner
+
+if TYPE_CHECKING:
+    from .abc import TestRunner
 
 if sys.version_info < (3, 11):
-    from ..exceptiongroup import ExceptionGroup
+    from exceptiongroup import ExceptionGroup
+
+if TYPE_CHECKING:
+    # pytest >= 9.2 keeps CallSpec2 as a TYPE_CHECKING-only alias of CallSpec
+    from _pytest.python import CallSpec2 as CallSpec
+else:
+    try:
+        # c.f. https://github.com/pytest-dev/pytest/pull/14742
+        # pytest >= 9.2
+        from _pytest.python import CallSpec
+    except ImportError:
+        from _pytest.python import CallSpec2 as CallSpec
 
 _current_runner: TestRunner | None = None
 _runner_stack: ExitStack | None = None
@@ -28,7 +49,7 @@ def extract_backend_and_options(backend: object) -> tuple[str, dict[str, Any]]:
         return backend, {}
     elif isinstance(backend, tuple) and len(backend) == 2:
         if isinstance(backend[0], str) and isinstance(backend[1], dict):
-            return cast(Tuple[str, Dict[str, Any]], backend)
+            return cast(tuple[str, dict[str, Any]], backend)
 
     raise TypeError("anyio_backend must be either a string or tuple of (string, dict)")
 
@@ -41,11 +62,11 @@ def get_runner(
     if _current_runner is None:
         asynclib = get_async_backend(backend_name)
         _runner_stack = ExitStack()
-        if sniffio.current_async_library_cvar.get(None) is None:
+        if current_async_library() is None:
             # Since we're in control of the event loop, we can cache the name of the
             # async library
-            token = sniffio.current_async_library_cvar.set(backend_name)
-            _runner_stack.callback(sniffio.current_async_library_cvar.reset, token)
+            token = set_current_async_library(backend_name)
+            _runner_stack.callback(reset_current_async_library, token)
 
         backend_options = backend_options or {}
         _current_runner = _runner_stack.enter_context(
@@ -63,19 +84,53 @@ def get_runner(
             _runner_stack = _current_runner = None
 
 
-def pytest_configure(config: Any) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
+    group = parser.getgroup("anyio")
+    parser.addini(
+        "anyio_mode",
+        default="strict",
+        help='AnyIO plugin mode (either "strict" or "auto")',
+    )
+    group.addoption(
+        "--anyio-mode",
+        default=None,
+        dest="anyio_mode",
+        help="""
+        'auto'   - All async test functions will be handled by AnyIO pytest plugin
+        'strict' - Disabling autoprocessing(useful when anyio tests
+            need to coexist with other async test plugins)
+        """,
+    )
+
+
+def _is_auto_mode(config: pytest.Config, mode: str) -> bool:
+    return (
+        config.getoption(mode, default=None) == "auto" or config.getini(mode) == "auto"
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
-        "anyio: mark the (coroutine function) test to be run "
-        "asynchronously via anyio.",
+        "anyio: mark the (coroutine function) test to be run asynchronously via anyio.",
     )
+    if (
+        _is_auto_mode(config, "anyio_mode")
+        and config.pluginmanager.has_plugin("asyncio")
+        and _is_auto_mode(config, "asyncio_mode")
+    ):
+        config.issue_config_time_warning(
+            pytest.PytestConfigWarning(
+                "AnyIO auto mode has been enabled together with pytest-asyncio auto "
+                "mode. This may cause unexpected behavior."
+            ),
+            1,
+        )
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_fixture_setup(fixturedef: Any, request: Any) -> Generator[Any]:
-    def wrapper(
-        *args: Any, anyio_backend: Any, request: SubRequest, **kwargs: Any
-    ) -> Any:
+    def wrapper(anyio_backend: Any, request: SubRequest, **kwargs: Any) -> Any:
         # Rebind any fixture methods to the request instance
         if (
             request.instance
@@ -94,6 +149,18 @@ def pytest_fixture_setup(fixturedef: Any, request: Any) -> Generator[Any]:
             kwargs["request"] = request
 
         with get_runner(backend_name, backend_options) as runner:
+            # re-entrant call into the test runner detected. this happens when an async fixture
+            # is dynamically requested via request.getfixturevalue() from inside a running async
+            # test or fixture. on asyncio this raises RuntimeError: This event loop is already
+            # running, on trio the runner deadlocks - the host loop blocks waiting for the
+            # coroutine to return, but the coroutine is waiting for the host loop. raising here
+            # prevents the hang and gives a consistent error across backends.
+            if runner.is_running():
+                raise RuntimeError(
+                    "Cannot schedule a coroutine in the test runner while another is already running; "
+                    "likely caused by request.getfixturevalue() on an async fixture."
+                )
+
             if isasyncgenfunction(local_func):
                 yield from runner.run_asyncgen_fixture(local_func, kwargs)
             else:
@@ -123,14 +190,79 @@ def pytest_fixture_setup(fixturedef: Any, request: Any) -> Generator[Any]:
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_pycollect_makeitem(collector: Any, name: Any, obj: Any) -> None:
+def pytest_pycollect_makeitem(
+    collector: pytest.Module | pytest.Class, name: str, obj: object
+) -> None:
     if collector.istestfunction(obj, name):
         inner_func = obj.hypothesis.inner_test if hasattr(obj, "hypothesis") else obj
         if iscoroutinefunction(inner_func):
+            anyio_auto_mode = _is_auto_mode(collector.config, "anyio_mode")
             marker = collector.get_closest_marker("anyio")
             own_markers = getattr(obj, "pytestmark", ())
-            if marker or any(marker.name == "anyio" for marker in own_markers):
+            if (
+                anyio_auto_mode
+                or marker
+                or any(marker.name == "anyio" for marker in own_markers)
+            ):
                 pytest.mark.usefixtures("anyio_backend")(obj)
+
+
+def pytest_collection_finish(session: pytest.Session) -> None:
+    for i, item in reversed(list(enumerate(session.items))):
+        if (
+            isinstance(item, pytest.Function)
+            and iscoroutinefunction(item.function)
+            and item.get_closest_marker("anyio") is not None
+            and "anyio_backend" not in item.fixturenames
+        ):
+            new_items = []
+            try:
+                cs_fields = {f.name for f in dataclasses.fields(CallSpec)}
+            except TypeError:
+                cs_fields = set()
+
+            for param_index, backend in enumerate(get_available_backends()):
+                if "_arg2scope" in cs_fields:  # pytest >= 8
+                    callspec = CallSpec(
+                        params={"anyio_backend": backend},
+                        indices={"anyio_backend": param_index},
+                        _arg2scope={"anyio_backend": Scope.Module},
+                        _idlist=[backend],
+                        marks=[],
+                    )
+                else:  # pytest 7.x
+                    callspec = CallSpec(  # type: ignore[call-arg]
+                        funcargs={},
+                        params={"anyio_backend": backend},
+                        indices={"anyio_backend": param_index},
+                        arg2scope={"anyio_backend": Scope.Module},
+                        idlist=[backend],
+                        marks=[],
+                    )
+
+                fi = item._fixtureinfo
+                new_names_closure = list(fi.names_closure)
+                if "anyio_backend" not in new_names_closure:
+                    new_names_closure.append("anyio_backend")
+
+                new_fixtureinfo = FuncFixtureInfo(
+                    argnames=fi.argnames,
+                    initialnames=fi.initialnames,
+                    names_closure=new_names_closure,
+                    name2fixturedefs=fi.name2fixturedefs,
+                )
+                new_item = pytest.Function.from_parent(
+                    item.parent,
+                    name=f"{item.originalname}[{backend}]",
+                    callspec=callspec,
+                    callobj=item.obj,
+                    fixtureinfo=new_fixtureinfo,
+                    keywords=item.keywords,
+                    originalname=item.originalname,
+                )
+                new_items.append(new_item)
+
+            session.items[i : i + 1] = new_items
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -170,7 +302,7 @@ def pytest_pyfunc_call(pyfuncitem: Any) -> bool | None:
     return None
 
 
-@pytest.fixture(scope="module", params=get_all_backends())
+@pytest.fixture(scope="module", params=get_available_backends())
 def anyio_backend(request: Any) -> Any:
     return request.param
 
@@ -189,3 +321,84 @@ def anyio_backend_options(anyio_backend: Any) -> dict[str, Any]:
         return {}
     else:
         return anyio_backend[1]
+
+
+class FreePortFactory:
+    """
+    Manages port generation based on specified socket kind, ensuring no duplicate
+    ports are generated.
+
+    This class provides functionality for generating available free ports on the
+    system. It is initialized with a specific socket kind and can generate ports
+    for given address families while avoiding reuse of previously generated ports.
+
+    Users should not instantiate this class directly, but use the
+    ``free_tcp_port_factory`` and ``free_udp_port_factory`` fixtures instead. For simple
+    uses cases, ``free_tcp_port`` and ``free_udp_port`` can be used instead.
+    """
+
+    def __init__(self, kind: socket.SocketKind) -> None:
+        self._kind = kind
+        self._generated = set[int]()
+
+    @property
+    def kind(self) -> socket.SocketKind:
+        """
+        The type of socket connection (e.g., :data:`~socket.SOCK_STREAM` or
+        :data:`~socket.SOCK_DGRAM`) used to bind for checking port availability
+
+        """
+        return self._kind
+
+    def __call__(self, family: socket.AddressFamily | None = None) -> int:
+        """
+        Return an unbound port for the given address family.
+
+        :param family: if omitted, both IPv4 and IPv6 addresses will be tried
+        :return: a port number
+
+        """
+        if family is not None:
+            families = [family]
+        else:
+            families = [socket.AF_INET]
+            if socket.has_ipv6:
+                families.append(socket.AF_INET6)
+
+        while True:
+            port = 0
+            with ExitStack() as stack:
+                for fam in families:
+                    sock = stack.enter_context(socket.socket(fam, self._kind))
+                    addr = "::1" if fam == socket.AF_INET6 else "127.0.0.1"
+                    try:
+                        sock.bind((addr, port))
+                    except OSError:
+                        break
+
+                    if not port:
+                        port = sock.getsockname()[1]
+                else:
+                    if port not in self._generated:
+                        self._generated.add(port)
+                        return port
+
+
+@pytest.fixture(scope="session")
+def free_tcp_port_factory() -> FreePortFactory:
+    return FreePortFactory(socket.SOCK_STREAM)
+
+
+@pytest.fixture(scope="session")
+def free_udp_port_factory() -> FreePortFactory:
+    return FreePortFactory(socket.SOCK_DGRAM)
+
+
+@pytest.fixture
+def free_tcp_port(free_tcp_port_factory: Callable[[], int]) -> int:
+    return free_tcp_port_factory()
+
+
+@pytest.fixture
+def free_udp_port(free_udp_port_factory: Callable[[], int]) -> int:
+    return free_udp_port_factory()

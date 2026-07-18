@@ -106,7 +106,7 @@ class ASGIWebSocketAsyncNetworkStream:
         return await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
     async def read(self, max_bytes: int, timeout: float | None = None) -> bytes:
-        import httpcore2
+        from ... import httpcore2
 
         try:
             message: Message = await self.receive(timeout=timeout)

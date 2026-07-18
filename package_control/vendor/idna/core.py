@@ -3,7 +3,7 @@ from __future__ import annotations
 import bisect
 import re
 import unicodedata
-from .. import warnings
+import warnings
 from typing import Literal
 
 from . import idnadata

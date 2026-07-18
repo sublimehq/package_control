@@ -11,10 +11,10 @@ from ._utils import safe_async_iterate
 # Functions for typechecking...
 
 
-ByteOrStr = typing.Union[bytes, str]
-HeadersAsSequence = typing.Sequence[typing.Tuple[ByteOrStr, ByteOrStr]]
+ByteOrStr = bytes | str
+HeadersAsSequence = typing.Sequence[tuple[ByteOrStr, ByteOrStr]]
 HeadersAsMapping = typing.Mapping[ByteOrStr, ByteOrStr]
-HeaderTypes = typing.Union[HeadersAsSequence, HeadersAsMapping, None]
+HeaderTypes = HeadersAsSequence | HeadersAsMapping | None
 
 Extensions = typing.MutableMapping[str, typing.Any]
 
@@ -110,10 +110,10 @@ DEFAULT_PORTS = {
 def include_request_headers(
     headers: list[tuple[bytes, bytes]],
     *,
-    url: "URL",
+    url: URL,
     content: None | bytes | typing.Iterable[bytes] | typing.AsyncIterable[bytes],
 ) -> list[tuple[bytes, bytes]]:
-    headers_set = {k.lower() for k, v in headers}
+    headers_set = {k.lower() for k, _v in headers}
 
     if b"host" not in headers_set:
         default_port = DEFAULT_PORTS.get(url.scheme)
@@ -417,8 +417,7 @@ class Response:
         if self._stream_consumed:
             raise RuntimeError("Attempted to call 'for ... in response.iter_stream()' more than once.")
         self._stream_consumed = True
-        for chunk in self.stream:
-            yield chunk
+        yield from self.stream
 
     def close(self) -> None:
         if not isinstance(self.stream, typing.Iterable):  # pragma: no cover

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
-h2
-~~
+HTTP/2 protocol implementation for Python.
+"""
+from __future__ import annotations
 
-A HTTP/2 implementation.
-"""
-__version__ = '4.1.0'
+__version__ = "4.4.1"

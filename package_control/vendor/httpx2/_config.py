@@ -27,7 +27,7 @@ def create_ssl_context(
     trust_env: bool = True,
 ) -> ssl.SSLContext:
     import ssl
-    from .. import warnings
+    import warnings
 
     from .. import httpcore2
 
@@ -85,6 +85,11 @@ class Timeout:
                                 # 5s timeout elsewhere.
     """
 
+    connect: float | None
+    read: float | None
+    write: float | None
+    pool: float | None
+
     def __init__(
         self,
         timeout: TimeoutTypes | UnsetType = UNSET,
@@ -100,10 +105,10 @@ class Timeout:
             assert read is UNSET
             assert write is UNSET
             assert pool is UNSET
-            self.connect = timeout.connect  # type: typing.Optional[float]
-            self.read = timeout.read  # type: typing.Optional[float]
-            self.write = timeout.write  # type: typing.Optional[float]
-            self.pool = timeout.pool  # type: typing.Optional[float]
+            self.connect = timeout.connect
+            self.read = timeout.read
+            self.write = timeout.write
+            self.pool = timeout.pool
         elif isinstance(timeout, tuple):
             # Passed as a tuple.
             self.connect = timeout[0]
@@ -143,7 +148,7 @@ class Timeout:
         return f"{class_name}(connect={self.connect}, read={self.read}, write={self.write}, pool={self.pool})"
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class Limits:
     """
     Configuration for limits to various client behaviors.

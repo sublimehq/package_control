@@ -480,7 +480,7 @@ def quote(string: str, safe: str) -> str:
         need to be escaped. Unreserved characters are always treated as safe.
         See: https://www.rfc-editor.org/rfc/rfc3986#section-2.3
     """
-    parts = []
+    parts: list[str] = []
     current_position = 0
     for match in re.finditer(PERCENT_ENCODED_REGEX, string):
         start_position, end_position = match.start(), match.end()
