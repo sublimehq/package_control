@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+__all__ = (
+    "current_default_thread_limiter",
+    "run_sync",
+)
+
 import sys
 from collections.abc import Callable
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 from warnings import warn
 
 from ._core._eventloop import get_async_backend
-from .abc import CapacityLimiter
+
+if TYPE_CHECKING:
+    from ._core._synchronization import CapacityLimiter
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
@@ -27,9 +34,9 @@ async def run_sync(
     """
     Call the given function with the given arguments in a worker thread.
 
-    If the ``cancellable`` option is enabled and the task waiting for its completion is
-    cancelled, the thread will still run its course but its return value (or any raised
-    exception) will be ignored.
+    If the ``abandon_on_cancel`` option is enabled and the task waiting for its
+    completion is cancelled, the thread will still run its course but its
+    return value (or any raised exception) will be ignored.
 
     :param func: a callable
     :param args: positional arguments for the callable
@@ -41,6 +48,8 @@ async def run_sync(
         ``abandon_on_cancel`` if both parameters are passed
     :param limiter: capacity limiter to use to limit the total amount of threads running
         (if omitted, the default limiter is used)
+    :raises NoEventLoopError: if no supported asynchronous event loop is running in the
+        current thread
     :return: an awaitable that yields the return value of the function.
 
     """
@@ -64,6 +73,8 @@ def current_default_thread_limiter() -> CapacityLimiter:
     concurrent threads.
 
     :return: a capacity limiter object
+    :raises NoEventLoopError: if no supported asynchronous event loop is running in the
+        current thread
 
     """
     return get_async_backend().current_default_thread_limiter()

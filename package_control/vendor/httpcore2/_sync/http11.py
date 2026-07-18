@@ -28,11 +28,7 @@ logger = logging.getLogger("httpcore2.http11")
 
 
 # A subset of `h11.Event` types supported by `_send_event`
-H11SendEvent = typing.Union[
-    h11.Request,
-    h11.Data,
-    h11.EndOfMessage,
-]
+H11SendEvent = h11.Request | h11.Data | h11.EndOfMessage
 
 
 class HTTPConnectionState(enum.IntEnum):

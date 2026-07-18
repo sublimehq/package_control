@@ -18,8 +18,9 @@ else:
 
 from ... import anyio
 from ... import wsproto
-from ...wsproto.utilities import wsp_utilities
-wsproto.utilities = wsp_utilities
+from ... import wsproto
+from ...wsproto import utilities as ___vendorize__0
+wsproto.utilities = ___vendorize__0
 from ...anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from ...wsproto.frame_protocol import CloseReason
 

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
-hyperframe
-~~~~~~~~~~
+Provides a pure-Python HTTP/2 framing layer.
+"""
+from __future__ import annotations
 
-A module for providing a pure-Python HTTP/2 framing layer.
-"""
-__version__ = '6.0.1'
+__version__ = "6.1.0"

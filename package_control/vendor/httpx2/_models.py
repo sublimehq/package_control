@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import codecs
+import contextlib
 import datetime
 import email.message
 import json as jsonlib
@@ -147,7 +148,7 @@ class Headers(typing.MutableMapping[str, str]):
         headers: HeaderTypes | None = None,
         encoding: str | None = None,
     ) -> None:
-        self._list = []  # type: typing.List[typing.Tuple[bytes, bytes, bytes]]
+        self._list: list[tuple[bytes, bytes, bytes]] = []
 
         if isinstance(headers, Headers):
             self._list = list(headers._list)
@@ -201,7 +202,7 @@ class Headers(typing.MutableMapping[str, str]):
         return [(raw_key, value) for raw_key, _, value in self._list]
 
     def keys(self) -> typing.KeysView[str]:
-        return {key.decode(self.encoding): None for _, key, value in self._list}.keys()
+        return {key.decode(self.encoding): None for _, key, _value in self._list}.keys()
 
     def values(self) -> typing.ValuesView[str]:
         values_dict: dict[str, str] = {}
@@ -270,7 +271,7 @@ class Headers(typing.MutableMapping[str, str]):
         if not split_commas:
             return values
 
-        split_values = []
+        split_values: list[str] = []
         for value in values:
             split_values.extend([item.strip() for item in value.split(",")])
         return split_values
@@ -971,15 +972,11 @@ class Response:
         Read and return the response content.
         """
         if not hasattr(self, "_content"):
-            parts = self.aiter_bytes()
-            try:
+            async with contextlib.aclosing(self.aiter_bytes()) as parts:
                 self._content = b"".join([part async for part in parts])
-            finally:
-                if isinstance(parts, AsyncGenerator):
-                    await parts.aclose()
         return self._content
 
-    async def aiter_bytes(self, chunk_size: int | None = None) -> typing.AsyncIterator[bytes]:
+    async def aiter_bytes(self, chunk_size: int | None = None) -> typing.AsyncGenerator[bytes, None]:
         """
         A byte-iterator over the decoded response content.
         This allows us to handle gzip, deflate, brotli, and zstd encoded responses.
@@ -992,15 +989,11 @@ class Response:
             decoder = self._get_content_decoder()
             chunker = ByteChunker(chunk_size=chunk_size)
             with request_context(request=self._request):
-                raw_stream = self.aiter_raw()
-                try:
+                async with contextlib.aclosing(self.aiter_raw()) as raw_stream:
                     async for raw_bytes in raw_stream:
                         for decoded in decoder.decode(raw_bytes):
                             for chunk in chunker.decode(decoded):
                                 yield chunk
-                finally:
-                    if isinstance(raw_stream, AsyncGenerator):
-                        await raw_stream.aclose()
                 for decoded in decoder.flush():
                     for chunk in chunker.decode(decoded):
                         yield chunk  # pragma: no cover
@@ -1035,7 +1028,7 @@ class Response:
             for line in decoder.flush():
                 yield line
 
-    async def aiter_raw(self, chunk_size: int | None = None) -> typing.AsyncIterator[bytes]:
+    async def aiter_raw(self, chunk_size: int | None = None) -> typing.AsyncGenerator[bytes, None]:
         """
         A byte-iterator over the raw response content.
         """
@@ -1200,7 +1193,7 @@ class Cookies(typing.MutableMapping[str, str]):
         Delete all cookies. Optionally include a domain and path in
         order to only delete a subset of all the cookies.
         """
-        args = []
+        args: list[str] = []
         if domain is not None:
             args.append(domain)
         if path is not None:
@@ -1257,9 +1250,9 @@ class Cookies(typing.MutableMapping[str, str]):
             )
             self.request = request
 
-        def add_unredirected_header(self, key: str, value: str) -> None:
-            super().add_unredirected_header(key, value)
-            self.request.headers[key] = value
+        def add_unredirected_header(self, key: str, val: str) -> None:
+            super().add_unredirected_header(key, val)
+            self.request.headers[key] = val
 
     class _CookieCompatResponse:
         """

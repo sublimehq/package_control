@@ -2,7 +2,6 @@ target = "vendor"
 packages = [
     # httpx2
     "anyio",
-    "exceptiongroup",   # required < python 3.12
     "h11",
     "h2",
     "hpack",
@@ -10,8 +9,9 @@ packages = [
     "httpx2",
     "hyperframe",
     "idna",
-    "sniffio",
+    "truststore",
     "typing_extensions",
+    "wsproto",
     # packaging
     "packaging",
     "resolvelib"

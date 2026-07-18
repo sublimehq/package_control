@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+__all__ = (
+    "FileReadStream",
+    "FileStreamAttribute",
+    "FileWriteStream",
+)
+
 from collections.abc import Callable, Mapping
 from io import SEEK_SET, UnsupportedOperation
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, cast
+from typing import IO, Any
 
 from .. import (
     BrokenResourceError,
@@ -19,7 +25,7 @@ from ..abc import ByteReceiveStream, ByteSendStream
 
 class FileStreamAttribute(TypedAttributeSet):
     #: the open file descriptor
-    file: BinaryIO = typed_attribute()
+    file: IO[bytes] = typed_attribute()
     #: the path of the file on the file system, if available (file must be a real file)
     path: Path = typed_attribute()
     #: the file number, if available (file must be a real file or a TTY)
@@ -27,7 +33,7 @@ class FileStreamAttribute(TypedAttributeSet):
 
 
 class _BaseFileStream:
-    def __init__(self, file: BinaryIO):
+    def __init__(self, file: IO[bytes]):
         self._file = file
 
     async def aclose(self) -> None:
@@ -70,9 +76,12 @@ class FileReadStream(_BaseFileStream, ByteReceiveStream):
 
         """
         file = await to_thread.run_sync(Path(path).open, "rb")
-        return cls(cast(BinaryIO, file))
+        return cls(file)
 
     async def receive(self, max_bytes: int = 65536) -> bytes:
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be a positive integer")
+
         try:
             data = await to_thread.run_sync(self._file.read, max_bytes)
         except ValueError:
@@ -137,7 +146,7 @@ class FileWriteStream(_BaseFileStream, ByteSendStream):
         """
         mode = "ab" if append else "wb"
         file = await to_thread.run_sync(Path(path).open, mode)
-        return cls(cast(BinaryIO, file))
+        return cls(file)
 
     async def send(self, item: bytes) -> None:
         try:

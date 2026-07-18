@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from ._client import Client
@@ -136,7 +137,7 @@ def stream(
     follow_redirects: bool = False,
     verify: ssl.SSLContext | str | bool = True,
     trust_env: bool = True,
-) -> typing.Iterator[Response]:
+) -> Generator[Response]:
     """
     Alternative to `httpx2.request()` that streams the response body
     instead of loading it into memory at once.

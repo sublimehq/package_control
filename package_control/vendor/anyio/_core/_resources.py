@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..abc import AsyncResource
+from ..abc import AsyncResource  # noqa: TC001
 from ._tasks import CancelScope
 
 

@@ -1,21 +1,21 @@
-# -*- coding: utf-8 -*-
 """
-hyperframe/frame
-~~~~~~~~~~~~~~~~
+Framing logic for HTTP/2.
 
-Defines framing logic for HTTP/2. Provides both classes to represent framed
+Provides both classes to represent framed
 data and logic for aiding the connection when it comes to reading from the
 socket.
 """
-import struct
+from __future__ import annotations
+
 import binascii
+import struct
+from typing import TYPE_CHECKING, Any
 
-from .exceptions import (
-    UnknownFrameError, InvalidPaddingError, InvalidFrameError, InvalidDataError
-)
+if TYPE_CHECKING:
+    from collections.abc import Iterable  # pragma: no cover
+
+from .exceptions import InvalidDataError, InvalidFrameError, InvalidPaddingError, UnknownFrameError
 from .flags import Flag, Flags
-from typing import Optional, Tuple, List, Iterable, Any, Dict, Type
-
 
 # The maximum initial length of a frame. Some frames have shorter maximum
 # lengths.
@@ -43,15 +43,16 @@ class Frame:
     """
     The base class for all HTTP/2 frames.
     """
+
     #: The flags defined on this type of frame.
-    defined_flags: List[Flag] = []
+    defined_flags: list[Flag] = []
 
     #: The byte used to define the type of the frame.
-    type: Optional[int] = None
+    type: int | None = None
 
     # If 'has-stream', the frame's stream_id must be non-zero. If 'no-stream',
     # it must be zero. If 'either', it's not checked.
-    stream_association: Optional[str] = None
+    stream_association: str | None = None
 
     def __init__(self, stream_id: int, flags: Iterable[str] = ()) -> None:
         #: The stream identifier for the stream this frame was received on.
@@ -67,30 +68,16 @@ class Frame:
         for flag in flags:
             self.flags.add(flag)
 
-        if (not self.stream_id and
-           self.stream_association == _STREAM_ASSOC_HAS_STREAM):
-            raise InvalidDataError(
-                'Stream ID must be non-zero for {}'.format(
-                    type(self).__name__,
-                )
-            )
-        if (self.stream_id and
-           self.stream_association == _STREAM_ASSOC_NO_STREAM):
-            raise InvalidDataError(
-                'Stream ID must be zero for {} with stream_id={}'.format(
-                    type(self).__name__,
-                    self.stream_id,
-                )
-            )
+        if not self.stream_id and self.stream_association == _STREAM_ASSOC_HAS_STREAM:
+            msg = f"Stream ID must be non-zero for {type(self).__name__}"
+            raise InvalidDataError(msg)
+        if self.stream_id and self.stream_association == _STREAM_ASSOC_NO_STREAM:
+            msg = f"Stream ID must be zero for {type(self).__name__} with stream_id={self.stream_id}"
+            raise InvalidDataError(msg)
 
     def __repr__(self) -> str:
         return (
-            "{}(stream_id={}, flags={}): {}"
-        ).format(
-            type(self).__name__,
-            self.stream_id,
-            repr(self.flags),
-            self._body_repr(),
+            f"{type(self).__name__}(stream_id={self.stream_id}, flags={self.flags!r}): {self._body_repr()}"
         )
 
     def _body_repr(self) -> str:
@@ -99,7 +86,7 @@ class Frame:
         return _raw_data_repr(self.serialize_body())
 
     @staticmethod
-    def explain(data: memoryview) -> Tuple["Frame", int]:
+    def explain(data: memoryview) -> tuple[Frame, int]:
         """
         Takes a bytestring and tries to parse a single frame and print it.
 
@@ -112,11 +99,11 @@ class Frame:
         """
         frame, length = Frame.parse_frame_header(data[:9])
         frame.parse_body(data[9:9 + length])
-        print(frame)
+        print(frame)  # noqa: T201
         return frame, length
 
     @staticmethod
-    def parse_frame_header(header: memoryview, strict: bool = False) -> Tuple["Frame", int]:
+    def parse_frame_header(header: memoryview, strict: bool = False) -> tuple[Frame, int]:
         """
         Takes a 9-byte frame header and returns a tuple of the appropriate
         Frame object and the length that needs to be read from the socket.
@@ -133,25 +120,26 @@ class Frame:
             type is received.
 
         .. versionchanged:: 5.0.0
-            Added :param:`strict` to accommodate :class:`ExtensionFrame`
+            Added ``strict`` parameter to accommodate :class:`ExtensionFrame`
         """
         try:
             fields = _STRUCT_HBBBL.unpack(header)
-        except struct.error:
-            raise InvalidFrameError("Invalid frame header")
+        except struct.error as err:
+            msg = "Invalid frame header"
+            raise InvalidFrameError(msg) from err
 
         # First 24 bits are frame length.
         length = (fields[0] << 8) + fields[1]
-        type = fields[2]
+        typ_e = fields[2]
         flags = fields[3]
         stream_id = fields[4] & 0x7FFFFFFF
 
         try:
-            frame = FRAMES[type](stream_id)
-        except KeyError:
+            frame = FRAMES[typ_e](stream_id)
+        except KeyError as err:
             if strict:
-                raise UnknownFrameError(type, length)
-            frame = ExtensionFrame(type=type, stream_id=stream_id)
+                raise UnknownFrameError(typ_e, length) from err
+            frame = ExtensionFrame(type=typ_e, stream_id=stream_id)
 
         frame.parse_flags(flags)
         return (frame, length)
@@ -184,13 +172,13 @@ class Frame:
             self.body_len & 0xFF,
             self.type,
             flags,
-            self.stream_id & 0x7FFFFFFF  # Stream ID is 32 bits.
+            self.stream_id & 0x7FFFFFFF,  # Stream ID is 32 bits.
         )
 
         return header + body
 
     def serialize_body(self) -> bytes:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def parse_body(self, data: memoryview) -> None:
         """
@@ -203,7 +191,7 @@ class Frame:
                      :meth:`parse_frame_header
                      <hyperframe.frame.Frame.parse_frame_header>`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Padding:
@@ -211,6 +199,7 @@ class Padding:
     Mixin for frames that contain padding. Defines extra fields that can be
     used and set by frames that can be padded.
     """
+
     def __init__(self, stream_id: int, pad_length: int = 0, **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)  # type: ignore
 
@@ -218,16 +207,17 @@ class Padding:
         self.pad_length = pad_length
 
     def serialize_padding_data(self) -> bytes:
-        if 'PADDED' in self.flags:  # type: ignore
+        if "PADDED" in self.flags:  # type: ignore
             return _STRUCT_B.pack(self.pad_length)
-        return b''
+        return b""
 
     def parse_padding_data(self, data: memoryview) -> int:
-        if 'PADDED' in self.flags:  # type: ignore
+        if "PADDED" in self.flags:  # type: ignore
             try:
-                self.pad_length = struct.unpack('!B', data[:1])[0]
-            except struct.error:
-                raise InvalidFrameError("Invalid Padding data")
+                self.pad_length = struct.unpack("!B", data[:1])[0]
+            except struct.error as err:
+                msg = "Invalid Padding data"
+                raise InvalidFrameError(msg) from err
             return 1
         return 0
 
@@ -235,10 +225,11 @@ class Padding:
     #:    Use self.pad_length instead.
     @property
     def total_padding(self) -> int:  # pragma: no cover
-        from .. import warnings
+        import warnings
         warnings.warn(
             "total_padding contains the same information as pad_length.",
-            DeprecationWarning
+            DeprecationWarning,
+            stacklevel=2,
         )
         return self.pad_length
 
@@ -248,6 +239,7 @@ class Priority:
     Mixin for frames that contain priority data. Defines extra fields that can
     be used and set by frames that contain priority data.
     """
+
     def __init__(self,
                  stream_id: int,
                  depends_on: int = 0x0,
@@ -268,16 +260,17 @@ class Priority:
     def serialize_priority_data(self) -> bytes:
         return _STRUCT_LB.pack(
             self.depends_on + (0x80000000 if self.exclusive else 0),
-            self.stream_weight
+            self.stream_weight,
         )
 
     def parse_priority_data(self, data: memoryview) -> int:
         try:
             self.depends_on, self.stream_weight = _STRUCT_LB.unpack(data[:5])
-        except struct.error:
-            raise InvalidFrameError("Invalid Priority data")
+        except struct.error as err:
+            msg = "Invalid Priority data"
+            raise InvalidFrameError(msg) from err
 
-        self.exclusive = True if self.depends_on >> 31 else False
+        self.exclusive = bool(self.depends_on >> 31)
         self.depends_on &= 0x7FFFFFFF
         return 5
 
@@ -288,10 +281,11 @@ class DataFrame(Padding, Frame):
     associated with a stream. One or more DATA frames are used, for instance,
     to carry HTTP request or response payloads.
     """
+
     #: The flags defined for DATA frames.
     defined_flags = [
-        Flag('END_STREAM', 0x01),
-        Flag('PADDED', 0x08),
+        Flag("END_STREAM", 0x01),
+        Flag("PADDED", 0x08),
     ]
 
     #: The type byte for data frames.
@@ -299,7 +293,7 @@ class DataFrame(Padding, Frame):
 
     stream_association = _STREAM_ASSOC_HAS_STREAM
 
-    def __init__(self, stream_id: int, data: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int, data: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         #: The data contained on this frame.
@@ -307,10 +301,10 @@ class DataFrame(Padding, Frame):
 
     def serialize_body(self) -> bytes:
         padding_data = self.serialize_padding_data()
-        padding = b'\0' * self.pad_length
+        padding = b"\0" * self.pad_length
         if isinstance(self.data, memoryview):
             self.data = self.data.tobytes()
-        return b''.join([padding_data, self.data, padding])
+        return b"".join([padding_data, self.data, padding])
 
     def parse_body(self, data: memoryview) -> None:
         padding_data_length = self.parse_padding_data(data)
@@ -320,7 +314,8 @@ class DataFrame(Padding, Frame):
         self.body_len = len(data)
 
         if self.pad_length and self.pad_length >= self.body_len:
-            raise InvalidPaddingError("Padding is too long.")
+            msg = "Padding is too long."
+            raise InvalidPaddingError(msg)
 
     @property
     def flow_controlled_length(self) -> int:
@@ -329,7 +324,7 @@ class DataFrame(Padding, Frame):
         flow control.
         """
         padding_len = 0
-        if 'PADDED' in self.flags:
+        if "PADDED" in self.flags:
             # Account for extra 1-byte padding length field, which is still
             # present if possibly zero-valued.
             padding_len = self.pad_length + 1
@@ -342,8 +337,9 @@ class PriorityFrame(Priority, Frame):
     can be sent at any time for an existing stream. This enables
     reprioritisation of existing streams.
     """
+
     #: The flags defined for PRIORITY frames.
-    defined_flags: List[Flag] = []
+    defined_flags: list[Flag] = []
 
     #: The type byte defined for PRIORITY frames.
     type = 0x02
@@ -351,21 +347,15 @@ class PriorityFrame(Priority, Frame):
     stream_association = _STREAM_ASSOC_HAS_STREAM
 
     def _body_repr(self) -> str:
-        return "exclusive={}, depends_on={}, stream_weight={}".format(
-            self.exclusive,
-            self.depends_on,
-            self.stream_weight
-        )
+        return f"exclusive={self.exclusive}, depends_on={self.depends_on}, stream_weight={self.stream_weight}"
 
     def serialize_body(self) -> bytes:
         return self.serialize_priority_data()
 
     def parse_body(self, data: memoryview) -> None:
         if len(data) > 5:
-            raise InvalidFrameError(
-                "PRIORITY must have 5 byte body: actual length %s." %
-                len(data)
-            )
+            msg = f"PRIORITY must have 5 byte body: actual length {len(data)}."
+            raise InvalidFrameError(msg)
 
         self.parse_priority_data(data)
         self.body_len = 5
@@ -380,8 +370,9 @@ class RstStreamFrame(Frame):
     requesting that the stream be cancelled or that an error condition has
     occurred.
     """
+
     #: The flags defined for RST_STREAM frames.
-    defined_flags: List[Flag] = []
+    defined_flags: list[Flag] = []
 
     #: The type byte defined for RST_STREAM frames.
     type = 0x03
@@ -395,24 +386,21 @@ class RstStreamFrame(Frame):
         self.error_code = error_code
 
     def _body_repr(self) -> str:
-        return "error_code={}".format(
-            self.error_code,
-        )
+        return f"error_code={self.error_code}"
 
     def serialize_body(self) -> bytes:
         return _STRUCT_L.pack(self.error_code)
 
     def parse_body(self, data: memoryview) -> None:
         if len(data) != 4:
-            raise InvalidFrameError(
-                "RST_STREAM must have 4 byte body: actual length %s." %
-                len(data)
-            )
+            msg = f"RST_STREAM must have 4 byte body: actual length {len(data)}."
+            raise InvalidFrameError(msg)
 
         try:
             self.error_code = _STRUCT_L.unpack(data)[0]
-        except struct.error:  # pragma: no cover
-            raise InvalidFrameError("Invalid RST_STREAM body")
+        except struct.error as err:  # pragma: no cover
+            msg = "Invalid RST_STREAM body"
+            raise InvalidFrameError(msg) from err
 
         self.body_len = 4
 
@@ -429,8 +417,9 @@ class SettingsFrame(Frame):
     might set a high initial flow control window, whereas a server might set a
     lower value to conserve resources.
     """
+
     #: The flags defined for SETTINGS frames.
-    defined_flags = [Flag('ACK', 0x01)]
+    defined_flags = [Flag("ACK", 0x01)]
 
     #: The type byte defined for SETTINGS frames.
     type = 0x04
@@ -454,39 +443,35 @@ class SettingsFrame(Frame):
     #: The byte that signals SETTINGS_ENABLE_CONNECT_PROTOCOL setting.
     ENABLE_CONNECT_PROTOCOL = 0x08
 
-    def __init__(self, stream_id: int = 0, settings: Optional[Dict[int, int]] = None, **kwargs: Any) -> None:
+    def __init__(self, stream_id: int = 0, settings: dict[int, int] | None = None, **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         if settings and "ACK" in kwargs.get("flags", ()):
-            raise InvalidDataError(
-                "Settings must be empty if ACK flag is set."
-            )
+            msg = "Settings must be empty if ACK flag is set."
+            raise InvalidDataError(msg)
 
         #: A dictionary of the setting type byte to the value of the setting.
-        self.settings = settings or {}
+        self.settings: dict[int, int] = settings or {}
 
     def _body_repr(self) -> str:
-        return "settings={}".format(
-            self.settings,
-        )
+        return f"settings={self.settings}"
 
     def serialize_body(self) -> bytes:
-        return b''.join([_STRUCT_HL.pack(setting & 0xFF, value)
+        return b"".join([_STRUCT_HL.pack(setting & 0xFF, value)
                          for setting, value in self.settings.items()])
 
     def parse_body(self, data: memoryview) -> None:
-        if 'ACK' in self.flags and len(data) > 0:
-            raise InvalidDataError(
-                "SETTINGS ack frame must not have payload: got %s bytes" %
-                len(data)
-            )
+        if "ACK" in self.flags and len(data) > 0:
+            msg = f"SETTINGS ack frame must not have payload: got {len(data)} bytes"
+            raise InvalidDataError(msg)
 
         body_len = 0
         for i in range(0, len(data), 6):
             try:
                 name, value = _STRUCT_HL.unpack(data[i:i+6])
-            except struct.error:
-                raise InvalidFrameError("Invalid SETTINGS body")
+            except struct.error as err:
+                msg = "Invalid SETTINGS body"
+                raise InvalidFrameError(msg) from err
 
             self.settings[name] = value
             body_len += 6
@@ -499,10 +484,11 @@ class PushPromiseFrame(Padding, Frame):
     The PUSH_PROMISE frame is used to notify the peer endpoint in advance of
     streams the sender intends to initiate.
     """
+
     #: The flags defined for PUSH_PROMISE frames.
     defined_flags = [
-        Flag('END_HEADERS', 0x04),
-        Flag('PADDED', 0x08)
+        Flag("END_HEADERS", 0x04),
+        Flag("PADDED", 0x08),
     ]
 
     #: The type byte defined for PUSH_PROMISE frames.
@@ -510,7 +496,7 @@ class PushPromiseFrame(Padding, Frame):
 
     stream_association = _STREAM_ASSOC_HAS_STREAM
 
-    def __init__(self, stream_id: int, promised_stream_id: int = 0, data: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int, promised_stream_id: int = 0, data: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         #: The stream ID that is promised by this frame.
@@ -521,26 +507,24 @@ class PushPromiseFrame(Padding, Frame):
         self.data = data
 
     def _body_repr(self) -> str:
-        return "promised_stream_id={}, data={}".format(
-            self.promised_stream_id,
-            _raw_data_repr(self.data),
-        )
+        return f"promised_stream_id={self.promised_stream_id}, data={_raw_data_repr(self.data)}"
 
     def serialize_body(self) -> bytes:
         padding_data = self.serialize_padding_data()
-        padding = b'\0' * self.pad_length
+        padding = b"\0" * self.pad_length
         data = _STRUCT_L.pack(self.promised_stream_id)
-        return b''.join([padding_data, data, self.data, padding])
+        return b"".join([padding_data, data, self.data, padding])
 
     def parse_body(self, data: memoryview) -> None:
         padding_data_length = self.parse_padding_data(data)
 
         try:
             self.promised_stream_id = _STRUCT_L.unpack(
-                data[padding_data_length:padding_data_length + 4]
+                data[padding_data_length:padding_data_length + 4],
             )[0]
-        except struct.error:
-            raise InvalidFrameError("Invalid PUSH_PROMISE body")
+        except struct.error as err:
+            msg = "Invalid PUSH_PROMISE body"
+            raise InvalidFrameError(msg) from err
 
         self.data = (
             data[padding_data_length + 4:len(data)-self.pad_length].tobytes()
@@ -548,13 +532,12 @@ class PushPromiseFrame(Padding, Frame):
         self.body_len = len(data)
 
         if self.promised_stream_id == 0 or self.promised_stream_id % 2 != 0:
-            raise InvalidDataError(
-                "Invalid PUSH_PROMISE promised stream id: %s" %
-                self.promised_stream_id
-            )
+            msg = f"Invalid PUSH_PROMISE promised stream id: {self.promised_stream_id}"
+            raise InvalidDataError(msg)
 
         if self.pad_length and self.pad_length >= self.body_len:
-            raise InvalidPaddingError("Padding is too long.")
+            msg = "Padding is too long."
+            raise InvalidPaddingError(msg)
 
 
 class PingFrame(Frame):
@@ -563,41 +546,37 @@ class PingFrame(Frame):
     the sender, as well as determining whether an idle connection is still
     functional. PING frames can be sent from any endpoint.
     """
+
     #: The flags defined for PING frames.
-    defined_flags = [Flag('ACK', 0x01)]
+    defined_flags = [Flag("ACK", 0x01)]
 
     #: The type byte defined for PING frames.
     type = 0x06
 
     stream_association = _STREAM_ASSOC_NO_STREAM
 
-    def __init__(self, stream_id: int = 0, opaque_data: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int = 0, opaque_data: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         #: The opaque data sent in this PING frame, as a bytestring.
         self.opaque_data = opaque_data
 
     def _body_repr(self) -> str:
-        return "opaque_data={!r}".format(
-            self.opaque_data,
-        )
+        return f"opaque_data={self.opaque_data!r}"
 
     def serialize_body(self) -> bytes:
         if len(self.opaque_data) > 8:
-            raise InvalidFrameError(
-                "PING frame may not have more than 8 bytes of data, got %r" %
-                self.opaque_data
-            )
+            msg = f"PING frame may not have more than 8 bytes of data, got {len(self.opaque_data)}"
+            raise InvalidFrameError(msg)
 
         data = self.opaque_data
-        data += b'\x00' * (8 - len(self.opaque_data))
+        data += b"\x00" * (8 - len(self.opaque_data))
         return data
 
     def parse_body(self, data: memoryview) -> None:
         if len(data) != 8:
-            raise InvalidFrameError(
-                "PING frame must have 8 byte length: got %s" % len(data)
-            )
+            msg = f"PING frame must have 8 byte length: got {len(data)}"
+            raise InvalidFrameError(msg)
 
         self.opaque_data = data.tobytes()
         self.body_len = 8
@@ -610,8 +589,9 @@ class GoAwayFrame(Frame):
     sender will ignore frames sent on new streams for the remainder of the
     connection.
     """
+
     #: The flags defined for GOAWAY frames.
-    defined_flags: List[Flag] = []
+    defined_flags: list[Flag] = []
 
     #: The type byte defined for GOAWAY frames.
     type = 0x07
@@ -622,7 +602,7 @@ class GoAwayFrame(Frame):
                  stream_id: int = 0,
                  last_stream_id: int = 0,
                  error_code: int = 0,
-                 additional_data: bytes = b'',
+                 additional_data: bytes = b"",
                  **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
@@ -636,16 +616,12 @@ class GoAwayFrame(Frame):
         self.additional_data = additional_data
 
     def _body_repr(self) -> str:
-        return "last_stream_id={}, error_code={}, additional_data={!r}".format(
-            self.last_stream_id,
-            self.error_code,
-            self.additional_data,
-        )
+        return f"last_stream_id={self.last_stream_id}, error_code={self.error_code}, additional_data={self.additional_data!r}"
 
     def serialize_body(self) -> bytes:
         data = _STRUCT_LL.pack(
             self.last_stream_id & 0x7FFFFFFF,
-            self.error_code
+            self.error_code,
         )
         data += self.additional_data
 
@@ -654,10 +630,11 @@ class GoAwayFrame(Frame):
     def parse_body(self, data: memoryview) -> None:
         try:
             self.last_stream_id, self.error_code = _STRUCT_LL.unpack(
-                data[:8]
+                data[:8],
             )
-        except struct.error:
-            raise InvalidFrameError("Invalid GOAWAY body.")
+        except struct.error as err:
+            msg = "Invalid GOAWAY body."
+            raise InvalidFrameError(msg) from err
 
         self.body_len = len(data)
 
@@ -678,8 +655,9 @@ class WindowUpdateFrame(Frame):
     can indirectly cause the propagation of flow control information toward the
     original sender.
     """
+
     #: The flags defined for WINDOW_UPDATE frames.
-    defined_flags: List[Flag] = []
+    defined_flags: list[Flag] = []
 
     #: The type byte defined for WINDOW_UPDATE frames.
     type = 0x08
@@ -693,29 +671,25 @@ class WindowUpdateFrame(Frame):
         self.window_increment = window_increment
 
     def _body_repr(self) -> str:
-        return "window_increment={}".format(
-            self.window_increment,
-        )
+        return f"window_increment={self.window_increment}"
 
     def serialize_body(self) -> bytes:
         return _STRUCT_L.pack(self.window_increment & 0x7FFFFFFF)
 
     def parse_body(self, data: memoryview) -> None:
         if len(data) > 4:
-            raise InvalidFrameError(
-                "WINDOW_UPDATE frame must have 4 byte length: got %s" %
-                len(data)
-            )
+            msg = f"WINDOW_UPDATE frame must have 4 byte length: got {len(data)}"
+            raise InvalidFrameError(msg)
 
         try:
             self.window_increment = _STRUCT_L.unpack(data)[0]
-        except struct.error:
-            raise InvalidFrameError("Invalid WINDOW_UPDATE body")
+        except struct.error as err:
+            msg = "Invalid WINDOW_UPDATE body"
+            raise InvalidFrameError(msg) from err
 
         if not 1 <= self.window_increment <= 2**31-1:
-            raise InvalidDataError(
-                "WINDOW_UPDATE increment must be between 1 to 2^31-1"
-            )
+            msg = "WINDOW_UPDATE increment must be between 1 to 2^31-1"
+            raise InvalidDataError(msg)
 
         self.body_len = 4
 
@@ -732,12 +706,13 @@ class HeadersFrame(Padding, Priority, Frame):
     to be followed with CONTINUATION frames. From the perspective of the frame
     building code the header block is an opaque data segment.
     """
+
     #: The flags defined for HEADERS frames.
     defined_flags = [
-        Flag('END_STREAM', 0x01),
-        Flag('END_HEADERS', 0x04),
-        Flag('PADDED', 0x08),
-        Flag('PRIORITY', 0x20),
+        Flag("END_STREAM", 0x01),
+        Flag("END_HEADERS", 0x04),
+        Flag("PADDED", 0x08),
+        Flag("PRIORITY", 0x20),
     ]
 
     #: The type byte defined for HEADERS frames.
@@ -745,36 +720,31 @@ class HeadersFrame(Padding, Priority, Frame):
 
     stream_association = _STREAM_ASSOC_HAS_STREAM
 
-    def __init__(self, stream_id: int, data: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int, data: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         #: The HPACK-encoded header block.
         self.data = data
 
     def _body_repr(self) -> str:
-        return "exclusive={}, depends_on={}, stream_weight={}, data={}".format(
-            self.exclusive,
-            self.depends_on,
-            self.stream_weight,
-            _raw_data_repr(self.data),
-        )
+        return f"exclusive={self.exclusive}, depends_on={self.depends_on}, stream_weight={self.stream_weight}, data={_raw_data_repr(self.data)}"
 
     def serialize_body(self) -> bytes:
         padding_data = self.serialize_padding_data()
-        padding = b'\0' * self.pad_length
+        padding = b"\0" * self.pad_length
 
-        if 'PRIORITY' in self.flags:
+        if "PRIORITY" in self.flags:
             priority_data = self.serialize_priority_data()
         else:
-            priority_data = b''
+            priority_data = b""
 
-        return b''.join([padding_data, priority_data, self.data, padding])
+        return b"".join([padding_data, priority_data, self.data, padding])
 
     def parse_body(self, data: memoryview) -> None:
         padding_data_length = self.parse_padding_data(data)
         data = data[padding_data_length:]
 
-        if 'PRIORITY' in self.flags:
+        if "PRIORITY" in self.flags:
             priority_data_length = self.parse_priority_data(data)
         else:
             priority_data_length = 0
@@ -785,7 +755,8 @@ class HeadersFrame(Padding, Priority, Frame):
         )
 
         if self.pad_length and self.pad_length >= self.body_len:
-            raise InvalidPaddingError("Padding is too long.")
+            msg = "Padding is too long."
+            raise InvalidPaddingError(msg)
 
 
 class ContinuationFrame(Frame):
@@ -798,24 +769,23 @@ class ContinuationFrame(Frame):
     Much like the HEADERS frame, hyper treats this as an opaque data frame with
     different flags and a different type.
     """
+
     #: The flags defined for CONTINUATION frames.
-    defined_flags = [Flag('END_HEADERS', 0x04)]
+    defined_flags = [Flag("END_HEADERS", 0x04)]
 
     #: The type byte defined for CONTINUATION frames.
     type = 0x09
 
     stream_association = _STREAM_ASSOC_HAS_STREAM
 
-    def __init__(self, stream_id: int, data: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int, data: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         #: The HPACK-encoded header block.
         self.data = data
 
     def _body_repr(self) -> str:
-        return "data={}".format(
-            _raw_data_repr(self.data),
-        )
+        return f"data={_raw_data_repr(self.data)}"
 
     def serialize_body(self) -> bytes:
         return self.data
@@ -840,29 +810,29 @@ class AltSvcFrame(Frame):
               another way, a valid ALTSVC frame has ``stream_id != 0`` XOR
               ``len(origin) != 0``.
     """
-    type = 0xA
+
+    type = 0x0A
 
     stream_association = _STREAM_ASSOC_EITHER
 
-    def __init__(self, stream_id: int, origin: bytes = b'', field: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, stream_id: int, origin: bytes = b"", field: bytes = b"", **kwargs: Any) -> None:
         super().__init__(stream_id, **kwargs)
 
         if not isinstance(origin, bytes):
-            raise InvalidDataError("AltSvc origin must be bytestring.")
+            msg = "AltSvc origin must be a bytestring."
+            raise InvalidDataError(msg)
         if not isinstance(field, bytes):
-            raise InvalidDataError("AltSvc field must be a bytestring.")
+            msg = "AltSvc field must be a bytestring."
+            raise InvalidDataError(msg)
         self.origin = origin
         self.field = field
 
     def _body_repr(self) -> str:
-        return "origin={!r}, field={!r}".format(
-            self.origin,
-            self.field,
-        )
+        return f"origin={self.origin!r}, field={self.field!r}"
 
     def serialize_body(self) -> bytes:
         origin_len = _STRUCT_H.pack(len(self.origin))
-        return b''.join([origin_len, self.origin, self.field])
+        return b"".join([origin_len, self.origin, self.field])
 
     def parse_body(self, data: memoryview) -> None:
         try:
@@ -870,11 +840,13 @@ class AltSvcFrame(Frame):
             self.origin = data[2:2+origin_len].tobytes()
 
             if len(self.origin) != origin_len:
-                raise InvalidFrameError("Invalid ALTSVC frame body.")
+                msg = "Invalid ALTSVC frame body."
+                raise InvalidFrameError(msg)
 
             self.field = data[2+origin_len:].tobytes()
-        except (struct.error, ValueError):
-            raise InvalidFrameError("Invalid ALTSVC frame body.")
+        except (struct.error, ValueError) as err:
+            msg = "Invalid ALTSVC frame body."
+            raise InvalidFrameError(msg) from err
 
         self.body_len = len(data)
 
@@ -897,18 +869,14 @@ class ExtensionFrame(Frame):
 
     stream_association = _STREAM_ASSOC_EITHER
 
-    def __init__(self, type: int, stream_id: int, flag_byte: int = 0x0, body: bytes = b'', **kwargs: Any) -> None:
+    def __init__(self, type: int, stream_id: int, flag_byte: int = 0x0, body: bytes = b"", **kwargs: Any) -> None:  # noqa: A002
         super().__init__(stream_id, **kwargs)
         self.type = type
         self.flag_byte = flag_byte
         self.body = body
 
     def _body_repr(self) -> str:
-        return "type={}, flag_byte={}, body={}".format(
-            self.type,
-            self.flag_byte,
-            _raw_data_repr(self.body),
-        )
+        return f"type={self.type}, flag_byte={self.flag_byte}, body={_raw_data_repr(self.body)}"
 
     def parse_flags(self, flag_byte: int) -> None:  # type: ignore
         """
@@ -936,22 +904,22 @@ class ExtensionFrame(Frame):
             self.body_len & 0xFF,
             self.type,
             flags,
-            self.stream_id & 0x7FFFFFFF  # Stream ID is 32 bits.
+            self.stream_id & 0x7FFFFFFF,  # Stream ID is 32 bits.
         )
 
         return header + self.body
 
 
-def _raw_data_repr(data: Optional[bytes]) -> str:
+def _raw_data_repr(data: bytes | None) -> str:
     if not data:
         return "None"
-    r = binascii.hexlify(data).decode('ascii')
+    r = binascii.hexlify(data).decode("ascii")
     if len(r) > 20:
         r = r[:20] + "..."
     return "<hex:" + r + ">"
 
 
-_FRAME_CLASSES: List[Type[Frame]] = [
+_FRAME_CLASSES: list[type[Frame]] = [
     DataFrame,
     HeadersFrame,
     PriorityFrame,

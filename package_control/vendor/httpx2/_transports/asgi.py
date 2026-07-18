@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
     import trio
 
-    Event = typing.Union[asyncio.Event, trio.Event]
+    Event = asyncio.Event | trio.Event
 
 
 _Message = typing.MutableMapping[str, typing.Any]

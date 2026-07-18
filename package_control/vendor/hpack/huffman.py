@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """
-hpack/huffman_decoder
-~~~~~~~~~~~~~~~~~~~~~
-
 An implementation of a bitwise prefix tree specially built for decoding
 Huffman-coded content where we already know the Huffman table.
 """
+from __future__ import annotations
 
 
 class HuffmanEncoder:
@@ -13,18 +10,19 @@ class HuffmanEncoder:
     Encodes a string according to the Huffman encoding table defined in the
     HPACK specification.
     """
-    def __init__(self, huffman_code_list, huffman_code_list_lengths):
+
+    def __init__(self, huffman_code_list: list[int], huffman_code_list_lengths: list[int]) -> None:
         self.huffman_code_list = huffman_code_list
         self.huffman_code_list_lengths = huffman_code_list_lengths
 
-    def encode(self, bytes_to_encode):
+    def encode(self, bytes_to_encode: bytes | None) -> bytes:
         """
         Given a string of bytes, encodes them according to the HPACK Huffman
         specification.
         """
         # If handed the empty string, just immediately return.
         if not bytes_to_encode:
-            return b''
+            return b""
 
         final_num = 0
         final_int_len = 0
@@ -46,12 +44,11 @@ class HuffmanEncoder:
         final_num <<= bits_to_be_padded
         final_num |= (1 << bits_to_be_padded) - 1
 
-        # Convert the number to hex and strip off the leading '0x' and the
-        # trailing 'L', if present.
-        final_num = hex(final_num)[2:].rstrip('L')
+        # Convert the number to hex without leading '0x' or trailing 'L'.
+        s = f"{final_num:x}"
 
         # If this is odd, prepend a zero.
-        final_num = '0' + final_num if len(final_num) % 2 != 0 else final_num
+        s = "0" + s if len(s) % 2 != 0 else s
 
         # This number should have twice as many digits as bytes. If not, we're
         # missing some leading zeroes. Work out how many bytes we want and how
@@ -59,8 +56,8 @@ class HuffmanEncoder:
         total_bytes = (final_int_len + bits_to_be_padded) // 8
         expected_digits = total_bytes * 2
 
-        if len(final_num) != expected_digits:
-            missing_digits = expected_digits - len(final_num)
-            final_num = ('0' * missing_digits) + final_num
+        if len(s) != expected_digits:
+            missing_digits = expected_digits - len(s)
+            s = ("0" * missing_digits) + s
 
-        return bytes.fromhex(final_num)
+        return bytes.fromhex(s)

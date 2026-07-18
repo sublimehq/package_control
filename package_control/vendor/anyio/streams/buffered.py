@@ -1,11 +1,30 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+__all__ = (
+    "BufferedByteReceiveStream",
+    "BufferedByteStream",
+    "BufferedConnectable",
+)
+
+import sys
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, SupportsIndex
 
 from .. import ClosedResourceError, DelimiterNotFound, EndOfStream, IncompleteRead
-from ..abc import AnyByteReceiveStream, ByteReceiveStream
+from ..abc import (
+    AnyByteReceiveStream,
+    AnyByteStream,
+    AnyByteStreamConnectable,
+    ByteReceiveStream,
+    ByteStream,
+    ByteStreamConnectable,
+)
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from ...typing_extensions import override
 
 
 @dataclass(eq=False)
@@ -32,7 +51,23 @@ class BufferedByteReceiveStream(ByteReceiveStream):
     def extra_attributes(self) -> Mapping[Any, Callable[[], Any]]:
         return self.receive_stream.extra_attributes
 
+    def feed_data(self, data: Iterable[SupportsIndex], /) -> None:
+        """
+        Append data directly into the buffer.
+
+        Any data in the buffer will be consumed by receive operations before receiving
+        anything from the wrapped stream.
+
+        :param data: the data to append to the buffer (can be bytes or anything else
+            that supports ``__index__()``)
+
+        """
+        self._buffer.extend(data)
+
     async def receive(self, max_bytes: int = 65536) -> bytes:
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be a positive integer")
+
         if self._closed:
             raise ClosedResourceError
 
@@ -117,3 +152,50 @@ class BufferedByteReceiveStream(ByteReceiveStream):
             # Move the offset forward and add the new data to the buffer
             offset = max(len(self._buffer) - delimiter_size + 1, 0)
             self._buffer.extend(data)
+
+
+class BufferedByteStream(BufferedByteReceiveStream, ByteStream):
+    """
+    A full-duplex variant of :class:`BufferedByteReceiveStream`. All writes are passed
+    through to the wrapped stream as-is.
+    """
+
+    def __init__(self, stream: AnyByteStream):
+        """
+        :param stream: the stream to be wrapped
+
+        """
+        super().__init__(stream)
+        self._stream = stream
+
+    @override
+    async def send_eof(self) -> None:
+        await self._stream.send_eof()
+
+    @override
+    async def send(self, item: bytes) -> None:
+        await self._stream.send(item)
+
+
+class BufferedConnectable(ByteStreamConnectable):
+    """
+    Wraps a byte stream connectable to produce :class:`BufferedByteStream` connections.
+
+    Use this when you want the streams returned by :meth:`connect` to have the buffered
+    receive API (e.g. :meth:`~BufferedByteReceiveStream.receive_exactly` and
+    :meth:`~BufferedByteReceiveStream.receive_until`).
+
+    :param connectable: the byte stream connectable to wrap
+    """
+
+    def __init__(self, connectable: AnyByteStreamConnectable):
+        """
+        :param connectable: the connectable to wrap
+
+        """
+        self.connectable = connectable
+
+    @override
+    async def connect(self) -> BufferedByteStream:
+        stream = await self.connectable.connect()
+        return BufferedByteStream(stream)
