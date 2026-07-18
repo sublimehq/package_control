@@ -1,7 +1,6 @@
 # flake8: noqa: E121,E126,E501
-import unittest
+import unittesting
 
-from ..http_cache import HttpCache
 from ..providers.bitbucket_provider import BitBucketProvider
 from ._data_decorator import data_decorator, data
 
@@ -11,12 +10,11 @@ from ._config import (
     DEBUG,
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
-    USER_AGENT,
 )
 
 
 @data_decorator
-class BitBucketProviderTests(unittest.TestCase):
+class BitBucketProviderTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self):
@@ -25,9 +23,6 @@ class BitBucketProviderTests(unittest.TestCase):
 
         return {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT,
             "http_basic_auth": {
                 "api.bitbucket.org": [BB_USER, BB_PASS]
             }
@@ -47,21 +42,21 @@ class BitBucketProviderTests(unittest.TestCase):
     def match_url(self, url, result):
         self.assertEqual(result, BitBucketProvider.match_url(url))
 
-    def test_get_libraries(self):
+    async def test_get_libraries(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], provider.get_libraries())
+        self.assertEqual([], await provider.get_libraries())
 
-    def test_get_broken_libraries(self):
+    async def test_get_broken_libraries(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_broken_libraries()))
+        self.assertEqual([], list(await provider.get_broken_libraries()))
 
-    def test_get_packages(self):
+    async def test_get_packages(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
@@ -92,10 +87,10 @@ class BitBucketProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            provider.get_packages()
+            await provider.get_packages()
         )
 
-    def test_get_mapped_packages(self):
+    async def test_get_mapped_packages(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
@@ -127,19 +122,19 @@ class BitBucketProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            provider.get_packages()
+            await provider.get_packages()
         )
 
-    def test_get_broken_packages(self):
+    async def test_get_broken_packages(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_broken_packages()))
+        self.assertEqual([], list(await provider.get_broken_packages()))
 
-    def test_get_renamed_packages(self):
+    async def test_get_renamed_packages(self):
         provider = BitBucketProvider(
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
         )
-        self.assertEqual({}, provider.get_renamed_packages())
+        self.assertEqual({}, await provider.get_renamed_packages())

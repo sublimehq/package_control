@@ -1,7 +1,6 @@
 # flake8: noqa: E121,E126,E501
-import unittest
+import unittesting
 
-from ..http_cache import HttpCache
 from ..providers.repository_provider import RepositoryProvider
 from ._data_decorator import data_decorator, data
 
@@ -15,7 +14,7 @@ TEST_FIXTURE_01_URL = TEST_FIXTURES_URI + "fixture-01/"
 
 
 @data_decorator
-class RepositoryProviderTests(unittest.TestCase):
+class RepositoryProviderTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self):
@@ -23,7 +22,7 @@ class RepositoryProviderTests(unittest.TestCase):
             "debug": DEBUG,
         }
 
-    def test_merge_behavior(self):
+    async def test_merge_behavior(self):
         provider = RepositoryProvider(TEST_FIXTURE_01_URL + "repository-04.json", self.settings())
         self.assertEqual(
             [
@@ -147,7 +146,7 @@ class RepositoryProviderTests(unittest.TestCase):
                     "source": TEST_FIXTURE_01_URL + "repository-06.json",
                 },
             ],
-            provider.get_packages()
+            await provider.get_packages(),
         )
 
     @data(
@@ -291,9 +290,9 @@ class RepositoryProviderTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def get_libraries(self, url, result):
+    async def get_libraries(self, url, result):
         provider = RepositoryProvider(url, self.settings())
-        self.assertEqual(result, provider.get_libraries())
+        self.assertEqual(result, await provider.get_libraries())
 
     @data(
         (
@@ -1036,6 +1035,6 @@ class RepositoryProviderTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def get_packages(self, url, result):
+    async def get_packages(self, url, result):
         provider = RepositoryProvider(url, self.settings())
-        self.assertEqual(result, provider.get_packages())
+        self.assertEqual(result, await provider.get_packages())

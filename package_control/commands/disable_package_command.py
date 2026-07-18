@@ -5,7 +5,6 @@ from .existing_packages_command import ExistingPackagesCommand
 
 
 class DisablePackageCommand(ExistingPackagesCommand):
-
     """
     A command that adds a package to Sublime Text's ignored packages list
     """
@@ -24,7 +23,7 @@ class DisablePackageCommand(ExistingPackagesCommand):
 
         return "There are no enabled packages to disable"
 
-    def list_packages(self, manager):
+    async def list_packages(self, manager):
         """
         Build a list of packages to display.
 
@@ -36,13 +35,13 @@ class DisablePackageCommand(ExistingPackagesCommand):
         """
 
         return sorted(
-            manager.list_all_packages()
+            await manager.list_all_packages()
             - PackageDisabler.ignored_packages()
-            - {'Binary', 'Default', 'Package Control', 'Text'},
-            key=lambda s: s.lower()
+            - {"Binary", "Default", "Package Control", "Text"},
+            key=lambda s: s.lower(),
         )
 
-    def on_done(self, manager, package_name):
+    async def on_done(self, manager, package_name):
         """
         Quick panel user selection handler - disables the selected package
 
@@ -55,4 +54,4 @@ class DisablePackageCommand(ExistingPackagesCommand):
 
         PackageDisabler.disable_packages({PackageDisabler.DISABLE: package_name})
 
-        sublime.status_message('Package {} successfully disabled.'.format(package_name))
+        sublime.status_message("Package {} successfully disabled.".format(package_name))

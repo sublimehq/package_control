@@ -6,6 +6,11 @@
 # this dedication to be an overt act of relinquishment in perpetuity of all
 # present and future rights to this code under copyright law.
 
+try:
+    from inspect import iscoroutinefunction
+except ImportError:
+    iscoroutinefunction = None
+
 
 def data(provider_method, first_param_name_suffix=False):
     """
@@ -47,8 +52,13 @@ def data_decorator(cls):
 
         # We used expanded variable names here since this line is present in
         # backtraces that are generated from test failures.
-        def generated_test_function(self):
-            original_function(self, *params)
+
+        if iscoroutinefunction is not None and iscoroutinefunction(original_function):
+            async def generated_test_function(self):
+                await original_function(self, *params)
+        else:
+            def generated_test_function(self):
+                original_function(self, *params)
 
         setattr(cls, expanded_name, generated_test_function)
 

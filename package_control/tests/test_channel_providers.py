@@ -1,7 +1,6 @@
 # flake8: noqa: E121,E126,E501
-import unittest
+import unittesting
 
-from ..http_cache import HttpCache
 from ..providers.channel_provider import ChannelProvider
 from ._data_decorator import data_decorator, data
 
@@ -10,29 +9,25 @@ from ._config import (
     TEST_FIXTURES_URI,
     TEST_REPOSITORY_URI,
     TEST_REPOSITORY_URL,
-    USER_AGENT,
 )
 
 
 @data_decorator
-class ChannelProviderTests(unittest.TestCase):
+class ChannelProviderTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self):
         return {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT,
         }
 
-    def test_get_packages_12(self):
+    async def test_get_packages_12(self):
         provider = ChannelProvider(TEST_REPOSITORY_URI + "channel-1.2.json", self.settings())
-        self.assertIn(provider.url, (url for url, _ in provider.get_failed_sources()))
+        self.assertIn(provider.url, (url for url, _ in await provider.get_failed_sources()))
 
-    def test_get_renamed_packages_12(self):
+    async def test_get_renamed_packages_12(self):
         provider = ChannelProvider(TEST_REPOSITORY_URI + "channel-1.2.json", self.settings())
-        self.assertIn(provider.url, (url for url, _ in provider.get_failed_sources()))
+        self.assertIn(provider.url, (url for url, _ in await provider.get_failed_sources()))
 
     @data(
         (
@@ -355,9 +350,9 @@ class ChannelProviderTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def get_libraries(self, url, result):
+    async def get_libraries(self, url, result):
         provider = ChannelProvider(url, self.settings())
-        self.assertEqual(result, provider.get_libraries())
+        self.assertEqual(result, await provider.get_libraries())
 
     @data(
         (
@@ -1393,9 +1388,9 @@ class ChannelProviderTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def get_packages(self, url, result):
+    async def get_packages(self, url, result):
         provider = ChannelProvider(url, self.settings())
-        self.assertEqual(result, provider.get_packages())
+        self.assertEqual(result, await provider.get_packages())
 
     @data(
         (
@@ -1417,11 +1412,11 @@ class ChannelProviderTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def get_renamed_packages(self, url, result):
+    async def get_renamed_packages(self, url, result):
         provider = ChannelProvider(url, self.settings())
-        self.assertEqual(result, provider.get_renamed_packages())
+        self.assertEqual(result, await provider.get_renamed_packages())
 
-    def test_merge_behavior(self):
+    async def test_merge_behavior(self):
         provider = ChannelProvider(TEST_FIXTURES_URI + "fixture-01/channel-02.json", self.settings())
         self.assertEqual(
             [
@@ -1543,5 +1538,5 @@ class ChannelProviderTests(unittest.TestCase):
                     "source": TEST_FIXTURES_URI + "fixture-01/repository-06.json",
                 },
             ],
-            provider.get_packages(),
+            await provider.get_packages(),
         )

@@ -1,7 +1,7 @@
 import json
 from urllib.parse import urlencode, urlparse
 
-from ..download_manager import http_get
+from ..http import http_get
 from .client_exception import ClientException
 
 
@@ -10,7 +10,7 @@ class JSONApiClient:
     def __init__(self, settings):
         self.settings = settings
 
-    def fetch(self, url):
+    async def fetch(self, url):
         """
         Retrieves the contents of a URL
 
@@ -32,9 +32,9 @@ class JSONApiClient:
             joiner = '?%s' if url.find('?') == -1 else '&%s'
             url += joiner % params
 
-        return http_get(url, self.settings, 'Error downloading repository.')
+        return await http_get(url, self.settings, 'Error downloading repository.')
 
-    def fetch_json(self, url):
+    async def fetch_json(self, url):
         """
         Retrieves and parses the JSON from a URL
 
@@ -48,7 +48,7 @@ class JSONApiClient:
             A dict or list from the JSON
         """
 
-        repository_json = self.fetch(url)
+        repository_json = await self.fetch(url)
 
         try:
             return json.loads(repository_json.decode('utf-8'))

@@ -1,9 +1,10 @@
+import asyncio
+
 import sublime
-import threading
 
 from . import __version__, library
 from .console_write import console_write
-from .download_manager import update_url
+from .http import update_url
 from .package_version import PackageVersion, version_sort
 from .pep440 import PEP440Version
 from .providers import channel_provider_for, repo_provider_for
@@ -39,8 +40,10 @@ class PackageRegistry:
         - `debug`
         - `package_name_map`
         - `http_basic_auth`
-        - `cache_length`
-        - `timeout`
+        - `http_cache_max_age`
+        - `http_cache_ttl`
+        - `http_retries`
+        - `http_timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
@@ -58,7 +61,7 @@ class PackageRegistry:
     ]
 
     def __init__(self, settings):
-        self.lock = threading.Lock()
+        self.lock = asyncio.Lock()
         self.state = STATE_IDLE
         self.settings = settings
         self.libraries = {}
@@ -67,7 +70,7 @@ class PackageRegistry:
         self.unavailable_libraries = set()
         self.unavailable_packages = set()
 
-    def ensure_fetched(self):
+    async def ensure_fetched(self):
         """
         Check state flag to fetch channels and repositories on demand.
 
@@ -76,24 +79,24 @@ class PackageRegistry:
         just wait for its completion.
         """
         if self.state != STATE_FETCHED:
-            with self.lock:
+            async with self.lock:
                 if self.state == STATE_IDLE:
-                    self.fetch()
+                    await self.fetch()
 
-    def fetch(self):
+    async def fetch(self):
         """
         Fetch channels and repositories and set state flag accordingly.
         """
         self.state = STATE_FETCHING
         try:
-            self._fetch()
+            await self._fetch()
         except BaseException:
             self.state = STATE_FAILED
             raise
         else:
             self.state = STATE_FETCHED
 
-    def _fetch(self):
+    async def _fetch(self):
         providers = []
         failed_sources = {}
 
@@ -127,7 +130,7 @@ class PackageRegistry:
                 found_default = True
                 url = DEFAULT_CHANNEL
 
-            provider = channel_provider_for(update_url(url, False), self.settings)
+            provider = channel_provider_for(update_url(url), self.settings)
             if provider:
                 providers.append(provider)
             else:
@@ -136,7 +139,7 @@ class PackageRegistry:
                 )
 
         for url in reversed(self.settings.get("repositories", [])):
-            provider = repo_provider_for(update_url(url, False), self.settings)
+            provider = repo_provider_for(update_url(url), self.settings)
             if provider:
                 providers.append(provider)
             else:
@@ -145,9 +148,7 @@ class PackageRegistry:
                 )
 
         # run in parallel
-        # todo: run in parallel
-        for provider in providers:
-            provider.fetch()
+        await asyncio.gather(*(p.fetch() for p in providers), return_exceptions=True)
 
         # merge in strict order
         broken_libraries = {}
@@ -236,7 +237,7 @@ class PackageRegistry:
         self.libraries = supported_libraries
         self.packages = supported_packages
 
-    def get_libraries(self):
+    async def get_libraries(self):
         """
         A list of library records provided by this repository.
 
@@ -264,10 +265,10 @@ class PackageRegistry:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return sorted(self.libraries.values(), key=lambda lib: lib["name"].lower())
 
-    def get_library(self, name):
+    async def get_library(self, name):
         """
         The record for specified library provided by this repository.
 
@@ -295,17 +296,17 @@ class PackageRegistry:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return self.libraries.get(name)
 
-    def get_libray_names(self):
+    async def get_libray_names(self):
         """
         A set of available library names in the registry
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return set(self.libraries.keys())
 
-    def get_packages(self):
+    async def get_packages(self):
         """
         A list of package records provided by this repository.
 
@@ -338,10 +339,10 @@ class PackageRegistry:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return sorted(self.packages.values(), key=lambda pkg: pkg["name"].lower())
 
-    def get_package(self, name):
+    async def get_package(self, name):
         """
         The record for specified package provided by this repository.
 
@@ -377,14 +378,14 @@ class PackageRegistry:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return self.packages.get(self.renamed_packages.get(name, name))
 
-    def get_package_names(self):
+    async def get_package_names(self):
         """
         A set of available package names in the registry
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return set(self.packages.keys())
 
     def _compatible_library_releases(self, releases):
@@ -430,7 +431,6 @@ class PackageRegistry:
         :return:
             A list of release dicts sorted by version in decending order
         """
-
         install_prereleases = self.settings.get("install_prereleases")
         allow_prereleases = (
             install_prereleases is True

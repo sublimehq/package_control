@@ -1,4 +1,4 @@
-from ..downloaders.downloader_exception import DownloaderException
+from ..http import DownloaderException
 
 
 class ProviderException(DownloaderException):
@@ -18,13 +18,12 @@ class InvalidChannelFileException(ProviderException):
 
 
 class InvalidRepoFileException(ProviderException):
-
     def __init__(self, provider, reason_message):
         self.reason_message = reason_message
         self.url = provider.url
 
     def __str__(self):
-        return "Repository {} does not appear to be a valid repository file because {}".format(
+        return "Repository {} does not appear to be a valid repository file because" " {}".format(
             self.url, self.reason_message
         )
 
