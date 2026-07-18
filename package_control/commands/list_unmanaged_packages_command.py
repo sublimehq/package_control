@@ -12,7 +12,7 @@ class ListUnmanagedPackagesCommand(ListPackagesCommand):
     `installed_packages`.
     """
 
-    def list_packages(self, manager):
+    async def list_packages(self, manager):
         """
         Build a list of packages to display.
 
@@ -27,5 +27,5 @@ class ListUnmanagedPackagesCommand(ListPackagesCommand):
         ignored_packages = load_list_setting(settings, 'unmanaged_packages_ignore')
         ignored_packages |= load_list_setting(settings, 'installed_packages')
 
-        packages = manager.list_packages() - ignored_packages
+        packages = await manager.list_packages() - ignored_packages
         return sorted(packages, key=lambda s: s.lower())

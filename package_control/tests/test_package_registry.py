@@ -2,7 +2,6 @@
 import unittesting
 from unittest import skipUnless
 
-from ..http_cache import HttpCache
 from ..package_registry import PackageRegistry
 from ._config import (
     BB_PASS,
@@ -15,31 +14,27 @@ from ._config import (
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
     TEST_FIXTURES_URI,
-    USER_AGENT
 )
 
 
-class PackageRegistryTests(unittesting.TestCase):
+class PackageRegistryTests(unittesting.AsyncTestCase):
     maxDiff = None
 
-    def setUp(self):
+    async def setUp(self):
         settings = {
             "debug": DEBUG,
             "channels": [],
             "repositories": [],
             "install_pre_releases": False,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
             "http_basic_auth": {
                 "api.bitbucket.org": [BB_USER, BB_PASS],
                 "api.github.com": [GH_USER, GH_PASS],
                 "gitlab.com": [GL_USER, GL_PASS],
-            },            
-            "user_agent": USER_AGENT,
+            }
         }
         self.registry = PackageRegistry(settings)
 
-    def test_merge_behavior(self):
+    async def test_merge_behavior(self):
         self.registry.settings["channels"] = [
             TEST_FIXTURES_URI + "fixture-01/channel-01.json",
             TEST_FIXTURES_URI + "fixture-01/channel-02.json",
@@ -188,10 +183,10 @@ class PackageRegistryTests(unittesting.TestCase):
                     "source": TEST_FIXTURES_URI + "fixture-01/repository-06.json",
                 },
             ],
-            self.registry.get_packages(),
+            await self.registry.get_packages(),
         )
 
-    def test_get_library_names_mapped(self):
+    async def test_get_library_names_mapped(self):
         """
         Verify translation from legacy dependency names to PEP491 distribution names,
         which they are accessed by, regardless their official PyPi "name" field.
@@ -199,9 +194,9 @@ class PackageRegistryTests(unittesting.TestCase):
         self.registry.settings.update({
             "repositories": [TEST_FIXTURES_URI + "fixture-01/repository-00.json"],
         })
-        self.assertEqual({"beautifulsoup4", "enum34", "jinja2"}, self.registry.get_libray_names())
+        self.assertEqual({"beautifulsoup4", "enum34", "jinja2"}, await self.registry.get_libray_names())
 
-    def test_get_libraries_mapped(self):
+    async def test_get_libraries_mapped(self):
         self.registry.settings.update({
             "repositories": [TEST_FIXTURES_URI + "fixture-01/repository-00.json"],
         })
@@ -262,11 +257,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "source": TEST_FIXTURES_URI + "fixture-01/repository-00.json"
                 }
             ],
-            self.registry.get_libraries()
+            await self.registry.get_libraries()
         )
 
     @skipUnless(BB_PASS, "Needs authentication.")
-    def test_get_packages_from_bitbucket(self):
+    async def test_get_packages_from_bitbucket(self):
         self.registry.settings.update({
             "repositories": ["https://bitbucket.org/wbond/package_control-tester"],
         })
@@ -296,11 +291,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )
 
     @skipUnless(BB_PASS, "Needs authentication.")
-    def test_get_packages_from_bitbucket_mapped(self):
+    async def test_get_packages_from_bitbucket_mapped(self):
         self.registry.settings.update({
             "repositories": ["https://bitbucket.org/wbond/package_control-tester"],
             "package_name_map": {"package_control-tester": "Package Control Tester"},
@@ -331,11 +326,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )
 
     @skipUnless(GH_PASS, "Needs authentication.")
-    def test_get_packages_from_github(self):
+    async def test_get_packages_from_github(self):
         self.registry.settings.update({
             "repositories": ["https://github.com/packagecontrol-test/package_control-tester"],
         })
@@ -367,11 +362,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )
 
     @skipUnless(GH_PASS, "Needs authentication.")
-    def test_get_packages_from_github_mapped(self):
+    async def test_get_packages_from_github_mapped(self):
         self.registry.settings.update({
             "repositories": ["https://github.com/packagecontrol-test/package_control-tester"],
             "package_name_map": {"package_control-tester": "Package Control Tester"},
@@ -404,11 +399,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )
 
     @skipUnless(GL_PASS, "Needs authentication.")
-    def test_get_packages_from_gitlab(self):
+    async def test_get_packages_from_gitlab(self):
         self.registry.settings.update({
             "repositories": ["https://gitlab.com/packagecontrol-test/package_control-tester"],
         })
@@ -441,11 +436,11 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": "2020-07-15 10:50:38"
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )
 
     @skipUnless(GL_PASS, "Needs authentication.")
-    def test_get_packages_from_gitlab_mapped(self):
+    async def test_get_packages_from_gitlab_mapped(self):
         self.registry.settings.update({
             "repositories": ["https://gitlab.com/packagecontrol-test/package_control-tester"],
             "package_name_map": {"package_control-tester": "Package Control Tester"},
@@ -479,5 +474,5 @@ class PackageRegistryTests(unittesting.TestCase):
                     "last_modified": "2020-07-15 10:50:38"
                 }
             ],
-            self.registry.get_packages()
+            await self.registry.get_packages()
         )

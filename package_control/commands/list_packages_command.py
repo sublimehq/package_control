@@ -26,7 +26,7 @@ class ListPackagesCommand(ExistingPackagesCommand):
 
         return "There are no packages to list"
 
-    def list_packages(self, manager):
+    async def list_packages(self, manager):
         """
         Build a list of packages to display.
 
@@ -37,9 +37,9 @@ class ListPackagesCommand(ExistingPackagesCommand):
             A list of package names to add to the quick panel
         """
 
-        return sorted(manager.list_packages(), key=lambda s: s.lower())
+        return sorted(await manager.list_packages(), key=lambda s: s.lower())
 
-    def on_done(self, manager, package_name):
+    async def on_done(self, manager, package_name):
         """
         Quick panel user selection handler - opens the homepage for any
         selected package in the user's browser

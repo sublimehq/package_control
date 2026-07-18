@@ -1,4 +1,4 @@
-import threading
+import asyncio
 
 from ..activity_indicator import ActivityIndicator
 from ..package_tasks import PackageTaskRunner
@@ -6,7 +6,6 @@ from .existing_packages_command import ExistingPackagesCommand
 
 
 class RemovePackageCommand(ExistingPackagesCommand):
-
     """
     A command that presents a list of installed packages, allowing the user to
     select one to remove
@@ -26,7 +25,7 @@ class RemovePackageCommand(ExistingPackagesCommand):
 
         return "There are no packages that can be removed"
 
-    def list_packages(self, manager):
+    async def list_packages(self, manager):
         """
         Build a list of packages installed by user.
 
@@ -36,14 +35,14 @@ class RemovePackageCommand(ExistingPackagesCommand):
         :returns:
             A list of package names to add to the quick panel
         """
-
-        return (
-            manager.list_packages()
-            - manager.list_default_packages()
-            - manager.predefined_packages()
+        pkgs1, pkgs2, pkgs3 = await asyncio.gather(
+            manager.list_packages(),
+            manager.list_default_packages(),
+            manager.predefined_packages(),
         )
+        return pkgs1 - pkgs2 - pkgs3
 
-    def on_done(self, manager, package_name):
+    async def on_done(self, manager, package_name):
         """
         Callback function to perform action on selected package.
 
@@ -54,9 +53,6 @@ class RemovePackageCommand(ExistingPackagesCommand):
             A package name to perform action for
         """
 
-        def worker():
-            with ActivityIndicator() as progress:
-                remover = PackageTaskRunner(manager)
-                remover.remove_packages({package_name}, progress)
-
-        threading.Thread(target=worker).start()
+        with ActivityIndicator() as progress:
+            remover = PackageTaskRunner(manager)
+            await remover.remove_packages({package_name}, progress)
