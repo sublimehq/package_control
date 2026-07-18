@@ -3,7 +3,7 @@ import platform
 import re
 import ssl
 
-import certifi
+from .. import truststore
 
 # Mirrors `truststore`'s Linux fallbacks for when OpenSSL's compiled-in paths are unusable:
 # https://github.com/sethmlarson/truststore/blob/0714f72a739d182cdb8502f4e1bb4cf7ebfe4eb5/src/truststore/_openssl.py#L8-L19

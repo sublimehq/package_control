@@ -28,12 +28,13 @@ from __future__ import annotations
 
 import contextlib
 import typing
+from collections.abc import Generator
 from types import TracebackType
 
-if typing.TYPE_CHECKING:
-    import ssl  # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
+    import ssl
 
-    from ... import httpx2  # pragma: no cover
+    from ... import httpx2
 
 from .._config import DEFAULT_LIMITS, Limits, Proxy, create_ssl_context
 from .._exceptions import (
@@ -60,11 +61,7 @@ from .base import AsyncBaseTransport, BaseTransport
 T = typing.TypeVar("T", bound="HTTPTransport")
 A = typing.TypeVar("A", bound="AsyncHTTPTransport")
 
-SOCKET_OPTION = typing.Union[
-    typing.Tuple[int, int, int],
-    typing.Tuple[int, int, typing.Union[bytes, bytearray]],
-    typing.Tuple[int, int, None, int],
-]
+SOCKET_OPTION = tuple[int, int, int] | tuple[int, int, bytes | bytearray] | tuple[int, int, None, int]
 
 __all__ = ["AsyncHTTPTransport", "HTTPTransport"]
 
@@ -93,7 +90,7 @@ def _load_httpcore_exceptions() -> dict[type[Exception], type[httpx2.HTTPError]]
 
 
 @contextlib.contextmanager
-def map_httpcore_exceptions() -> typing.Iterator[None]:
+def map_httpcore_exceptions() -> Generator[None]:
     global HTTPCORE_EXC_MAP
     if len(HTTPCORE_EXC_MAP) == 0:
         HTTPCORE_EXC_MAP = _load_httpcore_exceptions()
@@ -124,8 +121,7 @@ class ResponseStream(SyncByteStream):
 
     def __iter__(self) -> typing.Iterator[bytes]:
         with map_httpcore_exceptions():
-            for part in self._httpcore_stream:
-                yield part
+            yield from self._httpcore_stream
 
     def close(self) -> None:
         if hasattr(self._httpcore_stream, "close"):

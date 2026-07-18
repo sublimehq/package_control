@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
 """
-hyperframe/flags
-~~~~~~~~~~~~~~~~
+Basic Flag and Flags data structures.
+"""
+from __future__ import annotations
 
-Defines basic Flag and Flags data structures.
-"""
-from collections.abc import MutableSet
-from typing import NamedTuple, Iterable, Set, Iterator
+from collections.abc import Iterable, Iterator, MutableSet
+from typing import NamedTuple
 
 
 class Flag(NamedTuple):
@@ -22,12 +20,13 @@ class Flags(MutableSet):  # type: ignore
     Will behave like a regular set(), except that a ValueError will be thrown
     when .add()ing unexpected flags.
     """
-    def __init__(self, defined_flags: Iterable[Flag]):
-        self._valid_flags = set(flag.name for flag in defined_flags)
-        self._flags: Set[str] = set()
+
+    def __init__(self, defined_flags: Iterable[Flag]) -> None:
+        self._valid_flags = {flag.name for flag in defined_flags}
+        self._flags: set[str] = set()
 
     def __repr__(self) -> str:
-        return repr(sorted(list(self._flags)))
+        return repr(sorted(self._flags))
 
     def __contains__(self, x: object) -> bool:
         return self._flags.__contains__(x)
@@ -43,9 +42,6 @@ class Flags(MutableSet):  # type: ignore
 
     def add(self, value: str) -> None:
         if value not in self._valid_flags:
-            raise ValueError(
-                "Unexpected flag: {}. Valid flags are: {}".format(
-                    value, self._valid_flags
-                )
-            )
+            msg = f"Unexpected flag: {value}. Valid flags are: {self._valid_flags}"
+            raise ValueError(msg)
         return self._flags.add(value)

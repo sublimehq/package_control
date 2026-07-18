@@ -194,8 +194,7 @@ class CloseConnection(Event):
         return CloseConnection(code=self.code, reason=self.reason)
 
 
-from typing import Union
-T = TypeVar("T", Union[bytes, bytearray], str)
+T = TypeVar("T", bytes | bytearray, str)
 
 
 @dataclass(frozen=True)
@@ -247,7 +246,7 @@ class TextMessage(Message[str]):  # pylint: disable=unsubscriptable-object
 
 @dataclass(frozen=True)
 class BytesMessage(
-    Message[Union[bytearray, bytes]]  # pylint: disable=unsubscriptable-object
+    Message[bytearray | bytes]  # pylint: disable=unsubscriptable-object
 ):
     """
     Fired when a data frame with BINARY payload is received.

@@ -4,7 +4,6 @@ import os
 import zipfile
 from textwrap import dedent
 
-import sublime
 import sublime_aio
 
 from . import library, sys_path

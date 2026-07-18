@@ -17,7 +17,7 @@ class TaskInfo:
     :ivar ~collections.abc.Coroutine coro: the coroutine object of the task
     """
 
-    __slots__ = "_name", "id", "parent_id", "name", "coro"
+    __slots__ = "_name", "coro", "id", "name", "parent_id"
 
     def __init__(
         self,
@@ -58,6 +58,8 @@ def get_current_task() -> TaskInfo:
     Return the current task.
 
     :return: a representation of the current task
+    :raises NoEventLoopError: if no supported asynchronous event loop is running in the
+        current thread
 
     """
     return get_async_backend().get_current_task()
@@ -68,6 +70,8 @@ def get_running_tasks() -> list[TaskInfo]:
     Return a list of running tasks in the current event loop.
 
     :return: a list of task info objects
+    :raises NoEventLoopError: if no supported asynchronous event loop is running in the
+        current thread
 
     """
     return cast("list[TaskInfo]", get_async_backend().get_running_tasks())
