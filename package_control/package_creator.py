@@ -28,12 +28,12 @@ class PackageCreator:
         self.window = sublime.active_window()
         self.manager = PackageManager()
 
-    def run(self):
+    async def run(self):
         """
         Shows a list of packages that can be turned into a .sublime-package file
         """
 
-        self.packages = sorted(self.manager.list_packages(unpacked_only=True), key=lambda s: s.lower())
+        self.packages = sorted(await self.manager.list_packages(unpacked_only=True), key=lambda s: s.lower())
         if not self.packages:
             show_message('There are no packages available to be packaged')
             return

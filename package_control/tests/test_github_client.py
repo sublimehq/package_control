@@ -1,7 +1,6 @@
-import unittest
+import unittesting
 
 from ..clients.github_client import GitHubClient
-from ..http_cache import HttpCache
 from ._data_decorator import data_decorator, data
 
 from ._config import (
@@ -10,12 +9,11 @@ from ._config import (
     GH_USER,
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
-    USER_AGENT,
 )
 
 
 @data_decorator
-class GitHubClientTests(unittest.TestCase):
+class GitHubClientTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self, extra=None):
@@ -24,9 +22,6 @@ class GitHubClientTests(unittest.TestCase):
 
         settings = {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT,
             "http_basic_auth": {
                 "api.github.com": [GH_USER, GH_PASS],
             }
@@ -111,11 +106,11 @@ class GitHubClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def repo_user_branch(self, url, result):
+    async def repo_user_branch(self, url, result):
         client = GitHubClient(self.settings())
         self.assertEqual(result, client.user_repo_branch(url))
 
-    def test_repo_info_client(self):
+    async def test_repo_info_client(self):
         client = GitHubClient(self.settings({"min_api_calls": True}))
         self.assertEqual(
             {
@@ -129,10 +124,10 @@ class GitHubClientTests(unittest.TestCase):
                 "donate": None,
                 "default_branch": "master"
             },
-            client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
+            await client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
         )
 
-    def test_repo_info_server(self):
+    async def test_repo_info_server(self):
         client = GitHubClient(self.settings({"min_api_calls": False}))
         self.assertEqual(
             {
@@ -147,7 +142,7 @@ class GitHubClientTests(unittest.TestCase):
                 "donate": None,
                 "default_branch": "master"
             },
-            client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
+            await client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
         )
 
     @data(
@@ -229,9 +224,9 @@ class GitHubClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info(self, extra_settings, url, tag_prefix, result):
+    async def download_info(self, extra_settings, url, tag_prefix, result):
         client = GitHubClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info(url, tag_prefix))
+        self.assertEqual(result, await client.download_info(url, tag_prefix))
 
     @data(
         (
@@ -252,9 +247,9 @@ class GitHubClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info_from_branch(self, extra_settings, url, branch, result):
+    async def download_info_from_branch(self, extra_settings, url, branch, result):
         client = GitHubClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info_from_branch(url, branch))
+        self.assertEqual(result, await client.download_info_from_branch(url, branch))
 
     @data(
         (
@@ -321,9 +316,9 @@ class GitHubClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info_from_tags(self, extra_settings, url, tag_prefix, result):
+    async def download_info_from_tags(self, extra_settings, url, tag_prefix, result):
         client = GitHubClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info_from_tags(url, tag_prefix))
+        self.assertEqual(result, await client.download_info_from_tags(url, tag_prefix))
 
     @data(
         (
@@ -430,6 +425,6 @@ class GitHubClientTests(unittest.TestCase):
             ),
         )
     )
-    def download_info_from_releases(self, url, asset_templates, tag_prefix, result):
+    async def download_info_from_releases(self, url, asset_templates, tag_prefix, result):
         client = GitHubClient(self.settings())
-        self.assertEqual(result, client.download_info_from_releases(url, asset_templates, tag_prefix))
+        self.assertEqual(result, await client.download_info_from_releases(url, asset_templates, tag_prefix))

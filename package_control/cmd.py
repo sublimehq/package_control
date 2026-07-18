@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import subprocess
@@ -5,9 +6,6 @@ import subprocess
 from . import text
 from .console_write import console_write
 from .show_error import show_error
-
-if os.name == 'nt':
-    from ctypes import create_unicode_buffer, windll
 
 try:
     # Allow using this file on the website where the sublime
@@ -40,7 +38,7 @@ def create_cmd(args, basename_binary=False):
     else:
         escaped_args = []
         for arg in args:
-            if re.search('^[a-zA-Z0-9/_^\\-\\.:=]+$', arg) is None:
+            if re.search(r'^[a-zA-Z0-9/_^\\-\\.:=]+$', arg) is None:
                 arg = "'" + arg.replace("'", "'\\''") + "'"
             escaped_args.append(arg)
         return ' '.join(escaped_args)
@@ -69,7 +67,7 @@ class Cli:
         self.binary_locations = binary_locations
         self.debug = debug
 
-    def execute(self, args, cwd, input=None, encoding='utf-8', meaningful_output=False, ignore_errors=None):
+    async def execute(self, args, cwd, input=None, encoding='utf-8', meaningful_output=False, ignore_errors=None):
         """
         Creates a subprocess with the executable/args
 
@@ -100,14 +98,6 @@ class Cli:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-            # Make sure the cwd is ascii
-            try:
-                cwd.encode('mbcs')
-            except UnicodeEncodeError:
-                buf = create_unicode_buffer(512)
-                if windll.kernel32.GetShortPathNameW(cwd, buf, len(buf)):
-                    cwd = buf.value
-
         if self.debug:
             console_write(
                 '''
@@ -117,8 +107,8 @@ class Cli:
             )
 
         try:
-            proc = subprocess.Popen(
-                args,
+            proc = await asyncio.create_subprocess_exec(
+                *args,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -133,7 +123,7 @@ class Cli:
             binary_name = os.path.basename(args[0])
             is_vcs = re.search('git', binary_name) or re.search('hg', binary_name)
 
-            output, error = proc.communicate(input, timeout=60.0)
+            output, error = await asyncio.wait_for(proc.communicate(input), timeout=60.0)
             output = output.decode(encoding)
             output = output.replace('\r\n', '\n').rstrip(' \n\r')
 
@@ -168,7 +158,7 @@ class Cli:
 
             return output
 
-        except subprocess.TimeoutExpired:
+        except asyncio.TimeoutError:
             proc.terminate()
 
             message = text.format(

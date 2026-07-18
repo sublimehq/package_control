@@ -1,6 +1,6 @@
-import threading
+import asyncio
 
-from ..downloaders.downloader_exception import DownloaderException
+from ..http import DownloaderException
 
 STATE_IDLE = 0
 STATE_FETCHING = 1
@@ -25,8 +25,10 @@ class BaseProvider:
         A dict containing configuration for providers and http clients:
         - `debug`
         - `http_basic_auth`
-        - `cache_length`
-        - `timeout`
+        - `http_cache_max_age`
+        - `http_cache_ttl`
+        - `http_retries`
+        - `http_timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
@@ -45,7 +47,7 @@ class BaseProvider:
     ]
 
     def __init__(self, url, settings):
-        self.lock = threading.Lock()
+        self.lock = asyncio.Lock()
         self.state = STATE_IDLE
         self.broken_libraries = {}
         self.broken_packages = {}
@@ -80,7 +82,7 @@ class BaseProvider:
         """
         return True
 
-    def ensure_fetched(self):
+    async def ensure_fetched(self):
         """
         Check state flag to fetch data on demand.
 
@@ -89,17 +91,17 @@ class BaseProvider:
         just wait for its completion.
         """
         if self.state != STATE_FETCHED:
-            with self.lock:
+            async with self.lock:
                 if self.state == STATE_IDLE:
-                    self.fetch()
+                    await self.fetch()
 
-    def fetch(self):
+    async def fetch(self):
         """
         Fetch and load data from specified url and set state flag accordingly.
         """
         self.state = STATE_FETCHING
         try:
-            self._fetch()
+            await self._fetch()
         except DownloaderException as exc:
             self.failed_sources[self.url] = exc
             self.state = STATE_FAILED
@@ -110,7 +112,7 @@ class BaseProvider:
         else:
             self.state = STATE_FETCHED
 
-    def _fetch(self):
+    async def _fetch(self):
         """
         Retrieves and loads the JSON for other methods to use
 
@@ -119,37 +121,37 @@ class BaseProvider:
         """
         raise NotImplementedError()
 
-    def get_broken_libraries(self):
+    async def get_broken_libraries(self):
         """
         List of library names for libraries that are missing information
 
         :return:
             A generator of ("Library Name", Exception()) tuples
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return self.broken_libraries.items()
 
-    def get_broken_packages(self):
+    async def get_broken_packages(self):
         """
         List of package names for packages that are missing information
 
         :return:
             A generator of ("Package Name", Exception()) tuples
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return self.broken_packages.items()
 
-    def get_failed_sources(self):
+    async def get_failed_sources(self):
         """
         List of any URLs that could not be accessed while accessing this repository
 
         :return:
             A generator of ("https://example.com", Exception()) tuples
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return self.failed_sources.items()
 
-    def get_libraries(self):
+    async def get_libraries(self):
         """
         A list of library records provided by this repository.
 
@@ -177,10 +179,10 @@ class BaseProvider:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return sorted(self.libraries.values(), key=lambda lib: lib["name"].lower())
 
-    def get_packages(self):
+    async def get_packages(self):
         """
         A list of package records provided by this repository.
 
@@ -213,9 +215,9 @@ class BaseProvider:
             }
             ```
         """
-        self.ensure_fetched()
+        await self.ensure_fetched()
         return sorted(self.packages.values(), key=lambda pkg: pkg["name"].lower())
 
-    def get_renamed_packages(self):
+    async def get_renamed_packages(self):
         """For API-compatibility with RepositoryProvider"""
         return {}

@@ -1,7 +1,6 @@
 # flake8: noqa: E121,E126,E501
-import unittest
+import unittesting
 
-from ..http_cache import HttpCache
 from ..providers.github_provider import GitHubProvider
 from ._data_decorator import data_decorator, data
 
@@ -11,12 +10,11 @@ from ._config import (
     GH_USER,
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
-    USER_AGENT,
 )
 
 
 @data_decorator
-class GitHubProviderTests(unittest.TestCase):
+class GitHubProviderTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self):
@@ -25,9 +23,6 @@ class GitHubProviderTests(unittest.TestCase):
 
         return {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT,
             "http_basic_auth": {
                 "api.github.com": [GH_USER, GH_PASS],
             }
@@ -47,21 +42,21 @@ class GitHubProviderTests(unittest.TestCase):
     def match_url(self, url, result):
         self.assertEqual(result, GitHubProvider.match_url(url))
 
-    def test_get_libraries(self):
+    async def test_get_libraries(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], provider.get_libraries())
+        self.assertEqual([], await provider.get_libraries())
 
-    def test_get_broken_libraries(self):
+    async def test_get_broken_libraries(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_broken_libraries()))
+        self.assertEqual([], list(await provider.get_broken_libraries()))
 
-    def test_get_packages(self):
+    async def test_get_packages(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
@@ -94,10 +89,10 @@ class GitHubProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            provider.get_packages()
+            await provider.get_packages()
         )
 
-    def test_get_mapped_packages(self):
+    async def test_get_mapped_packages(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
@@ -131,19 +126,19 @@ class GitHubProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            provider.get_packages()
+            await provider.get_packages()
         )
 
-    def test_get_broken_packages(self):
+    async def test_get_broken_packages(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_broken_packages()))
+        self.assertEqual([], list(await provider.get_broken_packages()))
 
-    def test_get_renamed_packages(self):
+    async def test_get_renamed_packages(self):
         provider = GitHubProvider(
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual({}, provider.get_renamed_packages())
+        self.assertEqual({}, await provider.get_renamed_packages())

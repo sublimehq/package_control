@@ -5,7 +5,6 @@ from .existing_packages_command import ExistingPackagesCommand
 
 
 class EnablePackageCommand(ExistingPackagesCommand):
-
     """
     A command that removes a package from Sublime Text's ignored packages list
     """
@@ -24,7 +23,7 @@ class EnablePackageCommand(ExistingPackagesCommand):
 
         return "There are no disabled packages to enable"
 
-    def list_packages(self, manager):
+    async def list_packages(self, manager):
         """
         Build a list of packages to display.
 
@@ -37,10 +36,10 @@ class EnablePackageCommand(ExistingPackagesCommand):
 
         return sorted(
             filter(lambda p: manager.is_compatible(p), PackageDisabler.ignored_packages()),
-            key=lambda s: s.lower()
+            key=lambda s: s.lower(),
         )
 
-    def on_done(self, manager, package_name):
+    async def on_done(self, manager, package_name):
         """
         Quick panel user selection handler - enables the selected package
 
@@ -53,4 +52,4 @@ class EnablePackageCommand(ExistingPackagesCommand):
 
         PackageDisabler.reenable_packages({PackageDisabler.ENABLE: package_name})
 
-        sublime.status_message('Package {} successfully enabled.'.format(package_name))
+        sublime.status_message("Package {} successfully enabled.".format(package_name))

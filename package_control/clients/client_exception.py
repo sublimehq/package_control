@@ -1,4 +1,4 @@
-from ..downloaders.downloader_exception import DownloaderException
+from ..http import DownloaderException
 
 
 class ClientException(DownloaderException):

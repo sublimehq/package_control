@@ -18,8 +18,6 @@ GL_PASS = os.environ.get('GL_PASS', '')
 BB_USER = os.environ.get('BB_USER', '')
 BB_PASS = os.environ.get('BB_PASS', '')
 
-USER_AGENT = 'Package Control %s Unittests' % __version__
-
 # CAUTION: pathname2url behaves different on py33,38,314 on each OS,
 #          with regards to prepending // or not. Hence strip any.
 uri = pathname2url(os.path.dirname(__file__)).strip("/")
