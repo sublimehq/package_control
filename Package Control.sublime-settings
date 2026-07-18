@@ -67,6 +67,11 @@
 	// Valid values are: "ERROR", "WARNING", "INFO", "DEBUG"
 	"logging": {
 		"Package Control": "WARNING",
+		"anyio": "WARNING",
+		"hpack": "WARNING",
+		"httpcore2": "WARNING",
+		"httpx2": "WARNING",
+		"packaging": "WARNING",
 	},
 
 	// Print package install and upgrade messages.
@@ -121,41 +126,20 @@
 	// Packages to not auto upgrade
 	"auto_upgrade_ignore": [],
 
-	// Timeout for downloading channels, repositories and packages. Doesn't
-	// have an effect on Windows due to a bug in WinINet.
-	"timeout": 30,
-
 	// The number of seconds to cache repository and package info for
 	// No HTTP requests are made for responses with up to this age.
 	"cache_length": 600,
 
-	// An HTTP proxy server to use for requests. Not normally used on Windows
-	// since the system proxy configuration is utilized via WinINet.
+	// An HTTP(s) proxy server to use for requests.
+	// If empty default OS level proxy is used.
+	// Environment variables (e.g. $HTTP_PROXY) are supported.
 	"http_proxy": "",
 
-	// An HTTPS proxy server to use for requests - this will inherit from
-	// http_proxy if it is set to "" or null and http_proxy has a value. You
-	// can set this to false to prevent inheriting from http_proxy. Not
-	// normally used on Windows since the system proxy configuration is
-	// utilized via WinINet.
-	"https_proxy": "",
-
-	// Username and password for both http_proxy and https_proxy. May be used
-	// with WinINet to set credentials for system-level proxy config.
+	// Username and password for both http_proxy and https_proxy.
+	// If empty default OS level proxy authentication is used.
+	// Environment variables (e.g. $HTTP_PROXY or $HTTP_PASS) are supported.
 	"proxy_username": "",
 	"proxy_password": "",
-
-	// If HTTP responses should be cached to disk
-	"http_cache": true,
-
-	// Number of seconds to cache HTTP responses for, defaults to one week
-	// If a local cache entry hasn't been requested within this time span,
-	// it will be removed from storage.
-	"http_cache_length": 604800,
-
-	// User agent for HTTP requests. If "%s" is present, will be replaced
-	// with the current version.
-	"user_agent": "Package Control v%s",
 
 	// Username and password support for private repositories, or for
 	// bypassing anonymous user download limits on services.
@@ -170,6 +154,21 @@
 	//     "api.bitbucket.org": ["username", "app password"],
 	// }
 	"http_basic_auth": {},
+
+	// Number of seconds a cached HTTP response is considered fresh
+	// and being returned immediately without sending verification request.
+	"http_cache_max_age": 1200,
+
+	// Number of seconds to cache HTTP responses for, defaults to one week
+	// If a local cache entry hasn't been requested within this time span,
+	// it will be removed from storage.
+	"http_cache_ttl": 604800,
+
+	// HTTP(s) connection attempts before raising connection failure.
+	"http_retries": 3,
+
+	// HTTP(s) operation timeout (includes connect, read, write)
+	"http_timeout": 10,
 
 	// A list of package names to ignore when performing operations. This will
 	// only affect packages that appear to be a git or hg repository, but will
@@ -205,25 +204,6 @@
 
 	// Additional packages to ignore when listing unmanaged packages.
 	"unmanaged_packages_ignore": [],
-
-	// The downloader backends that should be used for HTTP(S) requests, split
-	// by operating system to allow for configuration to be shared.
-	//
-	// Valid options include: "urllib", "oscrypto", "curl", "wget",
-	// (Windows-only) "wininet"
-	//
-	// This setting allows Windows users to bypass wininet and use urllib
-	// instead if they machine or network presents trouble to wininet. Some
-	// OS X and Linux users have also reported better luck with certain
-	// proxies using curl or wget instead of urllib.
-	//
-	// The "curl" and "wget" options require the command line "curl" or "wget"
-	// program installed and present in the PATH.
-	"downloader_precedence": {
-		"windows": ["wininet", "oscrypto", "urllib"],
-		"osx": ["urllib", "oscrypto", "curl"],
-		"linux": ["urllib", "oscrypto", "curl", "wget"]
-	},
 
 	// Directories to ignore when creating a package
 	"dirs_to_ignore": [

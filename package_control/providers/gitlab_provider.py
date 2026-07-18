@@ -1,7 +1,7 @@
 import re
 
 from ..clients.gitlab_client import GitLabClient
-from ..downloaders.downloader_exception import DownloaderException
+from ..http import DownloaderException
 from .base_provider import BaseProvider
 from .provider_exception import (
     GitProviderDownloadInfoException,
@@ -26,8 +26,10 @@ class GitLabProvider(BaseProvider):
         - `debug`
         - `package_name_map`
         - `http_basic_auth`
-        - `cache_length`
-        - `timeout`
+        - `http_cache_max_age`
+        - `http_cache_ttl`
+        - `http_retries`
+        - `http_timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
@@ -56,18 +58,18 @@ class GitLabProvider(BaseProvider):
         user, repo, _ = GitLabClient.user_repo_branch(url)
         return bool(user and repo)
 
-    def _fetch(self):
+    async def _fetch(self):
         """
         Fetch package meta data from Gitlab API
         """
         client = GitLabClient(self.settings)
 
         try:
-            repo_info = client.repo_info(self.url)
+            repo_info = await client.repo_info(self.url)
             if not repo_info:
                 raise GitProviderRepoInfoException(self)
 
-            downloads = client.download_info_from_branch(self.url, repo_info["default_branch"])
+            downloads = await client.download_info_from_branch(self.url, repo_info["default_branch"])
             if not downloads:
                 raise GitProviderDownloadInfoException(self)
 

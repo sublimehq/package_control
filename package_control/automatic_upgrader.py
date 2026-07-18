@@ -4,6 +4,7 @@ import os
 import time
 
 import sublime
+import sublime_aio
 
 from . import sys_path
 from .activity_indicator import ActivityIndicator
@@ -26,8 +27,8 @@ class AutomaticUpgrader:
         self.next_run = 0
         self.current_version = int(sublime.version())
 
-    def run(self):
-        self.load_last_run()
+    async def run(self):
+        await sublime_aio.run_in_worker(self.load_last_run)
 
         if self.last_version != self.current_version and self.last_version != 0:
             console_write(
@@ -48,7 +49,7 @@ class AutomaticUpgrader:
             )
             return
 
-        self.upgrade_packages()
+        await self.upgrade_packages()
 
     def load_last_run(self):
         """
@@ -56,8 +57,8 @@ class AutomaticUpgrader:
         """
 
         try:
-            with open(os.path.join(sys_path.pc_cache_dir(), 'last_run.json')) as fobj:
-                last_run_data = json.load(fobj)
+            with open(os.path.join(sys_path.pc_cache_dir(), 'last_run.json'), "rb") as fobj:
+                last_run_data = json.loads(fobj.read())
             self.last_run = int(last_run_data['timestamp'])
             self.last_version = int(last_run_data['st_version'])
         except (FileNotFoundError, ValueError, TypeError):
@@ -73,12 +74,12 @@ class AutomaticUpgrader:
         """
 
         with open(os.path.join(sys_path.pc_cache_dir(), 'last_run.json'), 'w') as fobj:
-            json.dump({
+            fobj.write(json.dumps({
                 'timestamp': int(time.time()),
                 'st_version': self.current_version
-            }, fp=fobj)
+            }))
 
-    def upgrade_packages(self):
+    async def upgrade_packages(self):
         """
         Upgrades all packages that are not currently upgraded to the latest
         version. Also renames any installed packages to their new names.
@@ -88,19 +89,19 @@ class AutomaticUpgrader:
 
         with ActivityIndicator('Searching updates...') as progress:
             # upgrade existing libraries
-            required_libraries = upgrader.manager.find_required_libraries()
-            missing_libraries = upgrader.manager.find_missing_libraries(required_libraries=required_libraries)
-            upgrader.manager.install_libraries(
+            required_libraries = await upgrader.manager.find_required_libraries()
+            missing_libraries = await upgrader.manager.find_missing_libraries(required_libraries=required_libraries)
+            await upgrader.manager.install_libraries(
                 libraries=required_libraries - missing_libraries,
                 fail_early=False
             )
 
             # run updater synchronously to delay any "You must restart ST" dialogues
             # Note: we are in PackageCleanup thread here
-            completed = upgrader.upgrade_packages(
+            completed = await upgrader.upgrade_packages(
                 ignore_packages=upgrader.manager.settings.get('auto_upgrade_ignore'),
                 unattended=True,
                 progress=progress
             )
             if completed:
-                self.save_last_run()
+                await sublime_aio.run_in_worker(self.save_last_run)

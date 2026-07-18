@@ -1,6 +1,8 @@
 import os
 import zipfile
 
+import sublime_aio
+
 from . import sys_path
 from .console_write import console_write
 
@@ -30,7 +32,7 @@ def create_empty_file(filename):
     return True
 
 
-def list_sublime_package_dirs(path, include_hidden=False):
+async def list_sublime_package_dirs(path, include_hidden=False):
     """
     Return a set of directories in the folder specified that are not
     hidden and are not marked to be removed
@@ -44,28 +46,33 @@ def list_sublime_package_dirs(path, include_hidden=False):
     :return:
         A generator of directory names
     """
+    def worker():
+        files = set()
+        try:
+            for filename in os.listdir(path):
+                if filename[0] == '.':
+                    continue
+                file_path = os.path.join(path, filename)
+                # Don't include files
+                if not os.path.isdir(file_path):
+                    continue
+                # Don't include hidden packages
+                if not include_hidden and os.path.exists(os.path.join(file_path, '.hidden-sublime-package')):
+                    continue
+                # Don't include a dir if it is going to be cleaned up
+                if os.path.exists(os.path.join(file_path, 'package-control.cleanup')):
+                    continue
+                files.add(filename)
 
-    try:
-        for filename in os.listdir(path):
-            if filename[0] == '.':
-                continue
-            file_path = os.path.join(path, filename)
-            # Don't include files
-            if not os.path.isdir(file_path):
-                continue
-            # Don't include hidden packages
-            if not include_hidden and os.path.exists(os.path.join(file_path, '.hidden-sublime-package')):
-                continue
-            # Don't include a dir if it is going to be cleaned up
-            if os.path.exists(os.path.join(file_path, 'package-control.cleanup')):
-                continue
-            yield filename
+        except FileNotFoundError:
+            pass
 
-    except FileNotFoundError:
-        pass
+        return files
+
+    return await sublime_aio.run_in_worker(worker)
 
 
-def list_sublime_package_files(path, include_hidden=False):
+async def list_sublime_package_files(path, include_hidden=False):
     """
     Return a set of all .sublime-package files in a folder
 
@@ -78,23 +85,28 @@ def list_sublime_package_files(path, include_hidden=False):
     :return:
         A generator of package names with .sublime-package suffix removed
     """
+    def worker():
+        files = set()
+        try:
+            for filename in os.listdir(path):
+                name, ext = os.path.splitext(filename)
+                if ext.lower() != '.sublime-package':
+                    continue
+                file_path = os.path.join(path, filename)
+                if not os.path.isfile(file_path):
+                    continue
+                if not include_hidden:
+                    with zipfile.ZipFile(file_path) as fobj:
+                        if '.hidden-sublime-package' in fobj.NameToInfo:
+                            continue
+                files.add(name)
 
-    try:
-        for filename in os.listdir(path):
-            name, ext = os.path.splitext(filename)
-            if ext.lower() != '.sublime-package':
-                continue
-            file_path = os.path.join(path, filename)
-            if not os.path.isfile(file_path):
-                continue
-            if not include_hidden:
-                with zipfile.ZipFile(file_path) as fobj:
-                    if '.hidden-sublime-package' in fobj.NameToInfo:
-                        continue
-            yield name
+        except FileNotFoundError:
+            pass
 
-    except FileNotFoundError:
-        pass
+        return files
+
+    return await sublime_aio.run_in_worker(worker)
 
 
 def read_package_file(package, relative_path, binary=False):

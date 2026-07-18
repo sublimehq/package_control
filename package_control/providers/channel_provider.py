@@ -1,6 +1,7 @@
+import asyncio
 import json
 
-from ..download_manager import http_get, resolve_url, update_url
+from ..http import http_get, resolve_url, update_url
 from .bitbucket_provider import BitBucketProvider
 from .github_provider import GitHubProvider
 from .gitlab_provider import GitLabProvider
@@ -63,14 +64,16 @@ class ChannelProvider(RepositoryProvider):
         A dict containing configuration for providers and http clients:
         - `debug`
         - `http_basic_auth`
-        - `cache_length`
-        - `timeout`
+        - `http_cache_max_age`
+        - `http_cache_ttl`
+        - `http_retries`
+        - `http_timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
     """
 
-    def _fetch(self):
+    async def _fetch(self):
         """
         Retrieves and loads the JSON for other methods to use
 
@@ -79,16 +82,16 @@ class ChannelProvider(RepositoryProvider):
             ProviderException: when an error occurs trying to open a file
             DownloaderException: when an error occurs trying to open a URL
         """
-        json_string = http_get(self.url, self.settings, "Error downloading channel.")
+        json_string = await http_get(self.url, self.settings, "Error downloading channel.")
 
         try:
             content = json.loads(json_string.decode("utf-8"))
         except ValueError:
             raise InvalidChannelFileException(self, "parsing JSON failed.")
         else:
-            self._parse(content)
+            await self._parse(content)
 
-    def _parse(self, content):
+    async def _parse(self, content):
         try:
             schema_version = SchemaVersion(content["schema_version"])
         except KeyError:
@@ -119,14 +122,12 @@ class ChannelProvider(RepositoryProvider):
             migrate_lib = self._normalize_library
             migrate_pkg = self._normalize_package
 
-        debug = self.settings.get("debug", False)
-
         # fetch uncached repositories
         repo_providers = {}
         for repo_url in repo_urls:
             if repo_url not in libs and repo_url not in pkgs:
                 repo_provider = repo_provider_for(
-                    update_url(resolve_url(self.url, repo_url), debug), self.settings
+                    update_url(resolve_url(self.url, repo_url)), self.settings
                 )
                 if repo_provider:
                     repo_providers[repo_url] = repo_provider
@@ -135,16 +136,19 @@ class ChannelProvider(RepositoryProvider):
                         "{} is not a supported repository.".format(repo_url)
                     )
 
-        # todo: run in parallel
-        for repo_provider in repo_providers.values():
-            repo_provider.fetch()
+        # run in parallel
+        for result in await asyncio.gather(
+            *(repo_provider.fetch() for repo_provider in repo_providers.values()), return_exceptions=True
+        ):
+            if isinstance(result, BaseException):
+                raise result
 
         # merge in strict order
         for repo_url in reversed(repo_urls):
             if repo_url in repo_providers:
                 self.update(repo_providers[repo_url])
             else:
-                updated_repo_url = update_url(repo_url, debug)
+                updated_repo_url = update_url(repo_url)
                 for lib in filter(None, map(migrate_lib, libs.get(repo_url, []))):
                     lib["source"] = updated_repo_url
                     self.libraries[lib["name"]] = lib

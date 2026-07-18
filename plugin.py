@@ -15,6 +15,13 @@ for module_name in [
 del prefix1
 del prefix2
 
+try:
+    import sublime_aio
+except ImportError:
+    from .package_control.vendor import sublime_aio
+    # claim it being the global one to avoid monkey patching each module.
+    sys.modules["sublime_aio"] = sublime_aio
+
 from .package_control import text
 from .package_control.package_io import (
     get_installed_package_path,
@@ -169,4 +176,4 @@ else:
             """
 
             from .package_control.bootstrap import bootstrap
-            bootstrap()
+            sublime_aio.run_coroutine(bootstrap())

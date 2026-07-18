@@ -1,25 +1,18 @@
-import unittest
+import unittesting
 
 from ..clients.pypi_client import PyPiClient
-from ..http_cache import HttpCache
 from ._data_decorator import data_decorator, data
 
-from ._config import (
-    DEBUG,
-    USER_AGENT,
-)
+from ._config import DEBUG
 
 
 @data_decorator
-class PyPiClientTests(unittest.TestCase):
+class PyPiClientTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self, extra=None):
         settings = {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT
         }
         if extra:
             settings.update(extra)
@@ -61,24 +54,24 @@ class PyPiClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def name_and_version(self, url, result):
+    async def name_and_version(self, url, result):
         client = PyPiClient(self.settings())
         self.assertEqual(result, client.name_and_version(url))
 
     @data((("https://pypi.org/project/coverage", None),))
-    def download_info(self, url, result):
+    async def download_info(self, url, result):
         client = PyPiClient(self.settings())
-        self.assertEqual(result, client.download_info(url))
+        self.assertEqual(result, await client.download_info(url))
 
     @data((("https://pypi.org/project/coverage", None),))
-    def download_info_from_branch(self, url, result):
+    async def download_info_from_branch(self, url, result):
         client = PyPiClient(self.settings())
-        self.assertEqual(result, client.download_info_from_branch(url))
+        self.assertEqual(result, await client.download_info_from_branch(url))
 
     @data((("https://pypi.org/project/coverage", None),))
-    def download_info_from_tags(self, url, result):
+    async def download_info_from_tags(self, url, result):
         client = PyPiClient(self.settings())
-        self.assertEqual(result, client.download_info_from_tags(url))
+        self.assertEqual(result, await client.download_info_from_tags(url))
 
     @data(
         (
@@ -287,6 +280,6 @@ class PyPiClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info_from_releases(self, extra_settings, url, asset_templates, result):
+    async def download_info_from_releases(self, extra_settings, url, asset_templates, result):
         client = PyPiClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info_from_releases(url, asset_templates))
+        self.assertEqual(result, await client.download_info_from_releases(url, asset_templates))

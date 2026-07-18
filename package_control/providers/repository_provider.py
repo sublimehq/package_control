@@ -1,7 +1,8 @@
+import asyncio
 import json
 from urllib.parse import urlparse
 
-from ..download_manager import http_get, resolve_url, update_url
+from ..http import http_get, resolve_url, update_url
 from .base_provider import BaseProvider
 from .provider_exception import (
     InvalidRepoFileException,
@@ -93,8 +94,10 @@ class RepositoryProvider(BaseProvider):
         A dict containing configuration for providers and http clients:
         - `debug`
         - `http_basic_auth`
-        - `cache_length`
-        - `timeout`
+        - `http_cache_max_age`
+        - `http_cache_ttl`
+        - `http_retries`
+        - `http_timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
@@ -106,10 +109,10 @@ class RepositoryProvider(BaseProvider):
         super().__init__(url, settings)
         self.included_urls = set()
 
-    def get_renamed_packages(self):
+    async def get_renamed_packages(self):
         """:return: A dict of the packages that have been renamed"""
 
-        self.ensure_fetched()
+        await self.ensure_fetched()
 
         output = {}
         for package in self.packages.values():
@@ -125,7 +128,7 @@ class RepositoryProvider(BaseProvider):
 
         return output
 
-    def _fetch(self):
+    async def _fetch(self):
         """
         Fetches the contents of a URL of file path
 
@@ -140,16 +143,16 @@ class RepositoryProvider(BaseProvider):
 
         self.included_urls.add(self.url)
 
-        json_string = http_get(self.url, self.settings, "Error downloading repository.")
+        json_string = await http_get(self.url, self.settings, "Error downloading repository.")
 
         try:
             content = json.loads(json_string.decode("utf-8"))
         except ValueError:
             raise InvalidRepoFileException(self, "parsing JSON failed.") from None
         else:
-            self._parse(content)
+            await self._parse(content)
 
-    def _parse(self, content):
+    async def _parse(self, content):
         try:
             schema_version = content["schema_version"] = SchemaVersion(content["schema_version"])
         except KeyError:
@@ -180,7 +183,7 @@ class RepositoryProvider(BaseProvider):
         repo_providers = []
         for include_url in reversed(content["includes"]):
             repo_provider = RepositoryProvider(
-                update_url(resolve_url(self.url, include_url), False), self.settings
+                update_url(resolve_url(self.url, include_url)), self.settings
             )
             if repo_provider:
                 repo_provider.included_urls = self.included_urls
@@ -190,15 +193,17 @@ class RepositoryProvider(BaseProvider):
                     "{} is not a supported repository.".format(include_url)
                 )
 
-        # todo: run in parallel
-        for repo_provider in repo_providers:
-            repo_provider.fetch()
+        # run in parallel
+        for result in await asyncio.gather(
+            *(repo_provider.fetch() for repo_provider in repo_providers), return_exceptions=True
+        ):
+            if isinstance(result, BaseException):
+                raise result
 
         # merge in strict order
         for repo_provider in repo_providers:
             self.update(repo_provider)
 
-        # add inline packages and libaries
         if schema_version.major < 3:
             libs = []
             pkgs = content.get("packages", [])

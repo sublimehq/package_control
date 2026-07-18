@@ -1,19 +1,17 @@
-import unittest
+import unittesting
 
 from ..clients.gitlab_client import GitLabClient
-from ..http_cache import HttpCache
 from ._data_decorator import data_decorator, data
 
 from ._config import (
     DEBUG,
     GL_PASS,
     GL_USER,
-    USER_AGENT,
 )
 
 
 @data_decorator
-class GitLabClientTests(unittest.TestCase):
+class GitLabClientTests(unittesting.AsyncTestCase):
     maxDiff = None
 
     def settings(self, extra=None):
@@ -22,9 +20,6 @@ class GitLabClientTests(unittest.TestCase):
 
         settings = {
             "debug": DEBUG,
-            "cache": HttpCache(604800),
-            "cache_length": 604800,
-            "user_agent": USER_AGENT,
             "http_basic_auth": {
                 "gitlab.com": [GL_USER, GL_PASS]
             }
@@ -109,11 +104,11 @@ class GitLabClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def repo_user_branch(self, url, result):
+    async def repo_user_branch(self, url, result):
         client = GitLabClient(self.settings())
         self.assertEqual(result, client.user_repo_branch(url))
 
-    def test_repo_info_client(self):
+    async def test_repo_info_client(self):
         client = GitLabClient(self.settings({"min_api_calls": True}))
         self.assertEqual(
             {
@@ -128,12 +123,12 @@ class GitLabClientTests(unittest.TestCase):
                 "donate": None,
                 "default_branch": "master"
             },
-            client.repo_info(
+            await client.repo_info(
                 "https://gitlab.com/packagecontrol-test/package_control-tester"
             )
         )
 
-    def test_repo_info_server(self):
+    async def test_repo_info_server(self):
         client = GitLabClient(self.settings({"min_api_calls": False}))
         self.assertEqual(
             {
@@ -148,7 +143,7 @@ class GitLabClientTests(unittest.TestCase):
                 "donate": None,
                 "default_branch": "master"
             },
-            client.repo_info(
+            await client.repo_info(
                 "https://gitlab.com/packagecontrol-test/package_control-tester"
             )
         )
@@ -203,9 +198,9 @@ class GitLabClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info(self, extra_settings, url, tag_prefix, result):
+    async def download_info(self, extra_settings, url, tag_prefix, result):
         client = GitLabClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info(url, tag_prefix))
+        self.assertEqual(result, await client.download_info(url, tag_prefix))
 
     @data(
         (
@@ -227,9 +222,9 @@ class GitLabClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info_from_branch(self, extra_settings, url, branch, result):
+    async def download_info_from_branch(self, extra_settings, url, branch, result):
         client = GitLabClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info_from_branch(url, branch))
+        self.assertEqual(result, await client.download_info_from_branch(url, branch))
 
     @data(
         (
@@ -266,9 +261,9 @@ class GitLabClientTests(unittest.TestCase):
         ),
         first_param_name_suffix=True
     )
-    def download_info_from_tags(self, extra_settings, url, tag_prefix, result):
+    async def download_info_from_tags(self, extra_settings, url, tag_prefix, result):
         client = GitLabClient(self.settings(extra_settings))
-        self.assertEqual(result, client.download_info_from_tags(url, tag_prefix))
+        self.assertEqual(result, await client.download_info_from_tags(url, tag_prefix))
 
     @data(
         (
@@ -358,6 +353,6 @@ class GitLabClientTests(unittest.TestCase):
             ),
         )
     )
-    def download_info_from_releases(self, url, asset_templates, tag_prefix, result):
+    async def download_info_from_releases(self, url, asset_templates, tag_prefix, result):
         client = GitLabClient(self.settings())
-        self.assertEqual(result, client.download_info_from_releases(url, asset_templates, tag_prefix))
+        self.assertEqual(result, await client.download_info_from_releases(url, asset_templates, tag_prefix))
