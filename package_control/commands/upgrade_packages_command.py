@@ -1,7 +1,4 @@
-import threading
-
-import sublime
-import sublime_plugin
+import sublime_aio
 
 from ..activity_indicator import ActivityIndicator
 from ..console_write import console_write
@@ -9,8 +6,7 @@ from ..package_tasks import PackageTaskRunner
 from ..show_error import show_error
 
 
-class UpgradePackagesCommand(sublime_plugin.ApplicationCommand):
-
+class UpgradePackagesCommand(sublime_aio.ApplicationCommand):
     """
     A command that accepts a list of packages to upgrade,
     or prompts the user to paste a comma-separated list.
@@ -28,37 +24,28 @@ class UpgradePackagesCommand(sublime_plugin.ApplicationCommand):
     ```
     """
 
-    def run(self, packages=None, unattended=False):
-        if isinstance(packages, list):
-
-            def worker():
-                message = 'Searching updates...'
-                with ActivityIndicator(message) as progress:
-                    console_write(message)
-                    upgrader = PackageTaskRunner()
-                    upgrader.upgrade_packages(packages, None, unattended, progress)
-
-            threading.Thread(target=worker).start()
-            return
-
-        def on_done(input_text):
-            packages = []
-            for package in input_text.split(','):
-                if package:
-                    package = package.strip()
+    async def run(self, packages=None, unattended=False):
+        if not packages:
+            input_text = await sublime_aio.active_window().show_input_panel(
+                "Packages to upgrade (comma-separated)",
+            )
+            if input_text:
+                packages = []
+                for package in input_text.split(","):
                     if package:
-                        packages.append(package)
+                        package = package.strip()
+                        if package:
+                            packages.append(package)
 
             if not packages:
-                show_error('No package names were entered')
+                show_error("No package names were entered")
                 return
 
-            self.run(packages, False)
+        if not isinstance(packages, list):
+            return
 
-        sublime.active_window().show_input_panel(
-            'Packages to upgrade (comma-separated)',
-            '',
-            on_done,
-            None,
-            None
-        )
+        message = "Searching updates..."
+        with ActivityIndicator(message) as progress:
+            console_write(message)
+            upgrader = PackageTaskRunner()
+            await upgrader.upgrade_packages(packages, None, unattended, progress)

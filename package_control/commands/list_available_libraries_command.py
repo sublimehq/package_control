@@ -1,10 +1,9 @@
 import html
 import re
-import threading
 from datetime import datetime
 
 import sublime
-import sublime_plugin
+import sublime_aio
 
 from ..activity_indicator import ActivityIndicator
 from ..console_write import console_write
@@ -12,42 +11,65 @@ from ..package_manager import PackageManager
 from ..show_error import show_message
 from ..sys_path import python_versions
 
-USE_QUICK_PANEL_ITEM = hasattr(sublime, "QuickPanelItem")
 
-
-class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
+class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
 
     """
     A command that presents the list of available packages and allows the
     user to pick one to install.
     """
 
-    def run(self):
-        def show_quick_panel():
-            manager = PackageManager()
+    async def run(self):
+        manager = PackageManager()
 
-            with ActivityIndicator("Loading libraries...") as progress:
-                libraries = manager.registry.get_libraries()
-                if not libraries:
-                    message = "There are no libraries available for installation"
-                    console_write(message)
-                    progress.finish(message)
-                    show_message(
-                        """
-                        %s
+        with ActivityIndicator("Loading libraries...") as progress:
+            libraries = await manager.registry.get_libraries()
+            if not libraries:
+                message = "There are no libraries available for installation"
+                console_write(message)
+                progress.finish(message)
+                show_message(
+                    """
+                    %s
 
-                        Please see https://packagecontrol.io/docs/troubleshooting for help
-                        """,
-                        message,
-                    )
-                    return
+                    Please see https://packagecontrol.io/docs/troubleshooting for help
+                    """,
+                    message,
+                )
+                return
 
-            if USE_QUICK_PANEL_ITEM:
-                self.show_quick_panel_st4(libraries.values())
-            else:
-                self.show_quick_panel_st3(libraries.values())
+        items = []
+        for info in libraries:
+            versions = self.latest_releases(info["releases"])
+            if not versions:
+                continue
 
-        threading.Thread(target=show_quick_panel).start()
+            display_name = info["name"] + versions
+
+            details = [html.escape(info["description"])]
+
+            issues = html.escape(info["issues"])
+            issues_display = re.sub(r"^https?://", "", issues)
+            if issues_display:
+                details.append(
+                    'report bug: <a href="{}">{}</a>'.format(issues, issues_display)
+                )
+
+            try:
+                date = self.latest_release_date(info["releases"])
+                annotation = datetime.strptime(date, "%Y-%m-%d").strftime(
+                    "Updated on %a %b %d, %Y"
+                )
+            except (IndexError, KeyError, ValueError):
+                annotation = ""
+
+            items.append(sublime.QuickPanelItem(display_name, details, annotation))
+
+        picked = await sublime_aio.active_window().show_quick_panel(
+            items, sublime.KEEP_OPEN_ON_FOCUS_LOST
+        )
+        if picked >= 0:
+            sublime.set_clipboard(items[picked].trigger.split(" ", 1)[0])
 
     @staticmethod
     def latest_releases(releases):
@@ -77,54 +99,3 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
                 return release["date"].split(" ", 1)[0]
 
         return releases[0]["date"].split(" ", 1)[0]
-
-    def show_quick_panel_st3(self, libraries):
-        items = []
-        for info in libraries:
-            versions = self.latest_releases(info["releases"])
-            if versions:
-                items.append([info["name"] + versions, info["description"]])
-
-        def on_done(picked):
-            if picked > -1:
-                sublime.set_clipboard(items[picked][0].split(" ", 1)[0])
-
-        sublime.active_window().show_quick_panel(
-            items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST
-        )
-
-    def show_quick_panel_st4(self, libraries):
-        items = []
-        for info in libraries:
-            versions = self.latest_releases(info["releases"])
-            if not versions:
-                continue
-
-            display_name = info["name"] + versions
-
-            details = [html.escape(info["description"])]
-
-            issues = html.escape(info["issues"])
-            issues_display = re.sub(r"^https?://", "", issues)
-            if issues_display:
-                details.append(
-                    'report bug: <a href="{}">{}</a>'.format(issues, issues_display)
-                )
-
-            try:
-                date = self.latest_release_date(info["releases"])
-                annotation = datetime.strptime(date, "%Y-%m-%d").strftime(
-                    "Updated on %a %b %d, %Y"
-                )
-            except (IndexError, KeyError, ValueError):
-                annotation = ""
-
-            items.append(sublime.QuickPanelItem(display_name, details, annotation))
-
-        def on_done(picked):
-            if picked > -1:
-                sublime.set_clipboard(items[picked].trigger.split(" ", 1)[0])
-
-        sublime.active_window().show_quick_panel(
-            items, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST
-        )

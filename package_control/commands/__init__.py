@@ -12,8 +12,7 @@ from .install_packages_command import InstallPackagesCommand
 from .list_available_libraries_command import ListAvailableLibrariesCommand
 from .list_packages_command import ListPackagesCommand
 from .list_unmanaged_packages_command import ListUnmanagedPackagesCommand
-from .new_template_command import NewChannelJsonCommand
-from .new_template_command import NewRepositoryJsonCommand
+from .new_template_command import NewChannelJsonCommand, NewRepositoryJsonCommand
 from .package_control_disable_debug_mode_command import PackageControlDisableDebugModeCommand
 from .package_control_enable_debug_mode_command import PackageControlEnableDebugModeCommand
 from .package_control_insert_command import PackageControlInsertCommand
@@ -28,7 +27,6 @@ from .satisfy_packages_command import SatisfyPackagesCommand
 from .upgrade_all_packages_command import UpgradeAllPackagesCommand
 from .upgrade_package_command import UpgradePackageCommand
 from .upgrade_packages_command import UpgradePackagesCommand
-
 
 __all__ = [
     'AddChannelCommand',
