@@ -273,7 +273,7 @@ class MultiDecoder(ContentDecoder):
         if len(codings) > self.max_decode_links:
             raise DecodingError(f"Cannot apply more than {self.max_decode_links} content encodings.")
         # Note that we reverse the order for decoding.
-        self.children = [SUPPORTED_DECODERS[coding]() for coding in reversed(codings)]
+        self.children: list[ContentDecoder] = [SUPPORTED_DECODERS[coding]() for coding in reversed(codings)]
 
     def decode(self, data: bytes) -> typing.Iterator[bytes]:
         streams: typing.Iterator[bytes] = iter((data,))
@@ -443,7 +443,7 @@ class LineDecoder:
         return lines
 
 
-SUPPORTED_DECODERS = {
+SUPPORTED_DECODERS: dict[str, type[ContentDecoder]] = {
     "identity": IdentityDecoder,
     "gzip": GZipDecoder,
     "deflate": DeflateDecoder,

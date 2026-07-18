@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
     import trio
 
-    Event = typing.Union[asyncio.Event, trio.Event]
+    Event = asyncio.Event | trio.Event
 
 
 _Message = typing.MutableMapping[str, typing.Any]
@@ -27,7 +27,7 @@ def is_running_trio() -> bool:
         # sniffio is a dependency of trio.
 
         # See https://github.com/python-trio/trio/issues/2802
-        import sniffio
+        from ... import sniffio
 
         if sniffio.current_async_library() == "trio":
             return True

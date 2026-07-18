@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from signal import Signals
+from typing import TYPE_CHECKING
 
 from ._resources import AsyncResource
-from ._streams import ByteReceiveStream, ByteSendStream
+
+if TYPE_CHECKING:
+    from ._streams import ByteReceiveStream, ByteSendStream
 
 
 class Process(AsyncResource):

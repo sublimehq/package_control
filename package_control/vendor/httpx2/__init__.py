@@ -101,7 +101,7 @@ for __name in __all__:
 
 def __getattr__(name: str) -> object:  # pragma: no cover
     if name == "main":
-        from .. import warnings
+        import warnings
 
         warnings.warn(
             "`httpx2.main` is deprecated and will be removed in a future release. "

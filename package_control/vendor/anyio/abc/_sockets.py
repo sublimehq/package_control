@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import socket
 from abc import abstractmethod
 from collections.abc import Callable, Collection, Mapping
@@ -7,50 +8,134 @@ from contextlib import AsyncExitStack
 from io import IOBase
 from ipaddress import IPv4Address, IPv6Address
 from socket import AddressFamily
-from types import TracebackType
-from typing import Any, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
+from .._core._eventloop import get_async_backend
 from .._core._typedattr import (
     TypedAttributeProvider,
     TypedAttributeSet,
     typed_attribute,
 )
 from ._streams import ByteStream, Listener, UnreliableObjectStream
-from ._tasks import TaskGroup
 
-IPAddressType = Union[str, IPv4Address, IPv6Address]
-IPSockAddrType = Tuple[str, int]
-SockAddrType = Union[IPSockAddrType, str]
-UDPPacketType = Tuple[bytes, IPSockAddrType]
-UNIXDatagramPacketType = Tuple[bytes, str]
+if TYPE_CHECKING:
+    from ._tasks import TaskGroup
+
+IPAddressType: TypeAlias = str | IPv4Address | IPv6Address
+IPSockAddrType: TypeAlias = tuple[str, int]
+SockAddrType: TypeAlias = IPSockAddrType | str
+UDPPacketType: TypeAlias = tuple[bytes, IPSockAddrType]
+UNIXDatagramPacketType: TypeAlias = tuple[bytes, str]
 T_Retval = TypeVar("T_Retval")
 
 
-class _NullAsyncContextManager:
-    async def __aenter__(self) -> None:
-        pass
+def _validate_socket(
+    sock_or_fd: socket.socket | int,
+    sock_type: socket.SocketKind,
+    addr_family: socket.AddressFamily = socket.AF_UNSPEC,
+    *,
+    require_connected: bool = False,
+    require_bound: bool = False,
+) -> socket.socket:
+    if isinstance(sock_or_fd, int):
+        try:
+            sock = socket.socket(fileno=sock_or_fd)
+        except OSError as exc:
+            if exc.errno == errno.ENOTSOCK:
+                raise ValueError(
+                    "the file descriptor does not refer to a socket"
+                ) from exc
+            elif require_connected:
+                raise ValueError("the socket must be connected") from exc
+            elif require_bound:
+                raise ValueError("the socket must be bound to a local address") from exc
+            else:
+                raise
+    elif isinstance(sock_or_fd, socket.socket):
+        sock = sock_or_fd
+    else:
+        raise TypeError(
+            f"expected an int or socket, got {type(sock_or_fd).__qualname__} instead"
+        )
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> bool | None:
-        return None
+    try:
+        if require_connected:
+            try:
+                sock.getpeername()
+            except OSError as exc:
+                raise ValueError("the socket must be connected") from exc
+
+        if require_bound:
+            try:
+                if sock.family in (socket.AF_INET, socket.AF_INET6):
+                    bound_addr = sock.getsockname()[1]
+                else:
+                    bound_addr = sock.getsockname()
+            except OSError:
+                bound_addr = None
+
+            if not bound_addr:
+                raise ValueError("the socket must be bound to a local address")
+
+        if addr_family != socket.AF_UNSPEC and sock.family != addr_family:
+            raise ValueError(
+                f"address family mismatch: expected {addr_family.name}, got "
+                f"{sock.family.name}"
+            )
+
+        if sock.type != sock_type:
+            raise ValueError(
+                f"socket type mismatch: expected {sock_type.name}, got {sock.type.name}"
+            )
+    except BaseException:
+        # Avoid ResourceWarning from the locally constructed socket object
+        if isinstance(sock_or_fd, int):
+            sock.detach()
+
+        raise
+
+    sock.setblocking(False)
+    return sock
 
 
 class SocketAttribute(TypedAttributeSet):
-    #: the address family of the underlying socket
+    """
+    .. attribute:: family
+        :type: socket.AddressFamily
+
+        the address family of the underlying socket
+
+    .. attribute:: local_address
+        :type: tuple[str, int] | str
+
+        the local address the underlying socket is connected to
+
+    .. attribute:: local_port
+        :type: int
+
+        for IP based sockets, the local port the underlying socket is bound to
+
+    .. attribute:: raw_socket
+        :type: socket.socket
+
+        the underlying stdlib socket object
+
+    .. attribute:: remote_address
+        :type: tuple[str, int] | str
+
+        the remote address the underlying socket is connected to
+
+    .. attribute:: remote_port
+        :type: int
+
+        for IP based sockets, the remote port the underlying socket is connected to
+    """
+
     family: AddressFamily = typed_attribute()
-    #: the local socket address of the underlying socket
     local_address: SockAddrType = typed_attribute()
-    #: for IP addresses, the local port the underlying socket is bound to
     local_port: int = typed_attribute()
-    #: the underlying stdlib socket object
     raw_socket: socket.socket = typed_attribute()
-    #: the remote address the underlying socket is connected to
     remote_address: SockAddrType = typed_attribute()
-    #: for IP addresses, the remote port the underlying socket is connected to
     remote_port: int = typed_attribute()
 
 
@@ -77,8 +162,8 @@ class _SocketProvider(TypedAttributeProvider):
 
         # Provide local and remote ports for IP based sockets
         if self._raw_socket.family in (AddressFamily.AF_INET, AddressFamily.AF_INET6):
-            attributes[SocketAttribute.local_port] = (
-                lambda: self._raw_socket.getsockname()[1]
+            attributes[SocketAttribute.local_port] = lambda: (
+                self._raw_socket.getsockname()[1]
             )
             if peername is not None:
                 remote_port = peername[1]
@@ -99,8 +184,40 @@ class SocketStream(ByteStream, _SocketProvider):
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
 
+    @classmethod
+    async def from_socket(cls, sock_or_fd: socket.socket | int) -> SocketStream:
+        """
+        Wrap an existing socket object or file descriptor as a socket stream.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+        The existing socket must already be connected.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a socket stream
+
+        """
+        sock = _validate_socket(sock_or_fd, socket.SOCK_STREAM, require_connected=True)
+        return await get_async_backend().wrap_stream_socket(sock)
+
 
 class UNIXSocketStream(SocketStream):
+    @classmethod
+    async def from_socket(cls, sock_or_fd: socket.socket | int) -> UNIXSocketStream:
+        """
+        Wrap an existing socket object or file descriptor as a UNIX socket stream.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+        The existing socket must already be connected.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a UNIX socket stream
+
+        """
+        sock = _validate_socket(
+            sock_or_fd, socket.SOCK_STREAM, socket.AF_UNIX, require_connected=True
+        )
+        return await get_async_backend().wrap_unix_stream_socket(sock)
+
     @abstractmethod
     async def send_fds(self, message: bytes, fds: Collection[int | IOBase]) -> None:
         """
@@ -129,6 +246,23 @@ class SocketListener(Listener[SocketStream], _SocketProvider):
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
 
+    @classmethod
+    async def from_socket(
+        cls,
+        sock_or_fd: socket.socket | int,
+    ) -> SocketListener:
+        """
+        Wrap an existing socket object or file descriptor as a socket listener.
+
+        The newly created listener takes ownership of the socket being passed in.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a socket listener
+
+        """
+        sock = _validate_socket(sock_or_fd, socket.SOCK_STREAM, require_bound=True)
+        return await get_async_backend().wrap_listener_socket(sock)
+
     @abstractmethod
     async def accept(self) -> SocketStream:
         """Accept an incoming connection."""
@@ -156,6 +290,21 @@ class UDPSocket(UnreliableObjectStream[UDPPacketType], _SocketProvider):
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
 
+    @classmethod
+    async def from_socket(cls, sock_or_fd: socket.socket | int) -> UDPSocket:
+        """
+        Wrap an existing socket object or file descriptor as a UDP socket.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+        The existing socket must be bound to a local address.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a UDP socket
+
+        """
+        sock = _validate_socket(sock_or_fd, socket.SOCK_DGRAM, require_bound=True)
+        return await get_async_backend().wrap_udp_socket(sock)
+
     async def sendto(self, data: bytes, host: str, port: int) -> None:
         """
         Alias for :meth:`~.UnreliableObjectSendStream.send` ((data, (host, port))).
@@ -171,6 +320,25 @@ class ConnectedUDPSocket(UnreliableObjectStream[bytes], _SocketProvider):
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
 
+    @classmethod
+    async def from_socket(cls, sock_or_fd: socket.socket | int) -> ConnectedUDPSocket:
+        """
+        Wrap an existing socket object or file descriptor as a connected UDP socket.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+        The existing socket must already be connected.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a connected UDP socket
+
+        """
+        sock = _validate_socket(
+            sock_or_fd,
+            socket.SOCK_DGRAM,
+            require_connected=True,
+        )
+        return await get_async_backend().wrap_connected_udp_socket(sock)
+
 
 class UNIXDatagramSocket(
     UnreliableObjectStream[UNIXDatagramPacketType], _SocketProvider
@@ -180,6 +348,24 @@ class UNIXDatagramSocket(
 
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
+
+    @classmethod
+    async def from_socket(
+        cls,
+        sock_or_fd: socket.socket | int,
+    ) -> UNIXDatagramSocket:
+        """
+        Wrap an existing socket object or file descriptor as a UNIX datagram
+        socket.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a UNIX datagram socket
+
+        """
+        sock = _validate_socket(sock_or_fd, socket.SOCK_DGRAM, socket.AF_UNIX)
+        return await get_async_backend().wrap_unix_datagram_socket(sock)
 
     async def sendto(self, data: bytes, path: str) -> None:
         """Alias for :meth:`~.UnreliableObjectSendStream.send` ((data, path))."""
@@ -192,3 +378,24 @@ class ConnectedUNIXDatagramSocket(UnreliableObjectStream[bytes], _SocketProvider
 
     Supports all relevant extra attributes from :class:`~SocketAttribute`.
     """
+
+    @classmethod
+    async def from_socket(
+        cls,
+        sock_or_fd: socket.socket | int,
+    ) -> ConnectedUNIXDatagramSocket:
+        """
+        Wrap an existing socket object or file descriptor as a connected UNIX datagram
+        socket.
+
+        The newly created socket wrapper takes ownership of the socket being passed in.
+        The existing socket must already be connected.
+
+        :param sock_or_fd: a socket object or file descriptor
+        :return: a connected UNIX datagram socket
+
+        """
+        sock = _validate_socket(
+            sock_or_fd, socket.SOCK_DGRAM, socket.AF_UNIX, require_connected=True
+        )
+        return await get_async_backend().wrap_connected_unix_datagram_socket(sock)

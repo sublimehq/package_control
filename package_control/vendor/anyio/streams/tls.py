@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+__all__ = (
+    "TLSAttribute",
+    "TLSConnectable",
+    "TLSListener",
+    "TLSStream",
+)
+
 import logging
 import re
 import ssl
@@ -7,26 +14,40 @@ import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Tuple, TypeVar
+from ssl import SSLContext
+from typing import Any, TypeAlias, TypeVar
 
 from .. import (
     BrokenResourceError,
     EndOfStream,
     aclose_forcefully,
     get_cancelled_exc_class,
+    to_thread,
 )
 from .._core._typedattr import TypedAttributeSet, typed_attribute
-from ..abc import AnyByteStream, ByteStream, Listener, TaskGroup
+from ..abc import (
+    AnyByteStream,
+    AnyByteStreamConnectable,
+    ByteStream,
+    ByteStreamConnectable,
+    Listener,
+    TaskGroup,
+)
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
 else:
     from ...typing_extensions import TypeVarTuple, Unpack
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from ...typing_extensions import override
+
 T_Retval = TypeVar("T_Retval")
 PosArgsT = TypeVarTuple("PosArgsT")
-_PCTRTT = Tuple[Tuple[str, str], ...]
-_PCTRTTT = Tuple[_PCTRTT, ...]
+_PCTRTT: TypeAlias = tuple[tuple[str, str], ...]
+_PCTRTTT: TypeAlias = tuple[_PCTRTT, ...]
 
 
 class TLSAttribute(TypedAttributeSet):
@@ -119,9 +140,35 @@ class TLSStream(ByteStream):
 
         bio_in = ssl.MemoryBIO()
         bio_out = ssl.MemoryBIO()
-        ssl_object = ssl_context.wrap_bio(
-            bio_in, bio_out, server_side=server_side, server_hostname=hostname
-        )
+
+        # Resolve international host names using IDNA 2008.
+        # Otherwise wrap_bio() would resolve them with IDNA 2003.
+        if hostname is not None:
+            from .._core._sockets import idna2008_resolve
+
+            server_hostname: bytes | None = idna2008_resolve(hostname)
+        else:
+            server_hostname = None
+
+        # External SSLContext implementations may do blocking I/O in wrap_bio(),
+        # but the standard library implementation won't
+        if type(ssl_context) is ssl.SSLContext:
+            ssl_object = ssl_context.wrap_bio(
+                bio_in,
+                bio_out,
+                server_side=server_side,
+                server_hostname=server_hostname,
+            )
+        else:
+            ssl_object = await to_thread.run_sync(
+                ssl_context.wrap_bio,
+                bio_in,
+                bio_out,
+                server_side,
+                server_hostname,
+                None,
+            )
+
         wrapper = cls(
             transport_stream=transport_stream,
             standard_compatible=standard_compatible,
@@ -201,6 +248,9 @@ class TLSStream(ByteStream):
         await self.transport_stream.aclose()
 
     async def receive(self, max_bytes: int = 65536) -> bytes:
+        if max_bytes < 1:
+            raise ValueError("max_bytes must be a positive integer")
+
         data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
         if not data:
             raise EndOfStream
@@ -239,9 +289,11 @@ class TLSStream(ByteStream):
                 True
             ),
             TLSAttribute.server_side: lambda: self._ssl_object.server_side,
-            TLSAttribute.shared_ciphers: lambda: self._ssl_object.shared_ciphers()
-            if self._ssl_object.server_side
-            else None,
+            TLSAttribute.shared_ciphers: lambda: (
+                self._ssl_object.shared_ciphers()
+                if self._ssl_object.server_side
+                else None
+            ),
             TLSAttribute.standard_compatible: lambda: self.standard_compatible,
             TLSAttribute.ssl_object: lambda: self._ssl_object,
             TLSAttribute.tls_version: self._ssl_object.version,
@@ -296,13 +348,13 @@ class TLSListener(Listener[TLSStream]):
             # any asyncio implementation, so we explicitly pass the exception to log
             # (https://github.com/python/cpython/issues/108668). Trio does not have this
             # issue because it works around the CPython bug.
-            logging.getLogger(__name__).exception(
+            logging.getLogger("anyio.streams.tls").exception(
                 "Error during TLS handshake", exc_info=exc
             )
 
         # Only reraise base exceptions and cancellation exceptions
         if not isinstance(exc, Exception) or isinstance(exc, get_cancelled_exc_class()):
-            raise
+            raise  # noqa: PLE0704
 
     async def serve(
         self,
@@ -335,3 +387,50 @@ class TLSListener(Listener[TLSStream]):
         return {
             TLSAttribute.standard_compatible: lambda: self.standard_compatible,
         }
+
+
+class TLSConnectable(ByteStreamConnectable):
+    """
+    Wraps another connectable and does TLS negotiation after a successful connection.
+
+    :param connectable: the connectable to wrap
+    :param hostname: host name of the server (if host name checking is desired)
+    :param ssl_context: the SSLContext object to use (if not provided, a secure default
+        will be created)
+    :param standard_compatible: if ``False``, skip the closing handshake when closing
+        the connection, and don't raise an exception if the server does the same
+    """
+
+    def __init__(
+        self,
+        connectable: AnyByteStreamConnectable,
+        *,
+        hostname: str | None = None,
+        ssl_context: ssl.SSLContext | None = None,
+        standard_compatible: bool = True,
+    ) -> None:
+        self.connectable = connectable
+        self.ssl_context: SSLContext = ssl_context or ssl.create_default_context(
+            ssl.Purpose.SERVER_AUTH
+        )
+        if not isinstance(self.ssl_context, ssl.SSLContext):
+            raise TypeError(
+                "ssl_context must be an instance of ssl.SSLContext, not "
+                f"{type(self.ssl_context).__name__}"
+            )
+        self.hostname = hostname
+        self.standard_compatible = standard_compatible
+
+    @override
+    async def connect(self) -> TLSStream:
+        stream = await self.connectable.connect()
+        try:
+            return await TLSStream.wrap(
+                stream,
+                hostname=self.hostname,
+                ssl_context=self.ssl_context,
+                standard_compatible=self.standard_compatible,
+            )
+        except BaseException:
+            await aclose_forcefully(stream)
+            raise

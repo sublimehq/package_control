@@ -1,103 +1,93 @@
-# -*- coding: utf-8 -*-
 """
-hpack/hpack
-~~~~~~~~~~~
+Implements the HPACK header compression algorithm as detailed by RFC 7541.
+"""
+from __future__ import annotations
 
-Implements the HPACK header compression algorithm as detailed by the IETF.
-"""
 import logging
+from typing import TYPE_CHECKING, Any
 
-from .table import HeaderTable, table_entry_size
-from .exceptions import (
-    HPACKDecodingError, OversizedHeaderListError, InvalidTableSizeError
-)
+from .exceptions import HPACKDecodingError, InvalidTableSizeError, OversizedHeaderListError
 from .huffman import HuffmanEncoder
-from .huffman_constants import (
-    REQUEST_CODES, REQUEST_CODES_LENGTH
-)
+from .huffman_constants import REQUEST_CODES, REQUEST_CODES_LENGTH
 from .huffman_table import decode_huffman
-from .struct import HeaderTuple, NeverIndexedHeaderTuple
+from .struct import HeaderTuple, HeaderWeaklyTyped, NeverIndexedHeaderTuple
+from .table import HeaderTable, table_entry_size
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable  # pragma: no cover
 
 log = logging.getLogger("hpack.hpack")
 
-INDEX_NONE = b'\x00'
-INDEX_NEVER = b'\x10'
-INDEX_INCREMENTAL = b'\x40'
+INDEX_NONE = b"\x00"
+INDEX_NEVER = b"\x10"
+INDEX_INCREMENTAL = b"\x40"
+
+VARINT_MAX_LENGTH = 5 # octets, enough for encoding prefix + uint32
 
 # Precompute 2^i for 1-8 for use in prefix calcs.
 # Zero index is not used but there to save a subtraction
 # as prefix numbers are not zero indexed.
 _PREFIX_BIT_MAX_NUMBERS = [(2 ** i) - 1 for i in range(9)]
 
-try:  # pragma: no cover
-    basestring = basestring
-except NameError:  # pragma: no cover
-    basestring = (str, bytes)
-
-
 # We default the maximum header list we're willing to accept to 64kB. That's a
 # lot of headers, but if applications want to raise it they can do.
 DEFAULT_MAX_HEADER_LIST_SIZE = 2 ** 16
 
 
-def _unicode_if_needed(header, raw):
+def _unicode_if_needed(header: HeaderWeaklyTyped, raw: bool) -> HeaderTuple:
     """
     Provides a header as a unicode string if raw is False, otherwise returns
     it as a bytestring.
     """
-    name = bytes(header[0])
-    value = bytes(header[1])
+    name = bytes(header[0])  # type: ignore
+    value = bytes(header[1])  # type: ignore
+
     if not raw:
-        name = name.decode('utf-8')
-        value = value.decode('utf-8')
-    return header.__class__(name, value)
+        return header.__class__(name.decode("utf-8"), value.decode("utf-8"))  # type: ignore
+    return header.__class__(name, value)  # type: ignore
 
 
-def encode_integer(integer, prefix_bits):
+def encode_integer(integer: int, prefix_bits: int) -> bytearray:
     """
-    This encodes an integer according to the wacky integer encoding rules
+    Encodes an integer according to the wacky integer encoding rules
     defined in the HPACK spec.
     """
     log.debug("Encoding %d with %d bits", integer, prefix_bits)
 
     if integer < 0:
-        raise ValueError(
-            "Can only encode positive integers, got %s" % integer
-        )
+        msg = f"Can only encode positive integers, got {integer}"
+        raise ValueError(msg)
 
     if prefix_bits < 1 or prefix_bits > 8:
-        raise ValueError(
-            "Prefix bits must be between 1 and 8, got %s" % prefix_bits
-        )
+        msg = f"Prefix bits must be between 1 and 8, got {prefix_bits}"
+        raise ValueError(msg)
 
     max_number = _PREFIX_BIT_MAX_NUMBERS[prefix_bits]
 
     if integer < max_number:
         return bytearray([integer])  # Seriously?
-    else:
-        elements = [max_number]
-        integer -= max_number
+    elements = [max_number]
+    integer -= max_number
 
-        while integer >= 128:
-            elements.append((integer & 127) + 128)
-            integer >>= 7
+    while integer >= 128:
+        elements.append((integer & 127) + 128)
+        integer >>= 7
 
-        elements.append(integer)
+    elements.append(integer)
 
-        return bytearray(elements)
+    return bytearray(elements)
 
 
-def decode_integer(data, prefix_bits):
+def decode_integer(data: bytes | memoryview, prefix_bits: int) -> tuple[int, int]:
     """
-    This decodes an integer according to the wacky integer encoding rules
+    Decodes an integer according to the wacky integer encoding rules
     defined in the HPACK spec. Returns a tuple of the decoded integer and the
     number of bytes that were consumed from ``data`` in order to get that
     integer.
     """
     if prefix_bits < 1 or prefix_bits > 8:
-        raise ValueError(
-            "Prefix bits must be between 1 and 8, got %s" % prefix_bits
-        )
+        msg = f"Prefix bits must be between 1 and 8, got {prefix_bits}"
+        raise ValueError(msg)
 
     max_number = _PREFIX_BIT_MAX_NUMBERS[prefix_bits]
     index = 1
@@ -118,39 +108,55 @@ def decode_integer(data, prefix_bits):
                     break
                 shift += 7
 
-    except IndexError:
-        raise HPACKDecodingError(
-            "Unable to decode HPACK integer representation from %r" % data
-        )
+                if index > VARINT_MAX_LENGTH:  # sanity check to prevent infinite loops
+                    # We have consumed more than enough bytes for a typical unsigned integer.
+                    # The maximum size is not defined in HPACK RFC7541 Section 5.1:
+                    #   > This integer representation allows for values of indefinite size.  It
+                    #   > is also possible for an encoder to send a large number of zero
+                    #   > values, which can waste octets and could be used to overflow integer
+                    #   > values.  Integer encodings that exceed implementation limits -- in
+                    #   > value or octet length -- MUST be treated as decoding errors.
+                    msg = f"Variable integer representation is too long: {data!r}"
+                    raise HPACKDecodingError(msg)
+
+    except IndexError as err:
+        msg = f"Unable to decode HPACK integer representation from {data!r}"
+        raise HPACKDecodingError(msg) from err
 
     log.debug("Decoded %d, consumed %d bytes", number, index)
 
     return number, index
 
 
-def _dict_to_iterable(header_dict):
+def _dict_to_iterable(header_dict: dict[bytes | str, bytes | str]) \
+        -> Iterable[tuple[bytes | str, bytes | str]]:
     """
-    This converts a dictionary to an iterable of two-tuples. This is a
+    Converts a dictionary to an iterable of key-value tuples. This is a
     HPACK-specific function because it pulls "special-headers" out first and
     then emits them.
     """
-    assert isinstance(header_dict, dict)
+    if not isinstance(header_dict, dict):  # pragma: no cover
+        msg = f"header_dict not a dict, but {type(header_dict)}"
+        raise TypeError(msg)
+
     keys = sorted(
         header_dict.keys(),
-        key=lambda k: not _to_bytes(k).startswith(b':')
+        key=lambda k: not _to_bytes(k).startswith(b":"),
     )
     for key in keys:
         yield key, header_dict[key]
 
 
-def _to_bytes(string):
+def _to_bytes(value: bytes | str | Any) -> bytes:
     """
-    Convert string to bytes.
+    Convert anything to bytes through a UTF-8 encoded string
     """
-    if not isinstance(string, basestring):  # pragma: no cover
-        string = str(string)
-
-    return string if isinstance(string, bytes) else string.encode('utf-8')
+    t = type(value)
+    if t is bytes:
+        return value  # type: ignore
+    if t is not str:
+        value = str(value)
+    return value.encode("utf-8")  # type: ignore
 
 
 class Encoder:
@@ -159,27 +165,33 @@ class Encoder:
     HTTP/2 header blocks.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.header_table = HeaderTable()
         self.huffman_coder = HuffmanEncoder(
-            REQUEST_CODES, REQUEST_CODES_LENGTH
+            REQUEST_CODES, REQUEST_CODES_LENGTH,
         )
-        self.table_size_changes = []
+        self.table_size_changes: list[int] = []
 
     @property
-    def header_table_size(self):
+    def header_table_size(self) -> int:
         """
         Controls the size of the HPACK header table.
         """
         return self.header_table.maxsize
 
     @header_table_size.setter
-    def header_table_size(self, value):
+    def header_table_size(self, value: int) -> None:
         self.header_table.maxsize = value
         if self.header_table.resized:
             self.table_size_changes.append(value)
 
-    def encode(self, headers, huffman=True):
+    def encode(self,
+               headers: Iterable[\
+                   HeaderTuple | \
+                   tuple[bytes | str, bytes | str] | \
+                   tuple[bytes | str, bytes | str, bool | None]] | \
+                   dict[bytes | str, bytes | str],
+               huffman: bool = True) -> bytes:
         """
         Takes a set of headers and encodes them into a HPACK-encoded header
         block.
@@ -231,47 +243,76 @@ class Encoder:
         # table. Otherwise, a literal representation will be used.
         header_block = []
 
-        # Turn the headers into a list of tuples if possible. This is the
-        # natural way to interact with them in HPACK. Because dictionaries are
-        # un-ordered, we need to make sure we grab the "special" headers first.
-        if isinstance(headers, dict):
-            headers = _dict_to_iterable(headers)
-
         # Before we begin, if the header table size has been changed we need
         # to signal all changes since last emission appropriately.
         if self.header_table.resized:
             header_block.append(self._encode_table_size_change())
             self.header_table.resized = False
 
+        if isinstance(headers, dict):
+            # Turn the headers into a list of tuples if possible. This is the
+            # natural way to interact with them in HPACK. Because dictionaries are
+            # un-ordered, we need to make sure we grab the "special" headers first.
+            hpack_headers = _dict_to_iterable(headers)
+        else:
+            """
+            Assume headers is an iterable of HeaderTuples, or plain 2-tuples, or plain 3-tuples:
+
+            examples:
+            [
+                HeaderTuple(':method', 'GET'),
+                NeverIndexedHeaderTuple('customkey', 'sensitiveinfo'),
+            ]
+            or
+            [
+                (':method', 'GET'),
+                ('customkey', 'some-data'),
+            ]
+            or
+            [
+                (':method', 'GET', True),
+                ('customkey', 'sensitiveinfo', True),
+            ]
+            """
+            hpack_headers = iter(headers)  # type: ignore
+
         # Add each header to the header block
-        for header in headers:
+        for header in hpack_headers:
             sensitive = False
             if isinstance(header, HeaderTuple):
+                # HeaderTuple implies it's a 2-tuple with the sensitive information stored as instance attribute
                 sensitive = not header.indexable
             elif len(header) > 2:
                 sensitive = header[2]
 
-            header = (_to_bytes(header[0]), _to_bytes(header[1]))
-            header_block.append(self.add(header, sensitive, huffman))
+            new_header = (_to_bytes(header[0]), _to_bytes(header[1]))
+            header_block.append(self.add(new_header, sensitive, huffman))
 
-        header_block = b''.join(header_block)
+        encoded = b"".join(header_block)
 
-        log.debug("Encoded header block to %s", header_block)
+        log.debug("Encoded header block to %s", encoded)
 
-        return header_block
+        return encoded
 
-    def add(self, to_add, sensitive, huffman=False):
+    def add(self, to_add: tuple[bytes, bytes], sensitive: bool, huffman: bool = False) -> bytes:
         """
-        This function takes a header key-value tuple and serializes it.
-        """
-        log.debug(
-            "Adding %s to the header table, sensitive:%s, huffman:%s",
-            to_add,
-            sensitive,
-            huffman
-        )
+        Serializes a header key-value tuple.
 
+        When sensitive is True, the header will not be added to the header table
+        (see https://www.rfc-editor.org/rfc/rfc7541.html#section-7.1.3 for details),
+        furthermore, the header value will be redacted in debug logs, as "SENSITIVE_REDACTED",
+        to prevent accidental exposure of sensitive information.
+        """
         name, value = to_add
+
+        display_value = value if not sensitive else b"SENSITIVE_REDACTED"
+        log.debug(
+            "Adding %s=%s to the header table, sensitive:%s, huffman:%s",
+            name,
+            display_value,
+            sensitive,
+            huffman,
+        )
 
         # Set our indexing mode
         indexbit = INDEX_INCREMENTAL if not sensitive else INDEX_NEVER
@@ -292,7 +333,7 @@ class Encoder:
         # can use the indexed literal.
         index, name, perfect = match
 
-        if perfect:
+        if perfect is not None:
             # Indexed representation.
             encoded = self._encode_indexed(index)
         else:
@@ -302,14 +343,14 @@ class Encoder:
             # indexing since they just take space in the table and
             # pushed out other valuable headers.
             encoded = self._encode_indexed_literal(
-                index, value, indexbit, huffman
+                index, value, indexbit, huffman,
             )
             if not sensitive:
                 self.header_table.add(name, value)
 
         return encoded
 
-    def _encode_indexed(self, index):
+    def _encode_indexed(self, index: int) -> bytes:
         """
         Encodes a header using the indexed representation.
         """
@@ -317,7 +358,7 @@ class Encoder:
         field[0] |= 0x80  # we set the top bit
         return bytes(field)
 
-    def _encode_literal(self, name, value, indexbit, huffman=False):
+    def _encode_literal(self, name: bytes, value: bytes, indexbit: bytes, huffman: bool = False) -> bytes:
         """
         Encodes a header with a literal name and literal value. If ``indexing``
         is True, the header will be added to the header table: otherwise it
@@ -334,11 +375,11 @@ class Encoder:
             name_len[0] |= 0x80
             value_len[0] |= 0x80
 
-        return b''.join(
-            [indexbit, bytes(name_len), name, bytes(value_len), value]
+        return b"".join(
+            [indexbit, bytes(name_len), name, bytes(value_len), value],
         )
 
-    def _encode_indexed_literal(self, index, value, indexbit, huffman=False):
+    def _encode_indexed_literal(self, index: int, value: bytes, indexbit: bytes, huffman: bool = False) -> bytes:
         """
         Encodes a header with an indexed name and a literal value and performs
         incremental indexing.
@@ -358,18 +399,18 @@ class Encoder:
         if huffman:
             value_len[0] |= 0x80
 
-        return b''.join([bytes(prefix), bytes(value_len), value])
+        return b"".join([bytes(prefix), bytes(value_len), value])
 
-    def _encode_table_size_change(self):
+    def _encode_table_size_change(self) -> bytes:
         """
         Produces the encoded form of all header table size change context
         updates.
         """
-        block = b''
+        block = b""
         for size_bytes in self.table_size_changes:
-            size_bytes = encode_integer(size_bytes, 5)
-            size_bytes[0] |= 0x20
-            block += bytes(size_bytes)
+            b = encode_integer(size_bytes, 5)
+            b[0] |= 0x20
+            block += bytes(b)
         self.table_size_changes = []
         return block
 
@@ -395,7 +436,8 @@ class Decoder:
         Defaults to 64kB.
     :type max_header_list_size: ``int``
     """
-    def __init__(self, max_header_list_size=DEFAULT_MAX_HEADER_LIST_SIZE):
+
+    def __init__(self, max_header_list_size: int = DEFAULT_MAX_HEADER_LIST_SIZE) -> None:
         self.header_table = HeaderTable()
 
         #: The maximum decompressed size we will allow for any single header
@@ -424,17 +466,17 @@ class Decoder:
         self.max_allowed_table_size = self.header_table.maxsize
 
     @property
-    def header_table_size(self):
+    def header_table_size(self) -> int:
         """
         Controls the size of the HPACK header table.
         """
         return self.header_table.maxsize
 
     @header_table_size.setter
-    def header_table_size(self, value):
+    def header_table_size(self, value: int) -> None:
         self.header_table.maxsize = value
 
-    def decode(self, data, raw=False):
+    def decode(self, data: bytes, raw: bool = False) -> Iterable[HeaderTuple]:
         """
         Takes an HPACK-encoded header block and decodes it into a header set.
 
@@ -452,7 +494,7 @@ class Decoder:
         log.debug("Decoding %s", data)
 
         data_mem = memoryview(data)
-        headers = []
+        headers: list[HeaderTuple] = []
         data_len = len(data)
         inflated_size = 0
         current_index = 0
@@ -461,51 +503,48 @@ class Decoder:
             # Work out what kind of header we're decoding.
             # If the high bit is 1, it's an indexed field.
             current = data[current_index]
-            indexed = True if current & 0x80 else False
+            indexed = bool(current & 0x80)
 
             # Otherwise, if the second-highest bit is 1 it's a field that does
             # alter the header table.
-            literal_index = True if current & 0x40 else False
+            literal_index = bool(current & 0x40)
 
             # Otherwise, if the third-highest bit is 1 it's an encoding context
             # update.
-            encoding_update = True if current & 0x20 else False
+            encoding_update = bool(current & 0x20)
 
             if indexed:
                 header, consumed = self._decode_indexed(
-                    data_mem[current_index:]
+                    data_mem[current_index:],
                 )
             elif literal_index:
                 # It's a literal header that does affect the header table.
                 header, consumed = self._decode_literal_index(
-                    data_mem[current_index:]
+                    data_mem[current_index:],
                 )
             elif encoding_update:
                 # It's an update to the encoding context. These are forbidden
                 # in a header block after any actual header.
                 if headers:
-                    raise HPACKDecodingError(
-                        "Table size update not at the start of the block"
-                    )
+                    msg = "Table size update not at the start of the block"
+                    raise HPACKDecodingError(msg)
                 consumed = self._update_encoding_context(
-                    data_mem[current_index:]
+                    data_mem[current_index:],
                 )
                 header = None
             else:
                 # It's a literal header that does not affect the header table.
                 header, consumed = self._decode_literal_no_index(
-                    data_mem[current_index:]
+                    data_mem[current_index:],
                 )
 
             if header:
                 headers.append(header)
-                inflated_size += table_entry_size(*header)
+                inflated_size += table_entry_size(header[0], header[1])
 
                 if inflated_size > self.max_header_list_size:
-                    raise OversizedHeaderListError(
-                        "A header list larger than %d has been received" %
-                        self.max_header_list_size
-                    )
+                    msg = f"A header list larger than {self.max_header_list_size} has been received"
+                    raise OversizedHeaderListError(msg)
 
             current_index += consumed
 
@@ -516,33 +555,32 @@ class Decoder:
 
         try:
             return [_unicode_if_needed(h, raw) for h in headers]
-        except UnicodeDecodeError:
-            raise HPACKDecodingError("Unable to decode headers as UTF-8.")
+        except UnicodeDecodeError as err:
+            msg = "Unable to decode headers as UTF-8"
+            raise HPACKDecodingError(msg) from err
 
-    def _assert_valid_table_size(self):
+    def _assert_valid_table_size(self) -> None:
         """
         Check that the table size set by the encoder is lower than the maximum
         we expect to have.
         """
         if self.header_table_size > self.max_allowed_table_size:
-            raise InvalidTableSizeError(
-                "Encoder did not shrink table size to within the max"
-            )
+            msg = "Encoder did not shrink table size to within the max"
+            raise InvalidTableSizeError(msg)
 
-    def _update_encoding_context(self, data):
+    def _update_encoding_context(self, data: bytes | memoryview) -> int:
         """
         Handles a byte that updates the encoding context.
         """
         # We've been asked to resize the header table.
         new_size, consumed = decode_integer(data, 5)
         if new_size > self.max_allowed_table_size:
-            raise InvalidTableSizeError(
-                "Encoder exceeded max allowable table size"
-            )
+            msg = "Encoder exceeded max allowable table size"
+            raise InvalidTableSizeError(msg)
         self.header_table_size = new_size
         return consumed
 
-    def _decode_indexed(self, data):
+    def _decode_indexed(self, data: bytes | memoryview) -> tuple[HeaderTuple, int]:
         """
         Decodes a header represented using the indexed representation.
         """
@@ -551,16 +589,19 @@ class Decoder:
         log.debug("Decoded %s, consumed %d", header, consumed)
         return header, consumed
 
-    def _decode_literal_no_index(self, data):
-        return self._decode_literal(data, False)
+    def _decode_literal_no_index(self, data: bytes | memoryview) -> tuple[HeaderTuple, int]:
+        return self._decode_literal(data, should_index=False)
 
-    def _decode_literal_index(self, data):
-        return self._decode_literal(data, True)
+    def _decode_literal_index(self, data: bytes | memoryview) -> tuple[HeaderTuple, int]:
+        return self._decode_literal(data, should_index=True)
 
-    def _decode_literal(self, data, should_index):
+    def _decode_literal(self, data: bytes | memoryview, should_index: bool) -> tuple[HeaderTuple, int]:
         """
         Decodes a header represented with a literal.
         """
+        if isinstance(data, memoryview):
+            data = data.tobytes()  # pragma: no cover
+
         total_consumed = 0
 
         # When should_index is true, if the low six bits of the first byte are
@@ -575,7 +616,7 @@ class Decoder:
             high_byte = data[0]
             indexed_name = high_byte & 0x0F
             name_len = 4
-            not_indexable = high_byte & 0x10
+            not_indexable = bool(high_byte & 0x10)
 
         if indexed_name:
             # Indexed header name.
@@ -592,7 +633,8 @@ class Decoder:
             length, consumed = decode_integer(data, 7)
             name = data[consumed:consumed + length]
             if len(name) != length:
-                raise HPACKDecodingError("Truncated header block")
+                msg = "Truncated header block"
+                raise HPACKDecodingError(msg)
 
             if data[0] & 0x80:
                 name = decode_huffman(name)
@@ -604,7 +646,8 @@ class Decoder:
         length, consumed = decode_integer(data, 7)
         value = data[consumed:consumed + length]
         if len(value) != length:
-            raise HPACKDecodingError("Truncated header block")
+            msg = "Truncated header block"
+            raise HPACKDecodingError(msg)
 
         if data[0] & 0x80:
             value = decode_huffman(value)
@@ -614,6 +657,7 @@ class Decoder:
 
         # If we have been told never to index the header field, encode that in
         # the tuple we use.
+        header: HeaderTuple
         if not_indexable:
             header = NeverIndexedHeaderTuple(name, value)
         else:
@@ -627,7 +671,7 @@ class Decoder:
             "Decoded %s, total consumed %d bytes, indexed %s",
             header,
             total_consumed,
-            should_index
+            should_index,
         )
 
         return header, total_consumed

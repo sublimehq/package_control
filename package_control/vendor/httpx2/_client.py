@@ -5,12 +5,11 @@ import enum
 import logging
 import time
 import typing
-from .. import warnings
+import warnings
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 from types import TracebackType
 
-from .. import warnings
 from .__version__ import __version__
 from ._auth import Auth, BasicAuth, FunctionAuth
 from ._config import (
@@ -141,8 +140,7 @@ class BoundSyncStream(SyncByteStream):
         self.elapsed: datetime.timedelta | None = None
 
     def __iter__(self) -> typing.Iterator[bytes]:
-        for chunk in self._stream:
-            yield chunk
+        yield from self._stream
 
     def close(self) -> None:
         self.elapsed = datetime.timedelta(seconds=time.perf_counter() - self._start)
@@ -651,7 +649,7 @@ class Client(BaseClient):
 
         if http2:
             try:
-                from .. import h2  # noqa
+                from .. import h2
             except ImportError:  # pragma: no cover
                 raise ImportError(
                     "Using http2=True, but the 'h2' package is not installed. "
@@ -815,7 +813,7 @@ class Client(BaseClient):
         follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
         timeout: TimeoutTypes | UseClientDefault = USE_CLIENT_DEFAULT,
         extensions: RequestExtensions | None = None,
-    ) -> typing.Iterator[Response]:
+    ) -> Generator[Response]:
         """
         Alternative to `httpx2.request()` that streams the response body
         instead of loading it into memory at once.
@@ -1488,7 +1486,7 @@ class AsyncClient(BaseClient):
 
         if http2:
             try:
-                from .. import h2  # noqa
+                from .. import h2
             except ImportError:  # pragma: no cover
                 raise ImportError(
                     "Using http2=True, but the 'h2' package is not installed. "
@@ -1653,7 +1651,7 @@ class AsyncClient(BaseClient):
         follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
         timeout: TimeoutTypes | UseClientDefault = USE_CLIENT_DEFAULT,
         extensions: RequestExtensions | None = None,
-    ) -> typing.AsyncIterator[Response]:
+    ) -> AsyncGenerator[Response]:
         """
         Alternative to `httpx2.request()` that streams the response body
         instead of loading it into memory at once.

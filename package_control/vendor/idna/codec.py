@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 import codecs
-from typing import Any, Optional
+from typing import Any
 
 from .core import IDNAError, _unicode_dots_re, alabel, decode, encode, ulabel
 
@@ -18,7 +19,7 @@ class Codec(codecs.Codec):
 
     def encode(self, data: str, errors: str = "strict") -> tuple[bytes, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError(f'Unsupported error handling "{errors}"')
+            raise IDNAError(f'Unsupported error handling "{errors}"', code="unsupported_errors")
 
         if not data:
             return b"", 0
@@ -27,7 +28,7 @@ class Codec(codecs.Codec):
 
     def decode(self, data: bytes, errors: str = "strict") -> tuple[str, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError(f'Unsupported error handling "{errors}"')
+            raise IDNAError(f'Unsupported error handling "{errors}"', code="unsupported_errors")
 
         if not data:
             return "", 0
@@ -49,7 +50,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
 
     def _buffer_encode(self, data: str, errors: str, final: bool) -> tuple[bytes, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError(f'Unsupported error handling "{errors}"')
+            raise IDNAError(f'Unsupported error handling "{errors}"', code="unsupported_errors")
 
         if not data:
             return b"", 0
@@ -74,7 +75,6 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
                 size += 1
             size += len(label)
 
-        # Join with U+002E
         result_bytes = b".".join(result) + trailing_dot
         size += len(trailing_dot)
         return result_bytes, size
@@ -92,13 +92,16 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
 
     def _buffer_decode(self, data: Any, errors: str, final: bool) -> tuple[str, int]:  # ty: ignore[invalid-method-override]
         if errors != "strict":
-            raise IDNAError(f'Unsupported error handling "{errors}"')
+            raise IDNAError(f'Unsupported error handling "{errors}"', code="unsupported_errors")
 
         if not data:
             return ("", 0)
 
         if not isinstance(data, str):
-            data = str(data, "ascii")
+            try:
+                data = str(data, "ascii")
+            except UnicodeDecodeError as err:
+                raise IDNAError("Invalid ASCII in A-label", code="invalid_ascii") from err
 
         labels = _unicode_dots_re.split(data)
         trailing_dot = ""
@@ -133,7 +136,7 @@ class StreamReader(Codec, codecs.StreamReader):
     pass
 
 
-def search_function(name: str) -> Optional[codecs.CodecInfo]:
+def search_function(name: str) -> codecs.CodecInfo | None:
     """Codec search function registered with :mod:`codecs`.
 
     Returns a :class:`codecs.CodecInfo` for the ``"idna2008"`` codec name

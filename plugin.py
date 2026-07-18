@@ -33,12 +33,12 @@ has_packed = os.path.exists(get_installed_package_path('Package Control'))
 has_unpacked = regular_file_exists('Package Control', 'plugin.py')
 
 # Ensure least requires ST version
-if int(sublime.version()) < 4000:
+if int(sublime.version()) < 4201:
     message = text.format(
         '''
         Package Control
 
-        This package requires Sublime Text 4107 or higher.
+        This package requires Sublime Text 4201 or higher.
 
         Please consider updating ST or install Package Control 4.
         '''
@@ -55,13 +55,13 @@ if int(sublime.version()) < 4000:
         from .package_control.bootstrap import disable_package_control
         disable_package_control()
 
-# Ensure running on python 3.8+
-elif sys.version_info < (3, 8):
+# Ensure running on python 3.14+
+elif sys.version_info < (3, 14):
     message = text.format(
         '''
         Package Control
 
-        This package requires python 3.8 or higher.
+        This package requires python 3.14 or higher.
 
         Please consider updating ST or install Package Control 4.
         '''

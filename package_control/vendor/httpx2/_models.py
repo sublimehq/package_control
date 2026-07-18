@@ -147,7 +147,7 @@ class Headers(typing.MutableMapping[str, str]):
         headers: HeaderTypes | None = None,
         encoding: str | None = None,
     ) -> None:
-        self._list = []  # type: typing.List[typing.Tuple[bytes, bytes, bytes]]
+        self._list: list[tuple[bytes, bytes, bytes]] = []
 
         if isinstance(headers, Headers):
             self._list = list(headers._list)
@@ -201,7 +201,7 @@ class Headers(typing.MutableMapping[str, str]):
         return [(raw_key, value) for raw_key, _, value in self._list]
 
     def keys(self) -> typing.KeysView[str]:
-        return {key.decode(self.encoding): None for _, key, value in self._list}.keys()
+        return {key.decode(self.encoding): None for _, key, _value in self._list}.keys()
 
     def values(self) -> typing.ValuesView[str]:
         values_dict: dict[str, str] = {}
@@ -270,7 +270,7 @@ class Headers(typing.MutableMapping[str, str]):
         if not split_commas:
             return values
 
-        split_values = []
+        split_values: list[str] = []
         for value in values:
             split_values.extend([item.strip() for item in value.split(",")])
         return split_values
@@ -1200,7 +1200,7 @@ class Cookies(typing.MutableMapping[str, str]):
         Delete all cookies. Optionally include a domain and path in
         order to only delete a subset of all the cookies.
         """
-        args = []
+        args: list[str] = []
         if domain is not None:
             args.append(domain)
         if path is not None:
@@ -1257,9 +1257,9 @@ class Cookies(typing.MutableMapping[str, str]):
             )
             self.request = request
 
-        def add_unredirected_header(self, key: str, value: str) -> None:
-            super().add_unredirected_header(key, value)
-            self.request.headers[key] = value
+        def add_unredirected_header(self, key: str, val: str) -> None:
+            super().add_unredirected_header(key, val)
+            self.request.headers[key] = val
 
     class _CookieCompatResponse:
         """
