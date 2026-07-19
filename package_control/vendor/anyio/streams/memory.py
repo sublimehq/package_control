@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import warnings
+from ... import warnings
 from collections import OrderedDict, deque
 from dataclasses import dataclass, field
 from types import TracebackType

@@ -8,7 +8,7 @@ import types
 import typing
 from collections.abc import AsyncGenerator
 
-import h11
+from ... import h11
 
 from .._backends.base import AsyncNetworkStream
 from .._exceptions import (

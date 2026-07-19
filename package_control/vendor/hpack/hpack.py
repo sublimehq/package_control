@@ -18,7 +18,7 @@ from .huffman_constants import (
 from .huffman_table import decode_huffman
 from .struct import HeaderTuple, NeverIndexedHeaderTuple
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("hpack.hpack")
 
 INDEX_NONE = b'\x00'
 INDEX_NEVER = b'\x10'

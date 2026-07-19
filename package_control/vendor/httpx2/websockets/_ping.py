@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 import threading
 
-import anyio
+from ... import anyio
 
 
 class PingManagerBase:
