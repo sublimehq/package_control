@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-import warnings
+from .. import warnings
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
 from json import dumps as json_dumps
 from typing import (

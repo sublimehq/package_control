@@ -2,7 +2,7 @@ from __future__ import annotations
 import bisect
 import re
 import unicodedata
-import warnings
+from .. import warnings
 from typing import Optional, Union
 
 from . import idnadata

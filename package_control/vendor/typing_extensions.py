@@ -11,7 +11,7 @@ import operator
 import sys
 import types as _types
 import typing
-import warnings
+from . import warnings
 
 __all__ = [
     # Super-special typing primitives.

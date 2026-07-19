@@ -32,7 +32,7 @@ elif typing.TYPE_CHECKING:
     from ..typing_extensions import deprecated as _deprecated
 else:  # pragma: no cover
     import functools
-    import warnings
+    from .. import warnings
 
     def _deprecated(message: str) -> object:
         def decorator(func: Callable[[...], object]) -> object:

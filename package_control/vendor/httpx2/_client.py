@@ -650,7 +650,7 @@ class Client(BaseClient):
 
         if http2:
             try:
-                import h2  # noqa
+                from .. import h2  # noqa
             except ImportError:  # pragma: no cover
                 raise ImportError(
                     "Using http2=True, but the 'h2' package is not installed. "
@@ -1487,7 +1487,7 @@ class AsyncClient(BaseClient):
 
         if http2:
             try:
-                import h2  # noqa
+                from .. import h2  # noqa
             except ImportError:  # pragma: no cover
                 raise ImportError(
                     "Using http2=True, but the 'h2' package is not installed. "
