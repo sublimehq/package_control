@@ -33,7 +33,7 @@ from types import TracebackType
 if typing.TYPE_CHECKING:
     import ssl  # pragma: no cover
 
-    import httpx2  # pragma: no cover
+    from ... import httpx2  # pragma: no cover
 
 from .._config import DEFAULT_LIMITS, Limits, Proxy, create_ssl_context
 from .._exceptions import (
@@ -72,7 +72,7 @@ HTTPCORE_EXC_MAP: dict[type[Exception], type[httpx2.HTTPError]] = {}
 
 
 def _load_httpcore_exceptions() -> dict[type[Exception], type[httpx2.HTTPError]]:
-    import httpcore2
+    from ... import httpcore2
 
     return {
         httpcore2.TimeoutException: TimeoutException,
@@ -147,7 +147,7 @@ class HTTPTransport(BaseTransport):
         retries: int = 0,
         socket_options: typing.Iterable[SOCKET_OPTION] | None = None,
     ) -> None:
-        import httpcore2
+        from ... import httpcore2
 
         proxy = Proxy(url=proxy) if isinstance(proxy, (str, URL)) else proxy
         ssl_context = create_ssl_context(verify=verify, cert=cert, trust_env=trust_env)
@@ -231,7 +231,7 @@ class HTTPTransport(BaseTransport):
         request: Request,
     ) -> Response:
         assert isinstance(request.stream, SyncByteStream)
-        import httpcore2
+        from ... import httpcore2
 
         req = httpcore2.Request(
             method=request.method,
@@ -290,7 +290,7 @@ class AsyncHTTPTransport(AsyncBaseTransport):
         retries: int = 0,
         socket_options: typing.Iterable[SOCKET_OPTION] | None = None,
     ) -> None:
-        import httpcore2
+        from ... import httpcore2
 
         proxy = Proxy(url=proxy) if isinstance(proxy, (str, URL)) else proxy
         ssl_context = create_ssl_context(verify=verify, cert=cert, trust_env=trust_env)
@@ -374,7 +374,7 @@ class AsyncHTTPTransport(AsyncBaseTransport):
         request: Request,
     ) -> Response:
         assert isinstance(request.stream, AsyncByteStream)
-        import httpcore2
+        from ... import httpcore2
 
         req = httpcore2.Request(
             method=request.method,

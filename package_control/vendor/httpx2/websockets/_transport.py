@@ -5,10 +5,10 @@ import math
 import typing
 from types import TracebackType
 
-import anyio
-import wsproto
-from anyio.streams.stapled import StapledObjectStream
-from wsproto.frame_protocol import CloseReason
+from ... import anyio
+from ... import wsproto
+from ...anyio.streams.stapled import StapledObjectStream
+from ...wsproto.frame_protocol import CloseReason
 
 from .._models import Request, Response
 from .._transports.asgi import ASGITransport, _ASGIApp

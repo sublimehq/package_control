@@ -55,7 +55,7 @@ def __dir__() -> list[str]:
     return __all__
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("packaging.tags")
 
 PythonVersion = Sequence[int]
 AppleVersion = Tuple[int, int]

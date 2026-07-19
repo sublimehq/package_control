@@ -27,9 +27,9 @@ def create_ssl_context(
     trust_env: bool = True,
 ) -> ssl.SSLContext:
     import ssl
-    import warnings
+    from .. import warnings
 
-    import httpcore2
+    from .. import httpcore2
 
     if verify is True:
         ctx = httpcore2.default_ssl_context(_trust_env=trust_env)
@@ -143,7 +143,7 @@ class Timeout:
         return f"{class_name}(connect={self.connect}, read={self.read}, write={self.write}, pool={self.pool})"
 
 
-@dataclasses.dataclass(kw_only=True)
+@dataclasses.dataclass()
 class Limits:
     """
     Configuration for limits to various client behaviors.

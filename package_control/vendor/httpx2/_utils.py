@@ -190,7 +190,7 @@ class URLPattern:
 
         url = URL(pattern)
         self.network = None
-        prefix = url.path.removeprefix("/")
+        prefix = url.path[1:] if url.path.startswith("/") else url.path
         if prefix and (is_ipv4_hostname(url.host) or is_ipv6_hostname(url.host)):
             # A CIDR-style host, e.g. "all://192.168.0.0/16" or "all://[::1]/64".
             host = f"[{url.host}]" if ":" in url.host else url.host

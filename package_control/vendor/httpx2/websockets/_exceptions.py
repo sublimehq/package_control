@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    import wsproto
+    from ... import wsproto
 
     from .._models import Response
 

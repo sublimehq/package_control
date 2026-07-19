@@ -39,7 +39,7 @@ class _AliasFinder(importlib.abc.MetaPathFinder):
     ) -> importlib.machinery.ModuleSpec | None:
         if fullname != self._alias and not fullname.startswith(self._alias + "."):
             return None
-        real_name = self._real + fullname.removeprefix(self._alias)
+        real_name = self._real + fullname[len(self._alias) :]
         if real_name not in sys.modules and importlib.util.find_spec(real_name) is None:
             return None
         return importlib.machinery.ModuleSpec(fullname, _AliasLoader(real_name))
@@ -64,8 +64,8 @@ def alias_httpx() -> None:
 
     Must be called before anything imports `httpx` or `httpcore`. Calling it again is a no-op.
     """
-    import httpcore2
-    import httpx2
+    from .. import httpcore2
+    from .. import httpx2
 
     _alias("httpx", httpx2)
     _alias("httpcore", httpcore2)
