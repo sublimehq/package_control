@@ -8,7 +8,7 @@ import types
 import typing
 from collections.abc import Generator
 
-import h11
+from ... import h11
 
 from .._backends.base import NetworkStream
 from .._exceptions import (

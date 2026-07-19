@@ -6,7 +6,7 @@ import functools
 import os
 import re
 import sys
-import warnings
+from .. import warnings
 from typing import Generator, Iterator, NamedTuple, Sequence
 
 from ._elffile import EIClass, EIData, ELFFile, EMachine

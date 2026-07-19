@@ -14,7 +14,7 @@ except (ImportError, NotImplementedError):  # pragma: no cover
     trio = None  # type: ignore
 
 try:
-    import anyio
+    from .. import anyio
 except ImportError:  # pragma: no cover
     anyio = None  # type: ignore
 

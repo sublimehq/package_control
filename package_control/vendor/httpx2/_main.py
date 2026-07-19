@@ -20,7 +20,7 @@ from ._models import Response
 from ._status_codes import codes
 
 if typing.TYPE_CHECKING:
-    import httpcore2  # pragma: no cover
+    from .. import httpcore2  # pragma: no cover
 
 
 def print_help() -> None:

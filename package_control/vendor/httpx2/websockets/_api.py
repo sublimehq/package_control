@@ -14,13 +14,14 @@ from types import TracebackType
 if sys.version_info >= (3, 13):
     from typing import TypeVar  # pragma: no cover
 else:
-    from typing_extensions import TypeVar  # pragma: no cover
+    from ...typing_extensions import TypeVar  # pragma: no cover
 
-import anyio
-import wsproto
-import wsproto.utilities
-from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from wsproto.frame_protocol import CloseReason
+from ... import anyio
+from ... import wsproto
+from ...wsproto.utilities import wsp_utilities
+wsproto.utilities = wsp_utilities
+from ...anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
+from ...wsproto.frame_protocol import CloseReason
 
 from .._client import USE_CLIENT_DEFAULT
 from .._config import (
@@ -41,7 +42,7 @@ from ._ping import AsyncPingManager, PingManager
 from ._transport import ASGIWebSocketAsyncNetworkStream
 
 if typing.TYPE_CHECKING:
-    from httpcore2 import AsyncNetworkStream, NetworkStream
+    from ...httpcore2 import AsyncNetworkStream, NetworkStream
 
     from .._client import AsyncClient, Client, UseClientDefault
     from .._models import Response
@@ -200,7 +201,7 @@ class WebSocketSession:
                 event = wsproto.events.Message(b"Hello!")
                 ws.send(event)
         """
-        import httpcore2
+        from ... import httpcore2
 
         try:
             data = self.connection.send(event)
@@ -469,7 +470,7 @@ class WebSocketSession:
 
                 ws.close()
         """
-        import httpcore2
+        from ... import httpcore2
 
         self._should_close.set()
         if self._executor is not None:
@@ -501,7 +502,7 @@ class WebSocketSession:
         Args:
             max_bytes: The maximum chunk size to read at each iteration.
         """
-        import httpcore2
+        from ... import httpcore2
 
         partial_message_buffer: str | bytes | None = None
         partial_message_size = 0
@@ -738,7 +739,7 @@ class AsyncWebSocketSession(anyio.AsyncContextManagerMixin):
                 event = await wsproto.events.Message(b"Hello!")
                 ws.send(event)
         """
-        import httpcore2
+        from ... import httpcore2
 
         try:
             data = self.connection.send(event)
@@ -1040,7 +1041,7 @@ class AsyncWebSocketSession(anyio.AsyncContextManagerMixin):
 
                 await ws.close()
         """
-        import httpcore2
+        from ... import httpcore2
 
         self._should_close.set()
         if self.connection.state not in {
@@ -1070,7 +1071,7 @@ class AsyncWebSocketSession(anyio.AsyncContextManagerMixin):
         Args:
             max_bytes: The maximum chunk size to read at each iteration.
         """
-        import httpcore2
+        from ... import httpcore2
 
         partial_message_buffer: str | bytes | None = None
         partial_message_size = 0

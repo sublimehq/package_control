@@ -22,7 +22,7 @@ import ipaddress
 import re
 import typing
 
-import idna
+from .. import idna
 
 from ._exceptions import InvalidURL
 

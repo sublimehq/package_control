@@ -27,9 +27,10 @@ def create_ssl_context(
     trust_env: bool = True,
 ) -> ssl.SSLContext:
     import ssl
-    import warnings
+    from .. import warnings
 
     import certifi
+
 
     if verify is True:
         if trust_env and os.environ.get("SSL_CERT_FILE"):  # pragma: no cover
@@ -149,7 +150,7 @@ class Timeout:
         return f"{class_name}(connect={self.connect}, read={self.read}, write={self.write}, pool={self.pool})"
 
 
-@dataclasses.dataclass(kw_only=True)
+@dataclasses.dataclass()
 class Limits:
     """
     Configuration for limits to various client behaviors.
