@@ -6,12 +6,12 @@ import typing
 from dataclasses import dataclass
 from urllib.parse import parse_qs, unquote, urlencode
 
-import idna
+from .. import idna
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated  # pragma: no cover
 else:
-    from typing_extensions import deprecated  # pragma: no cover
+    from ..typing_extensions import deprecated  # pragma: no cover
 
 from ._exceptions import HTTPXDeprecationWarning
 from ._types import QueryParamTypes
@@ -439,7 +439,7 @@ _ORIGIN_DEFAULT_PORTS = {
 }
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(frozen=True, init=False)
 class Origin:
     """
     The scheme, host, and effective port of a URL.
