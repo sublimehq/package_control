@@ -636,10 +636,6 @@ class PackageManager:
         # Repositories are run in reverse order so that the ones first
         # on the list will overwrite those last on the list
         for repo in reversed(self.list_repositories()):
-            if re.match(r'https?://([^.]+\.)*package-control\.io', repo):
-                console_write('Removed malicious repository %s' % repo)
-                continue
-
             if repo[:8].lower() == "file:///":
                 repository_packages = None
                 repository_libraries = None
