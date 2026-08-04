@@ -27,7 +27,7 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
             manager = PackageManager()
 
             with ActivityIndicator("Loading libraries...") as progress:
-                libraries = manager.list_available_libraries()
+                libraries = manager.registry.get_libraries()
                 if not libraries:
                     message = "There are no libraries available for installation"
                     console_write(message)

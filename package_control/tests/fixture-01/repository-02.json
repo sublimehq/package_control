@@ -1,0 +1,18 @@
+{
+	"$schema": "sublime://packagecontrol.io/schemas/repository",
+	"schema_version": "4.0.0",
+	"packages": [
+		{
+			"name": "package-from-repository-01",
+			"description": "This is a package",
+			"author": "test-user",
+			"releases": [
+				{
+					"url": "https://server.com/downloads/test-package.sublime-package",
+					"date": "2022-01-01 00:00:00",
+					"version": "2.0.0"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,34 @@
+{
+	"$schema": "sublime://packagecontrol.io/schemas/repository",
+	"schema_version": "4.0.0",
+	"includes": [
+		"./repository-05.json",
+		"./repository-06.json"
+	],
+	"packages": [
+		{
+			"name": "package-from-repository-01",
+			"description": "This is a package",
+			"author": "test-user",
+			"releases": [
+				{
+					"url": "https://server.com/downloads/test-package.sublime-package",
+					"date": "2024-01-01 00:00:00",
+					"version": "4.0.0"
+				}
+			]
+		},
+		{
+			"name": "package-from-repository-04",
+			"description": "This package is used",
+			"author": "test-user",
+			"releases": [
+				{
+					"url": "https://server.com/downloads/test-package.sublime-package",
+					"date": "2024-01-01 00:00:00",
+					"version": "4.0.0"
+				}
+			]
+		}
+	]
+}

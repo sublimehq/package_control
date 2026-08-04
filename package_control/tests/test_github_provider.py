@@ -21,7 +21,7 @@ class GitHubProviderTests(unittest.TestCase):
 
     def settings(self):
         if not GH_PASS:
-            self.skipTest("GitHub personal access token for %s not set via env var GH_PASS" % GH_USER)
+            self.skipTest("GitHub personal access token for {} not set via env var GH_PASS".format(GH_USER))
 
         return {
             "debug": DEBUG,
@@ -52,7 +52,7 @@ class GitHubProviderTests(unittest.TestCase):
             "https://github.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_libraries()))
+        self.assertEqual([], provider.get_libraries())
 
     def test_get_broken_libraries(self):
         provider = GitHubProvider(
@@ -78,8 +78,7 @@ class GitHubProviderTests(unittest.TestCase):
                               "/package_control-tester/master/readme.md",
                     "issues": "https://github.com/packagecontrol-test/package_control-tester/issues",
                     "donate": None,
-                    "buy": None,
-                    "sources": ["https://github.com/packagecontrol-test/package_control-tester"],
+                    "source": "https://github.com/packagecontrol-test/package_control-tester",
                     "labels": [],
                     "previous_names": [],
                     "releases": [
@@ -95,7 +94,44 @@ class GitHubProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            list(provider.get_packages())
+            provider.get_packages()
+        )
+
+    def test_get_mapped_packages(self):
+        provider = GitHubProvider(
+            "https://github.com/packagecontrol-test/package_control-tester",
+            self.settings()
+        )
+        provider.settings["package_name_map"] = {"package_control-tester": "Package Control Tester"}
+        self.assertEqual(
+            [
+               {
+                    "name": "Package Control Tester",
+                    "description": "A test of Package Control upgrade messages with "
+                                   "explicit versions, but date-based releases.",
+                    "homepage": "https://github.com/packagecontrol-test/package_control-tester",
+                    "author": "packagecontrol-test",
+                    "readme": "https://raw.githubusercontent.com/packagecontrol-test"
+                              "/package_control-tester/master/readme.md",
+                    "issues": "https://github.com/packagecontrol-test/package_control-tester/issues",
+                    "donate": None,
+                    "source": "https://github.com/packagecontrol-test/package_control-tester",
+                    "labels": [],
+                    "previous_names": [],
+                    "releases": [
+                        {
+                            "date": LAST_COMMIT_TIMESTAMP,
+                            "version": LAST_COMMIT_VERSION,
+                            "url": "https://codeload.github.com/packagecontrol-test"
+                                   "/package_control-tester/zip/master",
+                            "sublime_text": "*",
+                            "platforms": ["*"]
+                        }
+                    ],
+                    "last_modified": LAST_COMMIT_TIMESTAMP
+                }
+            ],
+            provider.get_packages()
         )
 
     def test_get_broken_packages(self):
@@ -111,13 +147,3 @@ class GitHubProviderTests(unittest.TestCase):
             self.settings()
         )
         self.assertEqual({}, provider.get_renamed_packages())
-
-    def test_get_sources(self):
-        provider = GitHubProvider(
-            "https://github.com/packagecontrol-test/package_control-tester",
-            self.settings()
-        )
-        self.assertEqual(
-            ["https://github.com/packagecontrol-test/package_control-tester"],
-            provider.get_sources()
-        )

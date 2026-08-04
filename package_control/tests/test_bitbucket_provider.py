@@ -21,7 +21,7 @@ class BitBucketProviderTests(unittest.TestCase):
 
     def settings(self):
         if not BB_PASS:
-            self.skipTest("BitBucket app password for %s not set via env var BB_PASS" % BB_USER)
+            self.skipTest("BitBucket app password for {} not set via env var BB_PASS".format(BB_USER))
 
         return {
             "debug": DEBUG,
@@ -52,7 +52,7 @@ class BitBucketProviderTests(unittest.TestCase):
             "https://bitbucket.org/wbond/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_libraries()))
+        self.assertEqual([], provider.get_libraries())
 
     def test_get_broken_libraries(self):
         provider = BitBucketProvider(
@@ -77,8 +77,7 @@ class BitBucketProviderTests(unittest.TestCase):
                     "readme": "https://bitbucket.org/wbond/package_control-tester/raw/master/readme.md",
                     "issues": "https://bitbucket.org/wbond/package_control-tester/issues",
                     "donate": None,
-                    "buy": None,
-                    "sources": ["https://bitbucket.org/wbond/package_control-tester"],
+                    "source": "https://bitbucket.org/wbond/package_control-tester",
                     "labels": [],
                     "previous_names": [],
                     "releases": [
@@ -93,7 +92,42 @@ class BitBucketProviderTests(unittest.TestCase):
                     "last_modified": LAST_COMMIT_TIMESTAMP
                 }
             ],
-            list(provider.get_packages())
+            provider.get_packages()
+        )
+
+    def test_get_mapped_packages(self):
+        provider = BitBucketProvider(
+            "https://bitbucket.org/wbond/package_control-tester",
+            self.settings()
+        )
+        provider.settings["package_name_map"] = {"package_control-tester": "Package Control Tester"}
+        self.assertEqual(
+            [
+                {
+                    "name": "Package Control Tester",
+                    "description": "A test of Package Control upgrade messages with "
+                                   "explicit versions, but date-based releases.",
+                    "homepage": "https://bitbucket.org/wbond/package_control-tester",
+                    "author": "wbond",
+                    "readme": "https://bitbucket.org/wbond/package_control-tester/raw/master/readme.md",
+                    "issues": "https://bitbucket.org/wbond/package_control-tester/issues",
+                    "donate": None,
+                    "source": "https://bitbucket.org/wbond/package_control-tester",
+                    "labels": [],
+                    "previous_names": [],
+                    "releases": [
+                        {
+                            "date": LAST_COMMIT_TIMESTAMP,
+                            "version": LAST_COMMIT_VERSION,
+                            "url": "https://bitbucket.org/wbond/package_control-tester/get/master.zip",
+                            "sublime_text": "*",
+                            "platforms": ["*"]
+                        }
+                    ],
+                    "last_modified": LAST_COMMIT_TIMESTAMP
+                }
+            ],
+            provider.get_packages()
         )
 
     def test_get_broken_packages(self):
@@ -109,13 +143,3 @@ class BitBucketProviderTests(unittest.TestCase):
             self.settings()
         )
         self.assertEqual({}, provider.get_renamed_packages())
-
-    def test_get_sources(self):
-        provider = BitBucketProvider(
-            "https://bitbucket.org/wbond/package_control-tester",
-            self.settings()
-        )
-        self.assertEqual(
-            ["https://bitbucket.org/wbond/package_control-tester"],
-            provider.get_sources()
-        )

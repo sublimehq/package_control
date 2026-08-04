@@ -10,39 +10,21 @@ class InvalidChannelFileException(ProviderException):
 
     def __init__(self, provider, reason_message):
         self.reason_message = reason_message
-        self.url = provider.channel_url
+        self.url = provider.url
 
     def __str__(self):
         return ('Channel {} does not appear to be a valid channel file because "{}".'
                 .format(self.url, self.reason_message))
 
 
-class UncachedChannelRepositoryError(ProviderException):
-    pass
-
-
 class InvalidRepoFileException(ProviderException):
     def __init__(self, provider, reason_message):
         self.reason_message = reason_message
-        self.url = provider.repo_url
+        self.url = provider.url
 
     def __str__(self):
         return ('Repository {} does not appear to be a valid repository file because'
                 ' {}'.format(self.url, self.reason_message))
-
-
-class InvalidLibraryReleaseKeyError(ProviderException):
-    def __init__(self, repo, name, key):
-        super().__init__(
-            'Invalid or missing release-level key "{}" in library "{}"'
-            ' in repository "{}".'.format(key, name, repo))
-
-
-class InvalidPackageReleaseKeyError(ProviderException):
-    def __init__(self, repo, name, key):
-        super().__init__(
-            'Invalid or missing release-level key "{}" in package "{}"'
-            ' in repository "{}".'.format(key, name, repo))
 
 
 class GitProviderUserInfoException(ProviderException):
@@ -55,7 +37,7 @@ class GitProviderUserInfoException(ProviderException):
 
     def __init__(self, provider):
         self.provider_name = provider.__class__.__name__
-        self.url = provider.repo_url
+        self.url = provider.url
 
     def __str__(self):
         return ('{} unable to fetch user information from "{}".'
@@ -72,7 +54,7 @@ class GitProviderRepoInfoException(ProviderException):
 
     def __init__(self, provider):
         self.provider_name = provider.__class__.__name__
-        self.url = provider.repo_url
+        self.url = provider.url
 
     def __str__(self):
         return ('{} unable to fetch repo information from "{}".'
@@ -89,7 +71,7 @@ class GitProviderDownloadInfoException(ProviderException):
 
     def __init__(self, provider, url=None):
         self.provider_name = provider.__class__.__name__
-        self.url = url or provider.repo_url
+        self.url = url or provider.url
 
     def __str__(self):
         return ('{} unable to fetch download information from "{}".'

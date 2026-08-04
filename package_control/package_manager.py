@@ -6,9 +6,7 @@ import re
 import shutil
 import tempfile
 import time
-import traceback
 import zipfile
-from concurrent import futures
 from functools import partial
 from io import BytesIO
 from stat import S_IXUSR
@@ -17,14 +15,8 @@ from urllib.parse import urlencode
 
 import sublime
 
-from . import __version__, library, pep440, sys_path
-from .cache import (
-    clear_cache,
-    get_cache,
-    merge_cache_under_settings,
-    set_cache,
-    set_cache_under_settings,
-)
+from . import library, pep440, sys_path
+from .cache import clear_cache, get_cache, set_cache
 from .clear_directory import clear_directory, delete_directory
 from .console_write import console_write
 from .download_manager import http_get
@@ -42,9 +34,8 @@ from .package_io import (
     regular_file_exists,
     zip_file_exists,
 )
+from .package_registry import PackageRegistry
 from .package_version import PackageVersion, version_sort
-from .providers import channel_provider_for, repo_provider_for
-from .providers.provider_exception import UncachedChannelRepositoryError
 from .selectors import (
     get_compatible_platform,
     is_compatible_platform,
@@ -84,8 +75,6 @@ class PackageManager:
         Constructs a new instance.
         """
 
-        self._available_packages = None
-        self._available_libraries = None
         self.session_time = datetime.datetime.now()
 
         self.settings = {}
@@ -123,7 +112,6 @@ class PackageManager:
             'proxy_username',
             'remove_orphaned',
             'remove_orphaned_environments',
-            'renamed_packages',
             'repositories',
             'submit_url',
             'submit_usage',
@@ -154,6 +142,8 @@ class PackageManager:
         self.settings['platform'] = sublime.platform()
         self.settings['arch'] = sublime.arch()
         self.settings['version'] = int(sublime.version())
+
+        self.registry = PackageRegistry(self.settings)
 
         # Use the cache to see if settings have changed since the last
         # time the package manager was created, and clearing any cached
@@ -407,34 +397,6 @@ class PackageManager:
 
         return None
 
-    def select_releases(self, package_name, releases):
-        """
-        Returns all releases in the list of releases that are compatible with
-        the current platform and version of Sublime Text
-
-        :param package_name:
-            The name of the package
-
-        :param releases:
-            A list of release dicts
-
-        :return:
-            A list of release dicts
-        """
-
-        install_prereleases = self.settings.get('install_prereleases')
-        allow_prereleases = (
-            install_prereleases is True
-            or isinstance(install_prereleases, list) and package_name in install_prereleases
-        )
-
-        return [
-            release for release in releases
-            if is_compatible_platform(release['platforms'])
-            and is_compatible_version(release['sublime_text'])
-            and (allow_prereleases or PackageVersion(release['version']).is_final)
-        ]
-
     def select_libraries(self, library_info):
         """
         Takes the a dict from a dependencies.json file and returns the
@@ -461,315 +423,6 @@ class PackageManager:
         # If there were no matches in the info, but there also weren't any
         # errors, then it just means there are not libraries for this machine
         return []
-
-    def list_repositories(self):
-        """
-        Returns a master list of all repositories pulled from all sources
-
-        These repositories come from the channels specified in the
-        "channels" setting, plus any repositories listed in the
-        "repositories" setting.
-
-        :return:
-            A list of all available repositories
-        """
-
-        cache_ttl = self.settings.get('cache_length', 300)
-        channels = self.settings.get('channels', [])
-        # create copy to prevent backlash to settings object due to being extended
-        repositories = self.settings.get('repositories', []).copy()
-
-        # Update any old default channel URLs users have in their config
-        found_default = False
-        for channel in channels:
-            channel = channel.strip()
-
-            if re.match(r'https?://([^.]+\.)*package-control\.io', channel):
-                console_write('Removed malicious channel %s' % channel)
-                continue
-
-            if channel in OLD_DEFAULT_CHANNELS:
-                if found_default:
-                    continue
-                found_default = True
-                channel = DEFAULT_CHANNEL
-
-            # Caches various info from channels for performance
-            cache_key = channel + '.repositories'
-            if channel[:8].lower() == "file:///":
-                channel_repositories = None
-            else:
-                channel_repositories = get_cache(cache_key)
-
-            merge_cache_under_settings(self, 'renamed_packages', channel)
-            merge_cache_under_settings(self, 'unavailable_packages', channel, list_=True)
-            merge_cache_under_settings(self, 'unavailable_libraries', channel, list_=True)
-
-            # If any of the info was not retrieved from the cache, we need to
-            # grab the channel to get it
-            if channel_repositories is None:
-
-                provider = channel_provider_for(channel, self.settings)
-                if not provider:
-                    continue
-
-                try:
-                    channel_repositories = provider.get_sources()
-                    if channel[:8].lower() != "file:///":
-                        set_cache(cache_key, channel_repositories, cache_ttl)
-
-                    unavailable_packages = []
-                    unavailable_libraries = []
-
-                    for repo in channel_repositories:
-
-                        try:
-                            filtered_packages = {}
-                            for info in provider.get_packages(repo):
-                                name = info['name']
-                                info['releases'] = self.select_releases(name, info['releases'])
-                                if info['releases']:
-                                    filtered_packages[name] = info
-                                else:
-                                    unavailable_packages.append(name)
-
-                            packages_cache_key = repo + '.packages'
-                            set_cache(packages_cache_key, filtered_packages, cache_ttl)
-
-                        except UncachedChannelRepositoryError:
-                            pass
-
-                        try:
-                            filtered_libraries = {}
-                            for info in provider.get_libraries(repo):
-                                # Convert legacy dependency names to official pypi package names.
-                                # This is required for forward compatibility with upcomming changes
-                                # in scheme 4.0.0. Do it here to apply only on client side.
-                                name = info['name'] = library.translate_name(info['name'])
-
-                                info['releases'] = self.select_releases(name, info['releases'])
-                                if info['releases']:
-                                    dist_name = library.escape_name(name).lower()
-                                    filtered_libraries[dist_name] = info
-                                else:
-                                    unavailable_libraries.append(name)
-
-                            libraries_cache_key = repo + '.libraries'
-                            set_cache(libraries_cache_key, filtered_libraries, cache_ttl)
-
-                        except UncachedChannelRepositoryError:
-                            pass
-
-                    renamed_packages = provider.get_renamed_packages()
-                    set_cache_under_settings(self, 'renamed_packages', channel, renamed_packages, cache_ttl)
-
-                    set_cache_under_settings(
-                        self,
-                        'unavailable_packages',
-                        channel,
-                        unavailable_packages,
-                        cache_ttl,
-                        list_=True
-                    )
-                    set_cache_under_settings(
-                        self,
-                        'unavailable_libraries',
-                        channel,
-                        unavailable_libraries,
-                        cache_ttl,
-                        list_=True
-                    )
-
-                except DownloaderException as e:
-                    console_write(e)
-                    continue
-
-            repositories.extend(channel_repositories)
-
-        return [repo.strip() for repo in repositories]
-
-    def fetch_available(self):
-        """
-        Fetch available packages and libraries from available sources.
-
-        use results from:
-
-        1. in-memory cache (if not out-dated)
-        2. http cache (if remote returns 304)
-        3. download info from remote and store in caches
-
-        :return:
-            Nothing
-        """
-
-        if self.settings.get('debug'):
-            console_write(
-                '''
-                Fetching list of available packages and libraries
-                  Platform: %s-%s
-                  Sublime Text Version: %s
-                  Package Control Version: %s
-                ''',
-                (
-                    self.settings['platform'],
-                    self.settings['arch'],
-                    self.settings['version'],
-                    __version__
-                )
-            )
-
-        cache_ttl = self.settings.get('cache_length', 300)
-        name_map = self.settings.get('package_name_map', {})
-        downloaders = []
-        executor = None
-        providers = []
-        packages = {}
-        libraries = {}
-
-        def download_repo(url):
-            try:
-                provider = repo_provider_for(url, self.settings)
-                if provider:
-                    provider.prefetch()
-                    providers.append(provider)
-            except BaseException:
-                traceback.print_exc()
-
-        # Repositories are run in reverse order so that the ones first
-        # on the list will overwrite those last on the list
-        for repo in reversed(self.list_repositories()):
-            if re.match(r'https?://([^.]+\.)*package-control\.io', repo):
-                console_write('Removed malicious repository %s' % repo)
-                continue
-
-            if repo[:8].lower() == "file:///":
-                repository_packages = None
-                repository_libraries = None
-            else:
-                cache_key = repo + '.packages'
-                repository_packages = get_cache(cache_key)
-                if repository_packages:
-                    packages.update(repository_packages)
-
-                cache_key = repo + '.libraries'
-                repository_libraries = get_cache(cache_key)
-                if repository_libraries:
-                    libraries.update(repository_libraries)
-
-            if repository_packages is None and repository_libraries is None:
-                if executor is None:
-                    executor = futures.ThreadPoolExecutor(max_workers=10)
-                downloaders.append(executor.submit(download_repo, repo))
-
-        # wait for downloads to complete
-        futures.wait(downloaders)
-
-        # Grabs the results and stuff it all in the cache
-        for provider in providers:
-            repository_packages = {}
-            unavailable_packages = []
-            for info in provider.get_packages():
-                name = info['name']
-                name = info['name'] = name_map.get(name, name)
-                info['releases'] = self.select_releases(name, info['releases'])
-                if info['releases']:
-                    repository_packages[name] = info
-                else:
-                    unavailable_packages.append(name)
-
-            repository_libraries = {}
-            unavailable_libraries = []
-            for info in provider.get_libraries():
-                # Convert legacy dependency names to official pypi package names.
-                # This is required for forward compatibility with upcomming changes
-                # in scheme 4.0.0. Do it here to apply only on client side.
-                name = info['name'] = library.translate_name(info['name'])
-
-                info['releases'] = self.select_releases(name, info['releases'])
-                if info['releases']:
-                    dist_name = library.escape_name(name).lower()
-                    repository_libraries[dist_name] = info
-                else:
-                    unavailable_libraries.append(name)
-
-            # Display errors we encountered while fetching package info
-            for _, exception in provider.get_failed_sources():
-                console_write(exception)
-            for _, exception in provider.get_broken_packages():
-                console_write(exception)
-            for _, exception in provider.get_broken_libraries():
-                console_write(exception)
-
-            if provider.repo_url[:8].lower() != "file:///":
-                cache_key = provider.repo_url + '.packages'
-                set_cache(cache_key, repository_packages, cache_ttl)
-                cache_key = provider.repo_url + '.libraries'
-                set_cache(cache_key, repository_libraries, cache_ttl)
-
-            packages.update(repository_packages)
-            libraries.update(repository_libraries)
-
-            renamed_packages = provider.get_renamed_packages()
-            set_cache_under_settings(self, 'renamed_packages', provider.repo_url, renamed_packages, cache_ttl)
-
-            set_cache_under_settings(
-                self,
-                'unavailable_packages',
-                provider.repo_url,
-                unavailable_packages,
-                cache_ttl,
-                list_=True
-            )
-            set_cache_under_settings(
-                self,
-                'unavailable_libraries',
-                provider.repo_url,
-                unavailable_libraries,
-                cache_ttl,
-                list_=True
-            )
-
-        self._available_packages = packages
-        self._available_libraries = libraries
-
-    def list_available_libraries(self):
-        """
-        Returns a master list of every available library from all sources that
-        are compatible with the version of Python specified
-
-        :return:
-            A dict in the format:
-            {
-                'Library Name': {
-                    # library details - see example-repository.json for format
-                },
-                ...
-            }
-        """
-
-        if self._available_libraries is None:
-            self.fetch_available()
-
-        return self._available_libraries or {}
-
-    def list_available_packages(self):
-        """
-        Returns a master list of every available package from all sources
-
-        :return:
-            A dict in the format:
-            {
-                'Package Name': {
-                    # Package details - see example-repository.json for format
-                },
-                ...
-            }
-        """
-
-        if self._available_packages is None:
-            self.fetch_available()
-
-        return self._available_packages or {}
 
     def list_libraries(self):
         """
@@ -1194,7 +847,7 @@ class PackageManager:
         release = None
         available_version = None
 
-        available_library = self.list_available_libraries().get(lib.dist_name)
+        available_library = self.registry.get_library(lib.dist_name)
         if available_library:
             for available_release in available_library['releases']:
                 if lib.python_version in available_release['python_versions']:
@@ -1204,7 +857,7 @@ class PackageManager:
                     break
 
         if available_version is None:
-            is_unavailable = lib.name in self.settings.get('unavailable_libraries', [])
+            is_unavailable = lib.name in self.registry.unavailable_libraries
             if is_upgrade and is_unavailable:
                 message = '''
                     The library "%s" is installed, but not available for Python %s
@@ -1420,7 +1073,7 @@ class PackageManager:
         """
         Downloads and installs (or upgrades) a package
 
-        Uses the self.list_available_packages() method to determine where to
+        Uses the self.registry.get_package() method to determine where to
         retrieve the package file from.
 
         The install process consists of:
@@ -1480,11 +1133,10 @@ class PackageManager:
 
         # package is to be renamed during upgrade
         old_package_name = package_name
-        package_name = self.settings.get('renamed_packages', {}).get(package_name) or package_name
 
-        packages = self.list_available_packages()
-        if package_name not in packages:
-            if package_name in self.settings.get('unavailable_packages', []):
+        package = self.registry.get_package(package_name)
+        if package is None:
+            if package_name in self.registry.unavailable_packages:
                 console_write(
                     '''
                     The package "%s" is either not available on this platform or for
@@ -1497,7 +1149,7 @@ class PackageManager:
 
             return False
 
-        package = packages[package_name]
+        package_name = package["name"]
         release = package['releases'][0]
 
         package_dir = get_package_dir(package_name)
