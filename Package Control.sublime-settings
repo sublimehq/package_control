@@ -62,6 +62,13 @@
 	// to the Sublime Text console
 	"debug": false,
 
+	// Log level for Package Control's python logging participants.
+	// Logger names must begin with "Package Control".
+	// Valid values are: "ERROR", "WARNING", "INFO", "DEBUG"
+	"logging": {
+		"Package Control": "WARNING",
+	},
+
 	// Print package install and upgrade messages.
 	// Valid values are:
 	// - "disabled": don't print anything
