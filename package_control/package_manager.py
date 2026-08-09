@@ -15,7 +15,7 @@ from urllib.parse import urlencode
 
 import sublime
 
-from . import __version__, library, pep440, sys_path
+from . import __version__, library, logging, pep440, sys_path
 from .cache import clear_cache, get_cache, set_cache
 from .clear_directory import clear_directory, delete_directory
 from .console_write import console_write
@@ -116,6 +116,8 @@ class PackageManager:
             value = settings.get(setting)
             if value is not None:
                 self.settings[setting] = value
+
+        logging.set_loglevels(settings)
 
         # https_proxy will inherit from http_proxy unless it is set to a
         # string value or false
