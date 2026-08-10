@@ -1,10 +1,10 @@
-import os
 import json
+import os
 import threading
 import time
 import traceback
 
-from . import sys_path, text, __version__
+from . import __version__, sys_path, text
 from .activity_indicator import ActivityIndicator
 from .automatic_upgrader import AutomaticUpgrader
 from .clear_directory import clear_directory, delete_directory

@@ -1,6 +1,6 @@
 import os
 
-from ..cache import set_cache, get_cache
+from ..cache import get_cache, set_cache
 from ..show_error import show_error
 from .vcs_upgrader import VcsUpgrader
 

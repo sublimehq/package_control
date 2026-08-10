@@ -1,26 +1,26 @@
 import re
 import ssl
-from http.client import HTTPException, BadStatusLine
+from http.client import BadStatusLine, HTTPException
+from socket import error as ConnectionError
+from urllib.error import HTTPError, URLError
 from urllib.request import (
-    build_opener,
     HTTPPasswordMgrWithDefaultRealm,
     ProxyBasicAuthHandler,
     ProxyDigestAuthHandler,
     ProxyHandler,
     Request,
+    build_opener,
 )
-from urllib.error import HTTPError, URLError
-from socket import error as ConnectionError
 
 from .. import text
 from ..ca_certs import get_ca_bundle_path, get_user_ca_bundle_path
 from ..console_write import console_write
-from ..http.validating_https_handler import ValidatingHTTPSHandler
 from ..http.debuggable_http_handler import DebuggableHTTPHandler
-from .downloader_exception import DownloaderException
+from ..http.validating_https_handler import ValidatingHTTPSHandler
 from .basic_auth_downloader import BasicAuthDownloader
 from .caching_downloader import CachingDownloader
 from .decoding_downloader import DecodingDownloader
+from .downloader_exception import DownloaderException
 from .limiting_downloader import LimitingDownloader
 
 

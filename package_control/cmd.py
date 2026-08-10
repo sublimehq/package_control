@@ -1,10 +1,10 @@
 import os
-import subprocess
 import re
+import subprocess
 
+from . import text
 from .console_write import console_write
 from .show_error import show_error
-from . import text
 
 if os.name == 'nt':
     from ctypes import windll, create_unicode_buffer

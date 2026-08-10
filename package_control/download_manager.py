@@ -5,18 +5,15 @@ import sys
 from threading import Lock, Timer
 from urllib.parse import unquote_to_bytes, urljoin, urlparse
 
-from . import __version__
-from . import text
-from .cache import set_cache, get_cache
+from . import __version__, text
+from .cache import get_cache, set_cache
 from .console_write import console_write
-from .show_error import show_error
-
 from .downloaders import DOWNLOADERS
 from .downloaders.binary_not_found_error import BinaryNotFoundError
 from .downloaders.downloader_exception import DownloaderException
-from .downloaders.rate_limit_exception import RateLimitException
-from .downloaders.rate_limit_exception import RateLimitSkipException
+from .downloaders.rate_limit_exception import RateLimitException, RateLimitSkipException
 from .http_cache import HttpCache
+from .show_error import show_error
 
 _http_cache = None
 

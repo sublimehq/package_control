@@ -14,7 +14,6 @@ from .package_disabler import PackageDisabler
 from .package_io import create_empty_file
 from .show_error import show_message
 
-
 LOADER_PACKAGE_NAME = '0_package_control_loader'
 LOADER_PACKAGE_PATH = os.path.join(
     sys_path.installed_packages_path(),

@@ -1,15 +1,14 @@
-from datetime import datetime
 import html
 import re
 import time
-
 from concurrent import futures
+from datetime import datetime
 
 import sublime
 
 from .console_write import console_write
-from .package_manager import PackageManager
 from .package_disabler import PackageDisabler
+from .package_manager import PackageManager
 from .package_version import PackageVersion
 from .show_error import show_message
 

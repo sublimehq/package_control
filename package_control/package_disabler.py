@@ -15,10 +15,10 @@ except Exception:
 from .console_write import console_write
 from .package_io import package_file_exists, read_package_file
 from .settings import (
-    preferences_filename,
-    pc_settings_filename,
     load_list_setting,
-    save_list_setting
+    pc_settings_filename,
+    preferences_filename,
+    save_list_setting,
 )
 from .show_error import show_error
 from .sys_path import pc_cache_dir

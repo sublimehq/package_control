@@ -1,10 +1,10 @@
 import os
 import subprocess
 
-from ..console_write import console_write
 from ..cmd import create_cmd
-from .non_clean_exit_error import NonCleanExitError
+from ..console_write import console_write
 from .binary_not_found_error import BinaryNotFoundError
+from .non_clean_exit_error import NonCleanExitError
 
 
 class CliDownloader:

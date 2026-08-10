@@ -1,15 +1,15 @@
 {
 	"schema_version": "2.0",
 	"repositories": [
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.0.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.2.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-explicit.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-github_details.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-bitbucket_details.json"
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.0.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.2.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-explicit.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-github_details.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-bitbucket_details.json"
 	],
 	"certs": {},
 	"packages_cache": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.0.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.0.json": [
 			{
 				"name": "package_control-tester-1.0",
 				"author": "packagecontrol",
@@ -46,7 +46,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.2.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.2.json": [
 			{
 				"name": "package_control-tester-1.2",
 				"author": "packagecontrol",
@@ -83,7 +83,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-explicit.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-explicit.json": [
 			{
 				"name": "package_control-tester-2.0",
 				"author": "packagecontrol",
@@ -127,7 +127,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-github_details.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-github_details.json": [
 			{
 				"name": "package_control-tester-2.0-gh",
 				"author": "packagecontrol",
@@ -171,7 +171,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-2.0-bitbucket_details.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-2.0-bitbucket_details.json": [
 			{
 				"name": "package_control-tester-2.0-bb",
 				"author": "wbond",

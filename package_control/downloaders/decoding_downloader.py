@@ -7,6 +7,11 @@ try:
 except (ImportError):
     bz2 = None
 
+try:
+    from compression import zstd
+except (ImportError):
+    zstd = None
+
 from .downloader_exception import DownloaderException
 
 
@@ -28,6 +33,8 @@ class DecodingDownloader:
         encodings = 'gzip,deflate'
         if bz2:
             encodings = 'bzip2,' + encodings
+        if zstd:
+            encodings = 'zstd,' + encodings
         return encodings
 
     def decode_response(self, encoding, response):
@@ -45,11 +52,16 @@ class DecodingDownloader:
             The decoded response
         """
 
-        if encoding == 'bzip2':
+        if encoding == 'zstd':
+            if zstd:
+                return zstd.decompress(response)
+            # reaching this would mean the server misbehaving
+            raise DownloaderException('Received zstd file contents, but was unable to import the zstd module')
+        elif encoding == 'bzip2':
             if bz2:
                 return bz2.decompress(response)
-            else:
-                raise DownloaderException('Received bzip2 file contents, but was unable to import the bz2 module')
+            # reaching this would mean the server misbehaving
+            raise DownloaderException('Received bzip2 file contents, but was unable to import the bz2 module')
         elif encoding == 'gzip':
             return gzip.GzipFile(fileobj=BytesIO(response)).read()
         elif encoding == 'deflate':

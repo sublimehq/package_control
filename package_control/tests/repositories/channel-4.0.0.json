@@ -2,14 +2,14 @@
 	"$schema": "sublime://packagecontrol.io/schemas/channel",
 	"schema_version": "4.0.0",
 	"repositories": [
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json"
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json"
 	],
 	"packages_cache": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json": [
 			{
 				"name": "package_control-tester-4.0.0-bb-tags",
 				"author": "wbond",
@@ -95,7 +95,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json": [
 			{
 				"name": "package_control-tester-4.0.0",
 				"author": ["packagecontrol", "wbond"],
@@ -140,7 +140,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json": [
 			{
 				"name": "package_control-tester-4.0.0-gh-tags",
 				"author": "packagecontrol",
@@ -268,7 +268,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json": [
 			{
 				"name": "package_control-tester-4.0.0-gl-tags",
 				"author": "packagecontrol",
@@ -354,11 +354,11 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json": []
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json": []
 	},
 	"libraries_cache": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json": [],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-bitbucket_releases.json": [],
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-explicit.json": [
 			{
 				"name": "bz2",
 				"description": "Python bz2 module",
@@ -404,9 +404,9 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json": [],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json": [],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-github_releases.json": [],
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-gitlab_releases.json": [],
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-4.0.0-pypi_releases.json": [
 			{
 				"name": "coverage",
 				"description": "The code coverage tool for Python",

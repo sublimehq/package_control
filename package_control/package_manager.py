@@ -1,15 +1,13 @@
 import datetime
 import hashlib
 import json
-# To prevent import errors in thread with datetime
-import locale  # noqa
 import os
 import re
 import shutil
 import tempfile
 import time
+import traceback
 import zipfile
-
 from concurrent import futures
 from functools import partial
 from io import BytesIO
@@ -19,19 +17,23 @@ from urllib.parse import urlencode
 
 import sublime
 
-from . import __version__
-from . import library, pep440, sys_path
-from .cache import clear_cache, set_cache, get_cache, merge_cache_under_settings, set_cache_under_settings
+from . import __version__, library, pep440, sys_path
+from .cache import (
+    clear_cache,
+    get_cache,
+    merge_cache_under_settings,
+    set_cache,
+    set_cache_under_settings,
+)
 from .clear_directory import clear_directory, delete_directory
-from .clients.client_exception import ClientException
 from .console_write import console_write
 from .download_manager import http_get
 from .downloaders.downloader_exception import DownloaderException
 from .package_io import (
     create_empty_file,
     get_installed_package_path,
-    get_package_dir,
     get_package_cache_dir,
+    get_package_dir,
     get_package_module_cache_dir,
     list_sublime_package_dirs,
     list_sublime_package_files,
@@ -41,23 +43,25 @@ from .package_io import (
     zip_file_exists,
 )
 from .package_version import PackageVersion, version_sort
-from .providers import CHANNEL_PROVIDERS, REPOSITORY_PROVIDERS
-from .providers.channel_provider import UncachedChannelRepositoryError
-from .providers.provider_exception import ProviderException
-from .selectors import is_compatible_version, is_compatible_platform, get_compatible_platform
+from .providers import channel_provider_for, repo_provider_for
+from .providers.provider_exception import UncachedChannelRepositoryError
+from .selectors import (
+    get_compatible_platform,
+    is_compatible_platform,
+    is_compatible_version,
+)
 from .settings import load_list_setting, pc_settings_filename
 from .upgraders.git_upgrader import GitUpgrader
 from .upgraders.hg_upgrader import HgUpgrader
 
 DEFAULT_CHANNEL = 'https://packages.sublimetext.com/channel_v4.json'
 DEFAULT_CHANNEL_ST3 = 'https://packages.sublimetext.com/channel_v3.json'
-
-OLD_DEFAULT_CHANNELS = set([
+OLD_DEFAULT_CHANNELS = {
     'https://packagecontrol.io/channel_v3.json',
     'https://packagecontrol.io/channel.json',
     'https://sublime.wbond.net/channel.json',
     'https://sublime.wbond.net/repositories.json'
-])
+}
 
 ZIP_UNIX_SYSTEM = 3
 
@@ -506,15 +510,12 @@ class PackageManager:
             # grab the channel to get it
             if channel_repositories is None:
 
-                for provider_class in CHANNEL_PROVIDERS:
-                    if provider_class.match_url(channel):
-                        provider = provider_class(channel, self.settings)
-                        break
-                else:
+                provider = channel_provider_for(channel, self.settings)
+                if not provider:
                     continue
 
                 try:
-                    channel_repositories = provider.get_repositories()
+                    channel_repositories = provider.get_sources()
                     if channel[:8].lower() != "file:///":
                         set_cache(cache_key, channel_repositories, cache_ttl)
 
@@ -525,7 +526,8 @@ class PackageManager:
 
                         try:
                             filtered_packages = {}
-                            for name, info in provider.get_packages(repo):
+                            for info in provider.get_packages(repo):
+                                name = info['name']
                                 info['releases'] = self.select_releases(name, info['releases'])
                                 if info['releases']:
                                     filtered_packages[name] = info
@@ -540,11 +542,11 @@ class PackageManager:
 
                         try:
                             filtered_libraries = {}
-                            for name, info in provider.get_libraries(repo):
+                            for info in provider.get_libraries(repo):
                                 # Convert legacy dependency names to official pypi package names.
                                 # This is required for forward compatibility with upcomming changes
                                 # in scheme 4.0.0. Do it here to apply only on client side.
-                                name = info['name'] = library.translate_name(name)
+                                name = info['name'] = library.translate_name(info['name'])
 
                                 info['releases'] = self.select_releases(name, info['releases'])
                                 if info['releases']:
@@ -579,7 +581,7 @@ class PackageManager:
                         list_=True
                     )
 
-                except (DownloaderException, ClientException, ProviderException) as e:
+                except DownloaderException as e:
                     console_write(e)
                     continue
 
@@ -626,12 +628,13 @@ class PackageManager:
         libraries = {}
 
         def download_repo(url):
-            for provider_class in REPOSITORY_PROVIDERS:
-                if provider_class.match_url(url):
-                    provider = provider_class(url, self.settings)
+            try:
+                provider = repo_provider_for(url, self.settings)
+                if provider:
                     provider.prefetch()
                     providers.append(provider)
-                    break
+            except BaseException:
+                traceback.print_exc()
 
         # Repositories are run in reverse order so that the ones first
         # on the list will overwrite those last on the list
@@ -662,9 +665,9 @@ class PackageManager:
         for provider in providers:
             repository_packages = {}
             unavailable_packages = []
-            for name, info in provider.get_packages():
-                name = name_map.get(name, name)
-                info['name'] = name
+            for info in provider.get_packages():
+                name = info['name']
+                name = info['name'] = name_map.get(name, name)
                 info['releases'] = self.select_releases(name, info['releases'])
                 if info['releases']:
                     repository_packages[name] = info
@@ -673,11 +676,11 @@ class PackageManager:
 
             repository_libraries = {}
             unavailable_libraries = []
-            for name, info in provider.get_libraries():
+            for info in provider.get_libraries():
                 # Convert legacy dependency names to official pypi package names.
                 # This is required for forward compatibility with upcomming changes
                 # in scheme 4.0.0. Do it here to apply only on client side.
-                name = info['name'] = library.translate_name(name)
+                name = info['name'] = library.translate_name(info['name'])
 
                 info['releases'] = self.select_releases(name, info['releases'])
                 if info['releases']:

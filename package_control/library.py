@@ -1,14 +1,12 @@
 import os
 import re
 import shutil
-
 from datetime import datetime
 from hashlib import sha1
 
 import sublime
 
-from . import sys_path
-from . import distinfo
+from . import distinfo, sys_path
 from .clear_directory import delete_directory
 
 BUILTIN_LIBRARIES = {

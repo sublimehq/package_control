@@ -4,8 +4,7 @@ import os
 import sys
 
 from . import __version__ as pc_version
-from . import pep440
-from . import sys_path
+from . import pep440, sys_path
 
 
 def _trim_segments(rel_path, segments):

@@ -1,4 +1,5 @@
 import functools
+
 import sublime
 
 from . import text

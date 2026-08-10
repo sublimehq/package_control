@@ -1,8 +1,6 @@
-import os
-import json
 import datetime
-# To prevent import errors in thread with datetime
-import locale  # noqa
+import json
+import os
 import time
 
 import sublime

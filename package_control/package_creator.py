@@ -1,14 +1,13 @@
 import compileall
 import os
 import zipfile
+from fnmatch import fnmatch
 
 import sublime
 
-from fnmatch import fnmatch
-
 from . import sys_path
-from .package_manager import PackageManager
 from .package_io import get_package_dir
+from .package_manager import PackageManager
 from .show_error import show_error, show_message
 
 

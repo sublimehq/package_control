@@ -6,14 +6,14 @@ import tempfile
 from ..ca_certs import get_ca_bundle_path
 from ..console_write import console_write
 from ..sys_path import shortpath
-from .cli_downloader import CliDownloader
-from .non_http_error import NonHttpError
-from .non_clean_exit_error import NonCleanExitError
-from .downloader_exception import DownloaderException
 from .basic_auth_downloader import BasicAuthDownloader
 from .caching_downloader import CachingDownloader
+from .cli_downloader import CliDownloader
 from .decoding_downloader import DecodingDownloader
+from .downloader_exception import DownloaderException
 from .limiting_downloader import LimitingDownloader
+from .non_clean_exit_error import NonCleanExitError
+from .non_http_error import NonHttpError
 
 
 class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, CachingDownloader, BasicAuthDownloader):

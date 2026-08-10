@@ -1,4 +1,4 @@
-class BaseRepositoryProvider:
+class BaseProvider:
     """
     Base repository downloader that fetches package info
 
@@ -57,7 +57,7 @@ class BaseRepositoryProvider:
         Go out and perform HTTP operations, caching the result
         """
 
-        [name for name, info in self.get_packages()]
+        list(self.get_packages())
 
     def fetch(self):
         """
@@ -99,19 +99,19 @@ class BaseRepositoryProvider:
 
         return self.failed_sources.items()
 
-    def get_libraries(self, invalid_sources=None):
+    def get_libraries(self):
         """
         For API-compatibility with RepositoryProvider
         """
 
-        return {}.items()
+        return []
 
-    def get_packages(self, invalid_sources=None):
+    def get_packages(self):
         """
         For API-compatibility with RepositoryProvider
         """
 
-        return {}.items()
+        return []
 
     def get_sources(self):
         """

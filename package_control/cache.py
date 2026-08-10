@@ -1,6 +1,5 @@
 import time
 
-
 # A cache of channel and repository info to allow users to install multiple
 # packages without having to wait for the metadata to be downloaded more
 # than once. The keys are managed locally by the utilizing code.

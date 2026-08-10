@@ -1,13 +1,13 @@
 {
 	"schema_version": "3.0.0",
 	"repositories": [
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-github_releases.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-gitlab_releases.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-bitbucket_releases.json"
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-github_releases.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-gitlab_releases.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-bitbucket_releases.json"
 	],
 	"packages_cache": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json": [
 			{
 				"name": "package_control-tester-3.0.0",
 				"author": ["packagecontrol", "wbond"],
@@ -52,7 +52,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-github_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-github_releases.json": [
 			{
 				"name": "package_control-tester-3.0.0-gh-tags",
 				"author": "packagecontrol",
@@ -180,7 +180,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-gitlab_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-gitlab_releases.json": [
 			{
 				"name": "package_control-tester-3.0.0-gl-tags",
 				"author": "packagecontrol",
@@ -266,7 +266,7 @@
 				]
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-bitbucket_releases.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-bitbucket_releases.json": [
 			{
 				"name": "package_control-tester-3.0.0-bb-tags",
 				"author": "wbond",
@@ -354,7 +354,7 @@
 		]
 	},
 	"dependencies_cache": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-3.0.0-explicit.json": [
 			{
 				"name": "bz2",
 				"load_order": "02",

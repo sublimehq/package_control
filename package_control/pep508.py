@@ -3,7 +3,6 @@ import platform
 import re
 import sys
 
-
 TOKEN_REGEX = re.compile(
     r"(\bpython_version\b)|"
     r"(\bpython_full_version\b)|"

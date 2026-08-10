@@ -3,15 +3,19 @@ from itertools import chain
 from urllib.parse import urlparse
 
 from ..clients.bitbucket_client import BitBucketClient
-from ..clients.client_exception import ClientException
 from ..clients.github_client import GitHubClient
 from ..clients.gitlab_client import GitLabClient
 from ..clients.pypi_client import PyPiClient
 from ..download_manager import http_get, resolve_url, resolve_urls, update_url
 from ..downloaders.downloader_exception import DownloaderException
 from ..package_version import version_sort
-from .base_repository_provider import BaseRepositoryProvider
-from .provider_exception import ProviderException
+from .base_provider import BaseProvider
+from .provider_exception import (
+    InvalidLibraryReleaseKeyError,
+    InvalidPackageReleaseKeyError,
+    InvalidRepoFileException,
+    ProviderException,
+)
 from .schema_version import SchemaVersion
 
 try:
@@ -23,28 +27,7 @@ except ImportError:
     IS_ST = False
 
 
-class InvalidRepoFileException(ProviderException):
-    def __init__(self, repo, reason_message):
-        super().__init__(
-            'Repository {} does not appear to be a valid repository file because'
-            ' {}'.format(repo.repo_url, reason_message))
-
-
-class InvalidLibraryReleaseKeyError(ProviderException):
-    def __init__(self, repo, name, key):
-        super().__init__(
-            'Invalid or missing release-level key "{}" in library "{}"'
-            ' in repository "{}".'.format(key, name, repo))
-
-
-class InvalidPackageReleaseKeyError(ProviderException):
-    def __init__(self, repo, name, key):
-        super().__init__(
-            'Invalid or missing release-level key "{}" in package "{}"'
-            ' in repository "{}".'.format(key, name, repo))
-
-
-class JsonRepositoryProvider(BaseRepositoryProvider):
+class RepositoryProvider(BaseProvider):
     """
     Generic repository downloader that fetches package info
 
@@ -98,7 +81,7 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
         try:
             self.repo_info = self.fetch_repo(self.repo_url)
             self.schema_version = self.repo_info['schema_version']
-        except (DownloaderException, ClientException, ProviderException) as e:
+        except DownloaderException as e:
             self.failed_sources[self.repo_url] = e
             self.libraries = {}
             self.packages = {}
@@ -170,7 +153,7 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
             for include in resolve_urls(self.repo_url, includes):
                 try:
                     include_info = self.fetch_repo(include)
-                except (DownloaderException, ClientException, ProviderException) as e:
+                except DownloaderException as e:
                     self.failed_sources[include] = e
                 else:
                     include_version = include_info['schema_version']
@@ -183,44 +166,39 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
 
         return repo_info
 
-    def get_libraries(self, invalid_sources=None):
+    def get_libraries(self):
         """
         Provides access to the libraries in this repository
 
-        :param invalid_sources:
-            A list of URLs that are permissible to fetch data from
-
         :return:
             A generator of
-            (
-                'Library Name',
-                {
-                    'name': name,
-                    'description': description,
-                    'author': author,
-                    'issues': URL,
-                    'releases': [
-                        {
-                            'sublime_text': compatible version,
-                            'platforms': [platform name, ...],
-                            'python_versions': ['3.3', '3.8'],
-                            'url': url,
-                            'version': version,
-                            'sha256': hex hash
-                        }, ...
-                    ],
-                    'sources': [url, ...]
-                }
-            )
-            tuples
+
+            ```py
+            {
+                'name': name,
+                'description': description,
+                'author': author,
+                'issues': URL,
+                'releases': [
+                    {
+                        'sublime_text': compatible version,
+                        'platforms': [platform name, ...],
+                        'python_versions': ['3.3', '3.8'],
+                        'url': url,
+                        'version': version,
+                        'sha256': hex hash
+                    }, ...
+                ],
+                'sources': [url, ...]
+            }
+            ```
+
+            dictionaries
         """
 
         if self.libraries is not None:
-            for key, value in self.libraries.items():
-                yield (key, value)
-            return
-
-        if invalid_sources is not None and self.repo_url in invalid_sources:
+            for details in self.libraries.values():
+                yield details
             return
 
         if not self.fetch():
@@ -458,58 +436,53 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
                 info['releases'] = version_sort(info['releases'], 'platforms', reverse=True)
 
                 output[info['name']] = info
-                yield (info['name'], info)
+                yield info
 
-            except (DownloaderException, ClientException, ProviderException) as e:
+            except DownloaderException as e:
                 self.broken_libriaries[info['name']] = e
 
         self.libraries = output
 
-    def get_packages(self, invalid_sources=None):
+    def get_packages(self):
         """
         Provides access to the packages in this repository
 
-        :param invalid_sources:
-            A list of URLs that are permissible to fetch data from
-
         :return:
             A generator of
-            (
-                'Package Name',
-                {
-                    'name': name,
-                    'description': description,
-                    'author': author,
-                    'homepage': homepage,
-                    'previous_names': [old_name, ...],
-                    'labels': [label, ...],
-                    'sources': [url, ...],
-                    'readme': url,
-                    'issues': url,
-                    'donate': url,
-                    'buy': url,
-                    'last_modified': last modified date,
-                    'releases': [
-                        {
-                            'sublime_text': compatible version,
-                            'platforms': [platform name, ...],
-                            'url': url,
-                            'date': date,
-                            'version': version,
-                            'libraries': [library name, ...]
-                        }, ...
-                    ]
-                }
-            )
-            tuples
+
+            ```py
+            {
+                'name': name,
+                'description': description,
+                'author': author,
+                'homepage': homepage,
+                'previous_names': [old_name, ...],
+                'labels': [label, ...],
+                'sources': [url, ...],
+                'readme': url,
+                'issues': url,
+                'donate': url,
+                'buy': url,
+                'last_modified': last modified date,
+                'releases': [
+                    {
+                        'sublime_text': compatible version,
+                        'platforms': [platform name, ...],
+                        'url': url,
+                        'date': date,
+                        'version': version,
+                        'libraries': [library name, ...]
+                    }, ...
+                ]
+            }
+            ```
+
+            dictionaries
         """
 
         if self.packages is not None:
-            for key, value in self.packages.items():
-                yield (key, value)
-            return
-
-        if invalid_sources is not None and self.repo_url in invalid_sources:
+            for details in self.packages.values():
+                yield details
             return
 
         if not self.fetch():
@@ -556,10 +529,6 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
             details = package.get('details')
             if details:
                 details = resolve_url(self.repo_url, details)
-
-                if invalid_sources is not None and details in invalid_sources:
-                    continue
-
                 if details not in info['sources']:
                     info['sources'].append(details)
 
@@ -582,7 +551,7 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
                     # from the GitHub or BitBucket API
                     info = dict(chain(repo_info.items(), info.items()))
 
-                except (DownloaderException, ClientException, ProviderException) as e:
+                except DownloaderException as e:
                     if 'name' in info:
                         self.broken_packages[info['name']] = e
                     self.failed_sources[details] = e
@@ -866,9 +835,9 @@ class JsonRepositoryProvider(BaseRepositoryProvider):
                     info['last_modified'] = date
 
                 output[info['name']] = info
-                yield (info['name'], info)
+                yield info
 
-            except (DownloaderException, ClientException, ProviderException) as e:
+            except DownloaderException as e:
                 self.broken_packages[info['name']] = e
 
         self.packages = output

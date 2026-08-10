@@ -1,15 +1,13 @@
 from ..clients.bitbucket_client import BitBucketClient
-from ..clients.client_exception import ClientException
 from ..downloaders.downloader_exception import DownloaderException
-from .base_repository_provider import BaseRepositoryProvider
+from .base_provider import BaseProvider
 from .provider_exception import (
     GitProviderDownloadInfoException,
     GitProviderRepoInfoException,
-    ProviderException,
 )
 
 
-class BitBucketRepositoryProvider(BaseRepositoryProvider):
+class BitBucketProvider(BaseProvider):
     """
     Allows using a public BitBucket repository as the source for a single package.
     For legacy purposes, this can also be treated as the source for a Package
@@ -53,50 +51,46 @@ class BitBucketRepositoryProvider(BaseRepositoryProvider):
         user, repo, _ = BitBucketClient.user_repo_branch(repo_url)
         return bool(user and repo)
 
-    def get_packages(self, invalid_sources=None):
+    def get_packages(self):
         """
         Uses the BitBucket API to construct necessary info for a package
 
-        :param invalid_sources:
-            A list of URLs that should be ignored
-
         :return:
             A generator of
-            (
-                'Package Name',
-                {
-                    'name': name,
-                    'description': description,
-                    'author': author,
-                    'homepage': homepage,
-                    'last_modified': last modified date,
-                    'releases': [
-                        {
-                            'sublime_text': '*',
-                            'platforms': ['*'],
-                            'url': url,
-                            'date': date,
-                            'version': version
-                        }, ...
-                    ],
-                    'previous_names': [],
-                    'labels': [],
-                    'sources': [the repo URL],
-                    'readme': url,
-                    'issues': url,
-                    'donate': url,
-                    'buy': None
-                }
-            )
-            tuples
+
+            ```py
+            {
+                'name': name,
+                'description': description,
+                'author': author,
+                'homepage': homepage,
+                'previous_names': [old_name, ...],
+                'labels': [label, ...],
+                'sources': [url, ...],
+                'readme': url,
+                'issues': url,
+                'donate': url,
+                'buy': url,
+                'last_modified': last modified date,
+                'releases': [
+                    {
+                        'sublime_text': compatible version,
+                        'platforms': [platform name, ...],
+                        'url': url,
+                        'date': date,
+                        'version': version,
+                        'libraries': [library name, ...]
+                    }, ...
+                ]
+            }
+            ```
+
+            dictionaries
         """
 
         if self.packages is not None:
-            for key, value in self.packages.items():
-                yield (key, value)
-            return
-
-        if invalid_sources is not None and self.repo_url in invalid_sources:
+            for details in self.packages.values():
+                yield details
             return
 
         client = BitBucketClient(self.settings)
@@ -131,8 +125,8 @@ class BitBucketRepositoryProvider(BaseRepositoryProvider):
                 'buy': None
             }
             self.packages = {name: details}
-            yield (name, details)
+            yield details
 
-        except (DownloaderException, ClientException, ProviderException) as e:
+        except DownloaderException as e:
             self.failed_sources[self.repo_url] = e
             self.packages = {}

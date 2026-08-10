@@ -1,7 +1,5 @@
-from __future__ import unicode_literals
-
-from textwrap import dedent
 import re
+from textwrap import dedent
 
 
 def format(string, params=None, strip=True, indent=None):

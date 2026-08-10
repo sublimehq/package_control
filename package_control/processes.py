@@ -4,7 +4,7 @@ __all__ = ['list_process_names']
 
 if os.name == 'nt':
     import ctypes
-    from ctypes import windll, wintypes, POINTER, sizeof, byref, cast
+    from ctypes import POINTER, byref, cast, sizeof, windll, wintypes
 
     psapi = windll.psapi
     kernel32 = windll.kernel32

@@ -1,7 +1,7 @@
 import re
 
 from .console_write import console_write
-from .pep440 import PEP440Version, PEP440InvalidVersionError
+from .pep440 import PEP440InvalidVersionError, PEP440Version
 
 
 class PackageVersion(PEP440Version):

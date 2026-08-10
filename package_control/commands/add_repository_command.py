@@ -1,10 +1,9 @@
 import re
+from os.path import isabs, normcase, normpath
+from urllib.request import pathname2url
 
 import sublime
 import sublime_plugin
-
-from os.path import isabs, normcase, normpath
-from urllib.request import pathname2url
 
 from ..console_write import console_write
 from ..settings import pc_settings_filename

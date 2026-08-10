@@ -3,20 +3,8 @@ from itertools import chain
 
 from ..download_manager import http_get, resolve_urls, update_url
 from ..package_version import version_sort
-from .provider_exception import ProviderException
+from .provider_exception import InvalidChannelFileException, UncachedChannelRepositoryError
 from .schema_version import SchemaVersion
-
-
-class InvalidChannelFileException(ProviderException):
-
-    def __init__(self, channel, reason_message):
-        super().__init__(
-            'Channel %s does not appear to be a valid channel file because'
-            ' %s' % (channel.channel_url, reason_message))
-
-
-class UncachedChannelRepositoryError(ProviderException):
-    pass
 
 
 class ChannelProvider:
@@ -49,8 +37,7 @@ class ChannelProvider:
 
     __slots__ = [
         'channel_url',
-        'schema_version',
-        'repositories',
+        'repo_urls',
         'libraries_cache',
         'packages_cache',
         'settings',
@@ -58,8 +45,7 @@ class ChannelProvider:
 
     def __init__(self, channel_url, settings):
         self.channel_url = channel_url
-        self.schema_version = SchemaVersion('4.0.0')
-        self.repositories = None
+        self.repo_urls = None
         self.libraries_cache = {}
         self.packages_cache = {}
         self.settings = settings
@@ -93,7 +79,7 @@ class ChannelProvider:
             DownloaderException: when an error occurs trying to open a URL
         """
 
-        if self.repositories is not None:
+        if self.repo_urls is not None:
             return
 
         json_string = http_get(self.channel_url, self.settings, 'Error downloading channel.')
@@ -113,9 +99,149 @@ class ChannelProvider:
         if 'repositories' not in channel_info:
             raise InvalidChannelFileException(self, 'the "repositories" JSON key is missing.')
 
-        self.repositories = self._migrate_repositories(channel_info, schema_version)
+        self.repo_urls = self._migrate_repo_urls(channel_info, schema_version)
         self.packages_cache = self._migrate_packages_cache(channel_info, schema_version)
         self.libraries_cache = self._migrate_libraries_cache(channel_info, schema_version)
+
+    def get_broken_libraries(self):
+        """
+        Provide library names without releases.
+
+        :raises:
+            ProviderException: when an error occurs with the channel contents
+            DownloaderException: when an error occurs trying to open a URL
+
+        :return:
+            A generator of ("Library Name", Exception()) tuples
+        """
+
+        return {}.items()
+
+    def get_broken_packages(self):
+        """
+        Provide package names without releases.
+
+        :raises:
+            ProviderException: when an error occurs with the channel contents
+            DownloaderException: when an error occurs trying to open a URL
+
+        :return:
+            A generator of ("Package Name", Exception()) tuples
+        """
+
+        return {}.items()
+
+    def get_libraries(self, repo_url):
+        """
+        Provides access to the library info that is cached in a channel
+
+        :param repo_url:
+            The URL of the repository to get the cached info of
+
+        :raises:
+            DownloaderException: when an error occurs trying to open a URL
+            UncachedChannelRepositoryError when no cache entry exists for repo_url
+
+        :return:
+            A generator of
+
+            ```py
+            {
+                'name': name,
+                'description': description,
+                'author': author,
+                'issues': URL,
+                'releases': [
+                    {
+                        'sublime_text': compatible version,
+                        'platforms': [platform name, ...],
+                        'python_versions': ['3.3', '3.8'],
+                        'url': url,
+                        'version': version,
+                        'sha256': hex hash
+                    }, ...
+                ],
+                'sources': [url, ...]
+            }
+            ```
+
+            dictionaries
+        """
+
+        self.fetch()
+
+        if repo_url not in self.libraries_cache:
+            raise UncachedChannelRepositoryError(repo_url)
+
+        return self.libraries_cache[repo_url]
+
+    def get_packages(self, repo_url):
+        """
+        Provides access to the repository info that is cached in a channel
+
+        :param repo_url:
+            The URL of the repository to get the cached info of
+
+        :raises:
+            DownloaderException: when an error occurs trying to open a URL
+            UncachedChannelRepositoryError when no cache entry exists for repo_url
+
+        :return:
+            A generator of
+
+            ```py
+            {
+                'name': name,
+                'description': description,
+                'author': author,
+                'homepage': homepage,
+                'previous_names': [old_name, ...],
+                'labels': [label, ...],
+                'sources': [url, ...],
+                'readme': url,
+                'issues': url,
+                'donate': url,
+                'buy': url,
+                'last_modified': last modified date,
+                'releases': [
+                    {
+                        'sublime_text': compatible version,
+                        'platforms': [platform name, ...],
+                        'url': url,
+                        'date': date,
+                        'version': version,
+                        'libraries': [library name, ...]
+                    }, ...
+                ]
+            }
+            ```
+
+            dictionaries
+        """
+
+        self.fetch()
+
+        if repo_url not in self.packages_cache:
+            raise UncachedChannelRepositoryError(repo_url)
+
+        return self.packages_cache[repo_url]
+
+    def get_sources(self):
+        """
+        Return a list of current URLs that are directly referenced by the
+        channel
+
+        :return:
+            A list of repository URLs, provided by the channel.
+
+        :raises:
+            ProviderException: when an error occurs with the channel contents
+            DownloaderException: when an error occurs trying to open a URL
+        """
+
+        self.fetch()
+
+        return self.repo_urls or []
 
     def get_renamed_packages(self):
         """
@@ -139,164 +265,7 @@ class ChannelProvider:
 
         return output
 
-    def get_repositories(self):
-        """
-        :raises:
-            ProviderException: when an error occurs with the channel contents
-            DownloaderException: when an error occurs trying to open a URL
-
-        :return:
-            A list of the repository URLs
-        """
-
-        self.fetch()
-
-        return self.repositories
-
-    def get_sources(self):
-        """
-        Return a list of current URLs that are directly referenced by the
-        channel
-
-        :return:
-            A list of URLs and/or file paths
-        """
-
-        return self.get_repositories()
-
-    def get_packages(self, repo_url):
-        """
-        Provides access to the repository info that is cached in a channel
-
-        :param repo_url:
-            The URL of the repository to get the cached info of
-
-        :raises:
-            DownloaderException: when an error occurs trying to open a URL
-            UncachedChannelRepositoryError when no cache entry exists for repo_url
-
-        :return:
-            A generator of
-            (
-                'Package Name',
-                {
-                    'name': name,
-                    'description': description,
-                    'author': author,
-                    'homepage': homepage,
-                    'previous_names': [old_name, ...],
-                    'labels': [label, ...],
-                    'readme': url,
-                    'issues': url,
-                    'donate': url,
-                    'buy': url,
-                    'last_modified': last modified date,
-                    'releases': [
-                        {
-                            'sublime_text': compatible version,
-                            'platforms': [platform name, ...],
-                            'python_versions': ['3.3', '3.8'],
-                            'url': url,
-                            'date': date,
-                            'version': version,
-                            'libraries': [library name, ...]
-                        }, ...
-                    ]
-                }
-            )
-            tuples
-        """
-
-        self.fetch()
-
-        if repo_url not in self.packages_cache:
-            raise UncachedChannelRepositoryError(repo_url)
-
-        for package in self.packages_cache[repo_url]:
-            if package['releases']:
-                yield (package['name'], package)
-
-    def get_libraries(self, repo_url):
-        """
-        Provides access to the library info that is cached in a channel
-
-        :param repo_url:
-            The URL of the repository to get the cached info of
-
-        :raises:
-            DownloaderException: when an error occurs trying to open a URL
-            UncachedChannelRepositoryError when no cache entry exists for repo_url
-
-        :return:
-            A generator of
-            (
-                'Library Name',
-                {
-                    'name': name,
-                    'description': description,
-                    'author': author,
-                    'issues': URL,
-                    'releases': [
-                        {
-                            'sublime_text': compatible version,
-                            'platforms': [platform name, ...],
-                            'python_versions': ['3.3', '3.8'],
-                            'url': url,
-                            'version': version,
-                            'sha256': hex hash
-                        }, ...
-                    ]
-                }
-            )
-            tuples
-        """
-
-        self.fetch()
-
-        if repo_url not in self.libraries_cache:
-            raise UncachedChannelRepositoryError(repo_url)
-
-        for library in self.libraries_cache[repo_url]:
-            if library['releases']:
-                yield (library['name'], library)
-
-    def get_broken_packages(self):
-        """
-        Provide package names without releases.
-
-        :raises:
-            ProviderException: when an error occurs with the channel contents
-            DownloaderException: when an error occurs trying to open a URL
-
-        :return:
-            A generator of 'package names'
-        """
-
-        self.fetch()
-
-        for package in chain(*self.packages_cache.values()):
-            if not package['releases']:
-                yield package['name']
-
-    def get_broken_libraries(self):
-        """
-        Provide library names without releases.
-
-        :raises:
-            ProviderException: when an error occurs with the channel contents
-            DownloaderException: when an error occurs trying to open a URL
-
-        :return:
-            A generator of 'library names'
-        """
-
-        self.fetch()
-
-        for library in chain(*self.libraries_cache.values()):
-            if not library['releases']:
-                yield library['name']
-
-    def _migrate_repositories(self, channel_info, schema_version):
+    def _migrate_repo_urls(self, channel_info, schema_version):
 
         debug = self.settings.get('debug')
 
@@ -308,6 +277,11 @@ class ChannelProvider:
     def _migrate_packages_cache(self, channel_info, schema_version):
         """
         Transform input packages cache to scheme version 4.0.0
+
+        Note: package_cache is supported as of schema version 3.0.0 and
+              expected to contain only packages with url based releases.
+
+              Thus migration skips any v2.0 related operations.
 
         :param channel_info:
             The input channel information of any scheme version
@@ -360,6 +334,11 @@ class ChannelProvider:
         """
         Transform input libraries cache to scheme version 4.0.0
 
+        Note: libraries_cache is supported as of schema version 3.0.0 and
+              expected to contain only packages with url based releases.
+
+              Thus migration skips any v2.0 related operations.
+
         :param channel_info:
             The input channel information of any scheme version
 
@@ -382,13 +361,19 @@ class ChannelProvider:
             for library in chain(*libraries_cache.values()):
                 del library['load_order']
                 for release in library['releases']:
+                    release.setdefault('platforms', ['*'])
                     release['python_versions'] = ['3.3']
+                    release.setdefault('sublime_text', '*')
                 library['releases'] = version_sort(library['releases'], 'platforms', reverse=True)
 
         else:
             libraries_cache = channel_info.get('libraries_cache', {})
 
             for library in chain(*libraries_cache.values()):
+                for release in library['releases']:
+                    release.setdefault('platforms', ['*'])
+                    release.setdefault('python_versions', ['3.3'])
+                    release.setdefault('sublime_text', '*')
                 library['releases'] = version_sort(library['releases'], 'platforms', reverse=True)
 
         # Fix any out-dated repository URLs in libraries cache

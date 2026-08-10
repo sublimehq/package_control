@@ -1,13 +1,13 @@
 {
 	"schema_version": "1.2",
 	"repositories": [
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.0.json",
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.2.json"
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.0.json",
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.2.json"
 	],
 	"package_name_map": {},
 	"renamed_packages": {},
 	"packages": {
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.0.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.0.json": [
 			{
 				"name": "package_control-tester-1.0",
 				"author": "packagecontrol",
@@ -34,7 +34,7 @@
 				}
 			}
 		],
-		"https://raw.githubusercontent.com/wbond/package_control/master/package_control/tests/repositories/repository-1.2.json": [
+		"https://raw.githubusercontent.com/sublimehq/package_control/master/package_control/tests/repositories/repository-1.2.json": [
 			{
 				"name": "package_control-tester-1.2",
 				"author": "packagecontrol",

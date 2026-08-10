@@ -1,29 +1,24 @@
-# coding: utf-8
-
-from __future__ import unicode_literals, division, absolute_import, print_function
-
 import base64
 import hashlib
 import os
 import re
 import socket
 from urllib.parse import urlparse
-from urllib.request import parse_keqv_list, parse_http_list
+from urllib.request import parse_http_list, parse_keqv_list
 
 from .. import text
 from ..ca_certs import get_user_ca_bundle_path
 from ..console_write import console_write
-from ..deps.asn1crypto.util import OrderedDict
 from ..deps.asn1crypto import pem, x509
-from .downloader_exception import DownloaderException
-from .oscrypto_downloader_exception import OscryptoDownloaderException
+from ..deps.asn1crypto.util import OrderedDict
+from ..deps.oscrypto import errors as oscrypto_errors  # noqa
+from ..deps.oscrypto import tls  # noqa
 from .basic_auth_downloader import BasicAuthDownloader
 from .caching_downloader import CachingDownloader
 from .decoding_downloader import DecodingDownloader
+from .downloader_exception import DownloaderException
 from .limiting_downloader import LimitingDownloader
-
-from ..deps.oscrypto import tls  # noqa
-from ..deps.oscrypto import errors as oscrypto_errors  # noqa
+from .oscrypto_downloader_exception import OscryptoDownloaderException
 
 
 class OscryptoDownloader(DecodingDownloader, LimitingDownloader, CachingDownloader, BasicAuthDownloader):

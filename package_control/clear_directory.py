@@ -2,7 +2,6 @@ import errno
 import os
 import stat
 import sys
-
 from datetime import datetime
 from hashlib import sha1
 

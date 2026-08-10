@@ -1,10 +1,9 @@
 import re
-from urllib.parse import urlencode, quote
+from urllib.parse import quote, urlencode
 
 from ..downloaders.downloader_exception import DownloaderException
 from ..package_version import version_match_prefix
 from .json_api_client import JSONApiClient
-
 
 # A predefined list of readme filenames to look for
 _readme_filenames = [

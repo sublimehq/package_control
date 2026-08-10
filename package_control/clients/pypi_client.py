@@ -1,9 +1,6 @@
 import re
 
-from ..pep440 import PEP440InvalidVersionError
-from ..pep440 import PEP440Version
-from ..pep440 import PEP440VersionSpecifier
-
+from ..pep440 import PEP440InvalidVersionError, PEP440Version, PEP440VersionSpecifier
 from .json_api_client import JSONApiClient
 
 

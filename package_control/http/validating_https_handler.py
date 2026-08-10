@@ -1,10 +1,10 @@
 import ssl
-from urllib.error import URLError
 import urllib.request as urllib_compat
+from urllib.error import URLError
 
-from .validating_https_connection import ValidatingHTTPSConnection
 from .invalid_certificate_exception import InvalidCertificateException
 from .persistent_handler import PersistentHandler
+from .validating_https_connection import ValidatingHTTPSConnection
 
 
 class ValidatingHTTPSHandler(PersistentHandler, urllib_compat.HTTPSHandler):

@@ -4,13 +4,12 @@ import os
 import re
 import socket
 import ssl
-
 from http.client import HTTPS_PORT
-from urllib.request import parse_keqv_list, parse_http_list
+from urllib.request import parse_http_list, parse_keqv_list
 
 from ..console_write import console_write
-from .debuggable_https_response import DebuggableHTTPSResponse
 from .debuggable_http_connection import DebuggableHTTPConnection
+from .debuggable_https_response import DebuggableHTTPSResponse
 from .invalid_certificate_exception import InvalidCertificateException
 
 
