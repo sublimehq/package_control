@@ -1,5 +1,6 @@
 import os
 import re
+from urllib.request import pathname2url
 
 from .. import __version__
 
@@ -19,7 +20,10 @@ BB_PASS = os.environ.get('BB_PASS', '')
 
 USER_AGENT = 'Package Control %s Unittests' % __version__
 
-TEST_FIXTURES_URI = "file:///{}/".format(os.path.dirname(__file__).replace("\\", "/"))
+# CAUTION: pathname2url behaves different on py33,38,314 on each OS,
+#          with regards to prepending // or not. Hence strip any.
+uri = pathname2url(os.path.dirname(__file__)).strip("/")
+TEST_FIXTURES_URI = "file:///" + uri + "/"
 """Local file:// URI to test fixtures folder."""
 
 TEST_REPOSITORY_URI = TEST_FIXTURES_URI + "repositories/"
