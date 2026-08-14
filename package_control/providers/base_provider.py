@@ -25,10 +25,8 @@ class BaseProvider:
         A dict containing configuration for providers and http clients:
         - `debug`
         - `http_basic_auth`
-        - `http_cache_max_age`
-        - `http_cache_ttl`
-        - `http_retries`
-        - `http_timeout`
+        - `cache_length`
+        - `timeout`
         - `http_proxy`
         - `proxy_username`
         - `proxy_password`
