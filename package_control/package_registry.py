@@ -250,7 +250,7 @@ class PackageRegistry:
             ```
         """
         self.ensure_fetched()
-        return sorted(self.libraries.values(), key=lambda lib: lib["name"])
+        return sorted(self.libraries.values(), key=lambda lib: lib["name"].lower())
 
     def get_library(self, name):
         """
@@ -324,7 +324,7 @@ class PackageRegistry:
             ```
         """
         self.ensure_fetched()
-        return sorted(self.packages.values(), key=lambda pkg: pkg["name"])
+        return sorted(self.packages.values(), key=lambda pkg: pkg["name"].lower())
 
     def get_package(self, name):
         """

@@ -178,7 +178,7 @@ class BaseProvider:
             ```
         """
         self.ensure_fetched()
-        return sorted(self.libraries.values(), key=lambda lib: lib["name"])
+        return sorted(self.libraries.values(), key=lambda lib: lib["name"].lower())
 
     def get_packages(self):
         """
@@ -214,7 +214,7 @@ class BaseProvider:
             ```
         """
         self.ensure_fetched()
-        return sorted(self.packages.values(), key=lambda pkg: pkg["name"])
+        return sorted(self.packages.values(), key=lambda pkg: pkg["name"].lower())
 
     def get_renamed_packages(self):
         """For API-compatibility with RepositoryProvider"""
