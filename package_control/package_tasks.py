@@ -151,7 +151,7 @@ class PackageTaskRunner(PackageDisabler):
                     '''
                     %s
 
-                    Please see https://packagecontrol.io/docs/troubleshooting for help
+                    Please see https://packages.sublimetext.com/docs for help
                     ''',
                     message
                 )
@@ -222,7 +222,7 @@ class PackageTaskRunner(PackageDisabler):
                     '''
                     %s
 
-                    Please see https://packagecontrol.io/docs/troubleshooting for help
+                    Please see https://packages.sublimetext.com/docs for help
                     ''',
                     message
                 )
