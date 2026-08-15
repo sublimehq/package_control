@@ -29,7 +29,6 @@ class GitHubClientTests(unittest.TestCase):
             "user_agent": USER_AGENT,
             "http_basic_auth": {
                 "api.github.com": [GH_USER, GH_PASS],
-                "raw.githubusercontent.com": [GH_USER, GH_PASS],
             }
         }
         if extra:
@@ -116,8 +115,25 @@ class GitHubClientTests(unittest.TestCase):
         client = GitHubClient(self.settings())
         self.assertEqual(result, client.user_repo_branch(url))
 
-    def test_repo_info(self):
-        client = GitHubClient(self.settings())
+    def test_repo_info_client(self):
+        client = GitHubClient(self.settings({"min_api_calls": True}))
+        self.assertEqual(
+            {
+                "name": "package_control-tester",
+                "description": "A test of Package Control upgrade messages with "
+                               "explicit versions, but date-based releases.",
+                "homepage": "https://github.com/packagecontrol-test/package_control-tester",
+                "author": "packagecontrol-test",
+                "readme": None,
+                "issues": "https://github.com/packagecontrol-test/package_control-tester/issues",
+                "donate": None,
+                "default_branch": "master"
+            },
+            client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
+        )
+
+    def test_repo_info_server(self):
+        client = GitHubClient(self.settings({"min_api_calls": False}))
         self.assertEqual(
             {
                 "name": "package_control-tester",
@@ -132,24 +148,6 @@ class GitHubClientTests(unittest.TestCase):
                 "default_branch": "master"
             },
             client.repo_info("https://github.com/packagecontrol-test/package_control-tester")
-        )
-
-    def test_user_info(self):
-        client = GitHubClient(self.settings())
-        self.assertEqual(
-            [{
-                "name": "package_control-tester",
-                "description": "A test of Package Control upgrade messages with "
-                               "explicit versions, but date-based releases.",
-                "homepage": "https://github.com/packagecontrol-test/package_control-tester",
-                "author": "packagecontrol-test",
-                "readme": "https://raw.githubusercontent.com/packagecontrol-test"
-                          "/package_control-tester/master/readme.md",
-                "issues": "https://github.com/packagecontrol-test/package_control-tester/issues",
-                "donate": None,
-                "default_branch": "master"
-            }],
-            client.user_info("https://github.com/packagecontrol-test")
         )
 
     @data(

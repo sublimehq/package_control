@@ -19,7 +19,7 @@ class GitLabProviderTests(unittest.TestCase):
 
     def settings(self):
         if not GL_PASS:
-            self.skipTest("GitLab personal access token for %s not set via env var GL_PASS" % GL_USER)
+            self.skipTest("GitLab personal access token for {} not set via env var GL_PASS".format(GL_USER))
 
         return {
             "debug": DEBUG,
@@ -50,7 +50,7 @@ class GitLabProviderTests(unittest.TestCase):
             "https://gitlab.com/packagecontrol-test/package_control-tester",
             self.settings()
         )
-        self.assertEqual([], list(provider.get_libraries()))
+        self.assertEqual([], provider.get_libraries())
 
     def test_get_broken_libraries(self):
         provider = GitLabProvider(
@@ -76,8 +76,7 @@ class GitLabProviderTests(unittest.TestCase):
                               "package_control-tester/-/raw/master/readme.md",
                     "issues": None,
                     "donate": None,
-                    "buy": None,
-                    "sources": ["https://gitlab.com/packagecontrol-test/package_control-tester"],
+                    "source": "https://gitlab.com/packagecontrol-test/package_control-tester",
                     "labels": [],
                     "previous_names": [],
                     "releases": [
@@ -94,7 +93,45 @@ class GitLabProviderTests(unittest.TestCase):
                     "last_modified": "2020-07-15 10:50:38"
                 }
             ],
-            list(provider.get_packages())
+            provider.get_packages()
+        )
+
+    def test_get_mapped_packages(self):
+        provider = GitLabProvider(
+            "https://gitlab.com/packagecontrol-test/package_control-tester",
+            self.settings()
+        )
+        provider.settings["package_name_map"] = {"package_control-tester": "Package Control Tester"}
+        self.assertEqual(
+            [
+                {
+                    "name": "Package Control Tester",
+                    "description": "A test of Package Control upgrade messages with "
+                                   "explicit versions, but date-based releases.",
+                    "homepage": "https://gitlab.com/packagecontrol-test/package_control-tester",
+                    "author": "packagecontrol-test",
+                    "readme": "https://gitlab.com/packagecontrol-test/"
+                              "package_control-tester/-/raw/master/readme.md",
+                    "issues": None,
+                    "donate": None,
+                    "source": "https://gitlab.com/packagecontrol-test/package_control-tester",
+                    "labels": [],
+                    "previous_names": [],
+                    "releases": [
+                        {
+                            "date": "2020-07-15 10:50:38",
+                            "version": "2020.07.15.10.50.38",
+                            "url": "https://gitlab.com/packagecontrol-test/"
+                                   "package_control-tester/-/archive/master/"
+                                   "package_control-tester-master.zip",
+                            "sublime_text": "*",
+                            "platforms": ["*"]
+                        }
+                    ],
+                    "last_modified": "2020-07-15 10:50:38"
+                }
+            ],
+            provider.get_packages()
         )
 
     def test_get_broken_packages(self):
@@ -110,13 +147,3 @@ class GitLabProviderTests(unittest.TestCase):
             self.settings()
         )
         self.assertEqual({}, provider.get_renamed_packages())
-
-    def test_get_sources(self):
-        provider = GitLabProvider(
-            "https://gitlab.com/packagecontrol-test/package_control-tester",
-            self.settings()
-        )
-        self.assertEqual(
-            ["https://gitlab.com/packagecontrol-test/package_control-tester"],
-            provider.get_sources()
-        )

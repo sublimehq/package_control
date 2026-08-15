@@ -1,0 +1,8 @@
+{
+	"$schema": "sublime://packagecontrol.io/schemas/channel",
+	"schema_version": "4.0.0",
+	"repositories": [
+		"./repository-03.json",
+		"./repository-04.json"
+	]
+}

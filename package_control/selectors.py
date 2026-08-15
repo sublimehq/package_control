@@ -2,6 +2,8 @@ import re
 
 import sublime
 
+from . import sys_path
+
 PLATFORM_SELECTORS = (
     sublime.platform() + '-' + sublime.arch(),
     sublime.platform(),
@@ -9,6 +11,8 @@ PLATFORM_SELECTORS = (
 )
 
 ST_VERSION = int(sublime.version())
+
+PY_VERSIONS = sys_path.python_versions()
 
 
 def get_compatible_platform(platforms, platform_selectors=PLATFORM_SELECTORS):
@@ -54,6 +58,20 @@ def is_compatible_platform(platforms, platform_selectors=PLATFORM_SELECTORS):
     """
 
     return bool(get_compatible_platform(platforms, platform_selectors))
+
+
+def is_compatible_python(python_versions):
+    """
+    Checks if python_versions are supported by ST.
+
+    :param python_versions:
+        A list of python versions to check.
+
+    :returns:
+        True, if at least one of given python versions is supported
+        False, if specified python versions are not supported.
+    """
+    return any(p in PY_VERSIONS for p in python_versions)
 
 
 def is_compatible_version(version_range, st_version=ST_VERSION):

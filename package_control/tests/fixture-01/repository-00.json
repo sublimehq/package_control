@@ -1,0 +1,68 @@
+{
+	"$schema": "sublime://packagecontrol.io/schemas/repository",
+	"schema_version": "4.0.0",
+	"packages": [
+		{
+			"name": "package-from-repository-00",
+			"description": "This package is used",
+			"author": "test-user",
+			"releases": [
+				{
+					"url": "https://server.com/downloads/test-package.sublime-package",
+					"date": "2021-01-01 00:00:00",
+					"version": "1.0.0"
+				}
+			]
+		}
+	],
+	"libraries": [
+		{
+			"name": "bs4",
+			"description": "Beautiful Soup is a Python library for pulling data out of HTML and XML files - https://www.crummy.com/software/BeautifulSoup/",
+			"author": "jlegewie",
+			"issues": "https://github.com/jlegewie/sublime-beautifulsoup4/issues",
+			"releases": [
+				{
+					"url": "https://codeload.github.com/jlegewie/sublime-beautifulsoup4/zip/bs4.zip",
+					"date": "2014-01-01 10:00:00",
+					"version": "1.0.0",
+					"platforms": ["*"],
+					"python_versions": ["3.3", "3.8", "3.14"],
+					"sublime_text": ">=3000"
+				}
+			]
+		},
+		{
+			"name": "enum",
+			"description": "Python enum module",
+			"author": "FichteFoll",
+			"issues": "https://github.com/packagecontrol/enum/issues",
+			"releases": [
+				{
+					"url": "https://codeload.github.com/packagecontrol/enum/zip/enum.zip",
+					"date": "2014-01-01 10:00:00",
+					"version": "1.0.0",
+					"platforms": ["*"],
+					"python_versions": ["3.3", "3.8", "3.14"],
+					"sublime_text": "*"
+				}
+			]
+		},
+		{
+			"name": "python-jinja2",
+			"description": "Python Jinja2 module",
+			"author": "FichteFoll",
+			"issues": "https://github.com/packagecontrol/jinja2/issues",
+			"releases": [
+				{
+					"url": "https://codeload.github.com/packagecontrol/jinja2/zip/python-jinja2.zip",
+					"date": "2014-01-01 10:00:00",
+					"version": "1.0.0",
+					"platforms": ["*"],
+					"python_versions": ["3.3", "3.8", "3.14"],
+					"sublime_text": "*"
+				}
+			]
+		}
+	]
+}

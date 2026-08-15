@@ -552,13 +552,12 @@ class PackageTaskRunner(PackageDisabler):
 
         tasks = []
 
-        available_packages = self.manager.list_available_packages()
+        available_packages = self.manager.registry.get_package_names()
         if not available_packages:
             return False
 
         if found_packages is None:
             found_packages = self.manager.list_packages()
-        renamed_packages = self.manager.settings.get('renamed_packages', {})
 
         # VCS package updates
         ignore_vcs_packages = self.PULL not in actions
@@ -594,9 +593,8 @@ class PackageTaskRunner(PackageDisabler):
                 continue
 
             # if a package was renamed, new name is to be used to lookup update info
-            new_package_name = renamed_packages.get(package_name) or package_name
-            update_info = available_packages.get(new_package_name)
-            if not update_info:
+            update_info = self.manager.registry.get_package(package_name)
+            if update_info is None:
                 continue
 
             package_version = None
@@ -630,7 +628,8 @@ class PackageTaskRunner(PackageDisabler):
 
         # packages to install
         if self.INSTALL in actions:
-            for package_name, update_info in available_packages.items():
+            for update_info in self.manager.registry.get_packages():
+                package_name = update_info["name"]
                 if package_name in found_packages:
                     continue
                 if include_packages and package_name not in include_packages:
@@ -639,7 +638,8 @@ class PackageTaskRunner(PackageDisabler):
                     continue
                 tasks.append(PackageInstallTask(self.INSTALL, package_name, update_info=update_info))
 
-        return sorted(tasks, key=lambda task: task.package_name.lower())
+        tasks.sort(key=lambda task: task.package_name.lower())
+        return tasks
 
     def render_quick_panel_items(self, tasks):
         """

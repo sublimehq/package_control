@@ -113,8 +113,8 @@ class GitLabClientTests(unittest.TestCase):
         client = GitLabClient(self.settings())
         self.assertEqual(result, client.user_repo_branch(url))
 
-    def test_repo_info(self):
-        client = GitLabClient(self.settings())
+    def test_repo_info_client(self):
+        client = GitLabClient(self.settings({"min_api_calls": True}))
         self.assertEqual(
             {
                 "name": "package_control-tester",
@@ -133,24 +133,23 @@ class GitLabClientTests(unittest.TestCase):
             )
         )
 
-    def test_user_info(self):
-        client = GitLabClient(self.settings())
+    def test_repo_info_server(self):
+        client = GitLabClient(self.settings({"min_api_calls": False}))
         self.assertEqual(
-            [
-                {
-                    "name": "package_control-tester",
-                    "description":
-                        "A test of Package Control upgrade messages with explicit versions, but date-based releases.",
-                    "homepage": "https://gitlab.com/packagecontrol-test/package_control-tester",
-                    "readme": "https://gitlab.com/packagecontrol-test/package_control-tester/-/raw/master/readme.md",
-                    "author": "packagecontrol-test",
-                    "issues": None,
-                    "donate": None,
-                    "default_branch": "master"
-                }
-            ],
-            client.user_info(
-                "https://gitlab.com/packagecontrol-test"
+            {
+                "name": "package_control-tester",
+                "description":
+                    "A test of Package Control upgrade messages with explicit versions, but date-based releases.",
+                "homepage": "https://gitlab.com/packagecontrol-test/package_control-tester",
+                "readme":
+                    "https://gitlab.com/packagecontrol-test/package_control-tester/-/raw/master/readme.md",
+                "author": "packagecontrol-test",
+                "issues": None,
+                "donate": None,
+                "default_branch": "master"
+            },
+            client.repo_info(
+                "https://gitlab.com/packagecontrol-test/package_control-tester"
             )
         )
 

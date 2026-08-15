@@ -115,8 +115,25 @@ class BitBucketClientTests(unittest.TestCase):
         client = BitBucketClient(self.settings())
         self.assertEqual(result, client.user_repo_branch(url))
 
-    def test_repo_info(self):
-        client = BitBucketClient(self.settings())
+    def test_repo_info_client(self):
+        client = BitBucketClient(self.settings({"min_api_calls": True}))
+        self.assertEqual(
+            {
+                "name": "package_control-tester",
+                "description": "A test of Package Control upgrade messages with "
+                               "explicit versions, but date-based releases.",
+                "homepage": "https://bitbucket.org/wbond/package_control-tester",
+                "author": "wbond",
+                "readme": None,
+                "issues": "https://bitbucket.org/wbond/package_control-tester/issues",
+                "donate": None,
+                "default_branch": "master"
+            },
+            client.repo_info("https://bitbucket.org/wbond/package_control-tester")
+        )
+
+    def test_repo_info_server(self):
+        client = BitBucketClient(self.settings({"min_api_calls": False}))
         self.assertEqual(
             {
                 "name": "package_control-tester",
@@ -131,10 +148,6 @@ class BitBucketClientTests(unittest.TestCase):
             },
             client.repo_info("https://bitbucket.org/wbond/package_control-tester")
         )
-
-    def test_user_info(self):
-        client = BitBucketClient(self.settings())
-        self.assertEqual(None, client.user_info("https://bitbucket.org/wbond"))
 
     @data(
         (

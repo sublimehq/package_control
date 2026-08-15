@@ -1,8 +1,8 @@
 import json
 from urllib.parse import urlencode, urlparse
 
-from .client_exception import ClientException
 from ..download_manager import http_get
+from .client_exception import ClientException
 
 
 class JSONApiClient:
@@ -53,7 +53,7 @@ class JSONApiClient:
         try:
             return json.loads(repository_json.decode('utf-8'))
         except (ValueError):
-            error_string = 'Error parsing JSON from URL %s.' % url
+            error_string = 'Error parsing JSON from URL {}.'.format(url)
             raise ClientException(error_string)
 
     @staticmethod
@@ -156,8 +156,6 @@ class JSONApiClient:
                     new_selectors[key] = [value]
                     # remove `.` from python versions; n.r. for platforms
                     yield (pattern.replace(var, value.replace('.', '')), new_selectors)
-
-            return None
 
         output = resolve(output, '${platform}', 'platforms')
         output = resolve(output, '${py_version}', 'python_versions')

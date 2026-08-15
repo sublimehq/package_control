@@ -52,7 +52,7 @@ class GitHubClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return 'https://github.com/%s/%s' % (quote(user_name), quote(repo_name))
+        return 'https://github.com/{}/{}'.format(quote(user_name), quote(repo_name))
 
     def download_info(self, url, tag_prefix=None):
         """
@@ -115,7 +115,7 @@ class GitHubClient(JSONApiClient):
         if not repo_name:
             return None
 
-        user_repo = "%s/%s" % (user_name, repo_name)
+        user_repo = "{}/{}".format(user_name, repo_name)
 
         if branch is None:
             branch = default_branch
@@ -123,7 +123,7 @@ class GitHubClient(JSONApiClient):
                 repo_info = self.fetch_json(self._api_url(user_repo))
                 branch = repo_info.get('default_branch', 'master')
 
-        branch_url = self._api_url(user_repo, '/branches/%s' % branch)
+        branch_url = self._api_url(user_repo, '/branches/{}'.format(branch))
         branch_info = self.fetch_json(branch_url)
 
         timestamp = branch_info['commit']['commit']['committer']['date'][0:19].replace('T', ' ')
@@ -228,7 +228,7 @@ class GitHubClient(JSONApiClient):
             used_versions = set()
             for page in range(10):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                api_url = self._api_url(user_repo, '/releases?%s' % query_string)
+                api_url = self._api_url(user_repo, '/releases?{}'.format(query_string))
                 releases = self.fetch_json(api_url)
 
                 for release in releases:
@@ -328,7 +328,7 @@ class GitHubClient(JSONApiClient):
             used_versions = set()
             for page in range(10):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                tags_url = self._api_url(user_repo, '/tags?%s' % query_string)
+                tags_url = self._api_url(user_repo, '/tags?{}'.format(query_string))
                 tags_json = self.fetch_json(tags_url)
 
                 for tag in tags_json:
@@ -392,7 +392,7 @@ class GitHubClient(JSONApiClient):
         if not repo_name:
             return None
 
-        user_repo = "%s/%s" % (user_name, repo_name)
+        user_repo = "{}/{}".format(user_name, repo_name)
         api_url = self._api_url(user_repo)
         repo_info = self.fetch_json(api_url)
 
@@ -400,45 +400,6 @@ class GitHubClient(JSONApiClient):
             branch = repo_info.get('default_branch', 'master')
 
         return self._extract_repo_info(branch, repo_info)
-
-    def user_info(self, url):
-        """
-        Retrieve general information about all repositories that are
-        part of a user/organization.
-
-        :param url:
-            The URL to the user/organization, in the following form:
-              https://github.com/{user}
-
-        :raises:
-            DownloaderException: when there is an error downloading
-            ClientException: when there is an error parsing the response
-
-        :return:
-            None if no match, or am list of dicts with the following keys:
-              `name`
-              `description`
-              `homepage` - URL of the homepage
-              `author`
-              `readme` - URL of the readme
-              `issues` - URL of bug tracker
-              `donate` - URL of a donate page
-              `default_branch`
-        """
-
-        user_match = re.match(r'https?://github\.com/([^/#?]+)/?$', url)
-        if user_match is None:
-            return None
-
-        user = user_match.group(1)
-        api_url = 'https://api.github.com/users/%s/repos' % user
-
-        repos_info = self.fetch_json(api_url)
-
-        return [
-            self._extract_repo_info(info.get('default_branch', 'master'), info)
-            for info in repos_info
-        ]
 
     def _extract_repo_info(self, branch, result):
         """
@@ -464,18 +425,21 @@ class GitHubClient(JSONApiClient):
 
         user_name = result['owner']['login']
         repo_name = result['name']
-        user_repo = '%s/%s' % (user_name, repo_name)
+        user_repo = '{}/{}'.format(user_name, repo_name)
 
         issues_url = None
         if result['has_issues']:
-            issues_url = 'https://github.com/%s/issues' % user_repo
+            issues_url = 'https://github.com/{}/issues'.format(user_repo)
+
+        is_client = self.settings.get('min_api_calls', False)
+        readme_url = None if is_client else self._readme_url(user_repo, branch)
 
         return {
             'name': repo_name,
             'description': result['description'] or 'No description provided',
             'homepage': result['homepage'] or result['html_url'],
             'author': user_name,
-            'readme': self._readme_url(user_repo, branch),
+            'readme': readme_url,
             'issues': issues_url,
             'donate': None,
             'default_branch': branch
@@ -509,7 +473,7 @@ class GitHubClient(JSONApiClient):
         """
 
         return {
-            'url': 'https://codeload.github.com/%s/zip/%s' % (user_repo, ref_name),
+            'url': 'https://codeload.github.com/{}/zip/{}'.format(user_repo, ref_name),
             'version': version,
             'date': timestamp
         }
@@ -528,7 +492,7 @@ class GitHubClient(JSONApiClient):
             The API URL
         """
 
-        return 'https://api.github.com/repos/%s%s' % (user_repo, suffix)
+        return 'https://api.github.com/repos/{}{}'.format(user_repo, suffix)
 
     def _readme_url(self, user_repo, branch):
         """
@@ -549,12 +513,12 @@ class GitHubClient(JSONApiClient):
         """
 
         query_string = urlencode({'ref': branch})
-        readme_url = self._api_url(user_repo, '/readme?%s' % query_string)
+        readme_url = self._api_url(user_repo, '/readme?{}'.format(query_string))
 
         try:
             readme_file = self.fetch_json(readme_url).get('path')
             if readme_file:
-                return 'https://raw.githubusercontent.com/%s/%s/%s' % (user_repo, branch, readme_file)
+                return 'https://raw.githubusercontent.com/{}/{}/{}'.format(user_repo, branch, readme_file)
 
         except (DownloaderException) as e:
             if 'HTTP error 404' not in str(e):

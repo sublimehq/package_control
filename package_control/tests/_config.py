@@ -1,8 +1,10 @@
 import os
 import re
+from urllib.request import pathname2url
 
 from .. import __version__
 
+DEBUG = False
 
 LAST_COMMIT_TIMESTAMP = '2014-11-28 20:54:15'
 LAST_COMMIT_VERSION = re.sub(r'[ :\-]', '.', LAST_COMMIT_TIMESTAMP)
@@ -18,10 +20,17 @@ BB_PASS = os.environ.get('BB_PASS', '')
 
 USER_AGENT = 'Package Control %s Unittests' % __version__
 
-DEBUG = False
+# CAUTION: pathname2url behaves different on py33,38,314 on each OS,
+#          with regards to prepending // or not. Hence strip any.
+uri = pathname2url(os.path.dirname(__file__)).strip("/")
+TEST_FIXTURES_URI = "file:///" + uri + "/"
+"""Local file:// URI to test fixtures folder."""
+
+TEST_REPOSITORY_URI = TEST_FIXTURES_URI + "repositories/"
+"""Local file:// URI to repository with test data (channels, repositories)"""
 
 TEST_REPOSITORY_URL = (
     "https://raw.githubusercontent.com/sublimehq/package_control"
     "/master/package_control/tests/repositories/"
 )
-"""URL to repository with test data (channels, repositories)"""
+"""Remote https:// URL to repository with test data (channels, repositories)"""

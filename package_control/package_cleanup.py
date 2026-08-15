@@ -333,7 +333,7 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
             return set()
 
         if self.manager.settings.get('auto_migrate', True):
-            available_packages = set(self.manager.list_available_packages())
+            available_packages = self.manager.registry.get_package_names()
             migrate_packages = incompatible_packages & available_packages
             if migrate_packages:
                 num_packages = len(migrate_packages)

@@ -2,7 +2,7 @@ from ..pep440 import PEP440Version
 
 
 class SchemaVersion(PEP440Version):
-    supported_versions = ('2.0', '3.0.0', '4.0.0')
+    supported_versions = ("2.0", "3.0.0", "4.0.0")
 
     def __init__(self, ver):
         """
@@ -26,8 +26,9 @@ class SchemaVersion(PEP440Version):
 
         if ver not in self.supported_versions:
             raise ValueError(
-                'the "schema_version" is not recognized. Must be one of: %s or %s.'
-                % (', '.join(self.supported_versions[:-1]), self.supported_versions[-1])
+                'the "schema_version" is not recognized. Must be one of: {} or {}.'.format(
+                    ", ".join(self.supported_versions[:-1]), self.supported_versions[-1]
+                )
             )
 
         super().__init__(ver)
