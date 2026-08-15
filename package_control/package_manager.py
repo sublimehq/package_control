@@ -167,11 +167,6 @@ class PackageManager:
                 clear_cache()
             set_cache('filtered_settings', filtered_settings)
 
-    def get_mapped_name(self, package_name):
-        """:return: The name of the package after passing through mapping rules"""
-
-        return self.settings.get('package_name_map', {}).get(package_name, package_name)
-
     def get_metadata(self, package_name):
         """
         Returns the package metadata for an installed package
