@@ -191,6 +191,80 @@ class PackageRegistryTests(unittesting.TestCase):
             self.registry.get_packages(),
         )
 
+    def test_get_library_names_mapped(self):
+        """
+        Verify translation from legacy dependency names to PEP491 distribution names,
+        which they are accessed by, regardless their official PyPi "name" field.
+        """
+        self.registry.settings.update({
+            "repositories": [TEST_FIXTURES_URI + "fixture-01/repository-00.json"],
+        })
+        self.assertEqual({"beautifulsoup4", "enum34", "jinja2"}, self.registry.get_libray_names())
+
+    def test_get_libraries_mapped(self):
+        self.registry.settings.update({
+            "repositories": [TEST_FIXTURES_URI + "fixture-01/repository-00.json"],
+        })
+        self.assertEqual(
+            [
+                {
+                    # test name translation from "bs4" to "beautifulsoup4"
+                    "name": "beautifulsoup4",
+                    "description": "Beautiful Soup is a Python library for pulling data out of HTML and XML files - https://www.crummy.com/software/BeautifulSoup/",
+                    "author": "jlegewie",
+                    "issues": "https://github.com/jlegewie/sublime-beautifulsoup4/issues",
+                    "releases": [
+                        {
+                            "url": "https://codeload.github.com/jlegewie/sublime-beautifulsoup4/zip/bs4.zip",
+                            "date": "2014-01-01 10:00:00",
+                            "version": "1.0.0",
+                            "platforms": ["*"],
+                            "python_versions": ["3.3", "3.8", "3.14"],
+                            "sublime_text": ">=3000",
+                        }
+                    ],
+                    "source": TEST_FIXTURES_URI + "fixture-01/repository-00.json"
+                },
+                {
+                    # test name translation from "enum" to "enum34"
+                    "name": "enum34",
+                    "description": "Python enum module",
+                    "author": "FichteFoll",
+                    "issues": "https://github.com/packagecontrol/enum/issues",
+                    "releases": [
+                        {
+                            "url": "https://codeload.github.com/packagecontrol/enum/zip/enum.zip",
+                            "date": "2014-01-01 10:00:00",
+                            "version": "1.0.0",
+                            "platforms": ["*"],
+                            "python_versions": ["3.3", "3.8", "3.14"],
+                            "sublime_text": "*"
+                        }
+                    ],
+                    "source": TEST_FIXTURES_URI + "fixture-01/repository-00.json"
+                },
+                {
+                    # test name translation from "python-jinja2" to "Jinja2"
+                    "name": "Jinja2",
+                    "description": "Python Jinja2 module",
+                    "author": "FichteFoll",
+                    "issues": "https://github.com/packagecontrol/jinja2/issues",
+                    "releases": [
+                        {
+                            "url": "https://codeload.github.com/packagecontrol/jinja2/zip/python-jinja2.zip",
+                            "date": "2014-01-01 10:00:00",
+                            "version": "1.0.0",
+                            "platforms": ["*"],
+                            "python_versions": ["3.3", "3.8", "3.14"],
+                            "sublime_text": "*",
+                        }
+                    ],
+                    "source": TEST_FIXTURES_URI + "fixture-01/repository-00.json"
+                }
+            ],
+            self.registry.get_libraries()
+        )
+
     @skipUnless(BB_PASS, "Needs authentication.")
     def test_get_packages_from_bitbucket(self):
         self.registry.settings.update({
