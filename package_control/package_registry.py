@@ -395,7 +395,7 @@ class PackageRegistry:
                 and is_compatible_version(release["sublime_text"])
                 and PEP440Version(release["version"]).is_final
             ),
-            reverse=True
+            reverse=True,
         )
         return compatible_releases
 
@@ -432,6 +432,6 @@ class PackageRegistry:
                 and is_compatible_version(release["sublime_text"])
                 and (allow_prereleases or PackageVersion(release["version"]).is_final)
             ),
-            reverse=True
+            reverse=True,
         )
         return compatible_releases

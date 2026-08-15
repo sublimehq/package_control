@@ -35,7 +35,7 @@ class GitLabProvider(BaseProvider):
 
     def __init__(self, url, settings):
         # Clean off the trailing .git to be more forgiving
-        super().__init__(re.sub(r'\.git$', '', url), settings)
+        super().__init__(re.sub(r"\.git$", "", url), settings)
 
     @classmethod
     def match_url(cls, url):
@@ -67,29 +67,29 @@ class GitLabProvider(BaseProvider):
             if not repo_info:
                 raise GitProviderRepoInfoException(self)
 
-            downloads = client.download_info_from_branch(self.url, repo_info['default_branch'])
+            downloads = client.download_info_from_branch(self.url, repo_info["default_branch"])
             if not downloads:
                 raise GitProviderDownloadInfoException(self)
 
             for download in downloads:
-                download['sublime_text'] = '*'
-                download['platforms'] = ['*']
+                download["sublime_text"] = "*"
+                download["platforms"] = ["*"]
 
-            name = repo_info['name']
+            name = repo_info["name"]
             name = self.settings.get("package_name_map", {}).get(name, name)
             self.packages[name] = {
-                'name': name,
-                'description': repo_info['description'],
-                'homepage': repo_info['homepage'],
-                'author': repo_info['author'],
-                'last_modified': downloads[0].get('date'),
-                'releases': downloads,
-                'previous_names': [],
-                'labels': [],
-                'source': self.url,
-                'readme': repo_info['readme'],
-                'issues': repo_info['issues'],
-                'donate': repo_info['donate']
+                "name": name,
+                "description": repo_info["description"],
+                "homepage": repo_info["homepage"],
+                "author": repo_info["author"],
+                "last_modified": downloads[0].get("date"),
+                "releases": downloads,
+                "previous_names": [],
+                "labels": [],
+                "source": self.url,
+                "readme": repo_info["readme"],
+                "issues": repo_info["issues"],
+                "donate": repo_info["donate"],
             }
 
         except DownloaderException as e:

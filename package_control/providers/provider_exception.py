@@ -2,7 +2,6 @@ from ..downloaders.downloader_exception import DownloaderException
 
 
 class ProviderException(DownloaderException):
-
     """If a provider could not return information"""
 
 
@@ -13,18 +12,21 @@ class InvalidChannelFileException(ProviderException):
         self.url = provider.url
 
     def __str__(self):
-        return ('Channel {} does not appear to be a valid channel file because "{}".'
-                .format(self.url, self.reason_message))
+        return 'Channel {} does not appear to be a valid channel file because "{}".'.format(
+            self.url, self.reason_message
+        )
 
 
 class InvalidRepoFileException(ProviderException):
+
     def __init__(self, provider, reason_message):
         self.reason_message = reason_message
         self.url = provider.url
 
     def __str__(self):
-        return ('Repository {} does not appear to be a valid repository file because'
-                ' {}'.format(self.url, self.reason_message))
+        return "Repository {} does not appear to be a valid repository file because {}".format(
+            self.url, self.reason_message
+        )
 
 
 class GitProviderUserInfoException(ProviderException):
@@ -40,8 +42,7 @@ class GitProviderUserInfoException(ProviderException):
         self.url = provider.url
 
     def __str__(self):
-        return ('{} unable to fetch user information from "{}".'
-                .format(self.provider_name, self.url))
+        return '{} unable to fetch user information from "{}".'.format(self.provider_name, self.url)
 
 
 class GitProviderRepoInfoException(ProviderException):
@@ -57,8 +58,7 @@ class GitProviderRepoInfoException(ProviderException):
         self.url = provider.url
 
     def __str__(self):
-        return ('{} unable to fetch repo information from "{}".'
-                .format(self.provider_name, self.url))
+        return '{} unable to fetch repo information from "{}".'.format(self.provider_name, self.url)
 
 
 class GitProviderDownloadInfoException(ProviderException):
@@ -74,5 +74,6 @@ class GitProviderDownloadInfoException(ProviderException):
         self.url = url or provider.url
 
     def __str__(self):
-        return ('{} unable to fetch download information from "{}".'
-                .format(self.provider_name, self.url))
+        return '{} unable to fetch download information from "{}".'.format(
+            self.provider_name, self.url
+        )
