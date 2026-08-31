@@ -1,6 +1,6 @@
 # Package Control
 
-The [Sublime Text](http://www.sublimetext.com) package manager. 
+The [Sublime Text](http://www.sublimetext.com) package manager.
 It allows users to find, install, and keep packages up to date.
 
 ## Installation
@@ -14,27 +14,26 @@ The easiest way to install is ...
 3. Hit <kbd>Enter</kbd>.
 
 > [!WARNING]
->
 > 1. Package Control 3.4.1 is installed up to ST4200,
-> 	 which may fail loading on some modern OSs
-> 	 if required OpenSSL 1.1.1 libraries are missing.
-> 
-> 	 If that happens, please follow the manual install steps.
+>    which may fail loading on some modern OSs
+>    if required OpenSSL 1.1.1 libraries are missing.
 >
-> 2. Run _Package Control: Upgrade/Overwrite All_
+>    If that happens, please follow the manual install steps.
+>
+> 2. Run *Package Control: Upgrade/Overwrite All*
 >    or restart Sublime Text to update to Package Control 4.
 
 ### Manual Install
 
 1. Open Sublime Text's console.
+
 2. Paste and run the following script:
 
-    ```py
-    from urllib.request import urlretrieve; urlretrieve(url="https://download.sublimetext.com/Package%20Control.sublime-package", filename=sublime.installed_packages_path() + '/Package Control.sublime-package')
-    ```
+   ```py
+   from urllib.request import urlretrieve; urlretrieve(url="https://download.sublimetext.com/Package%20Control.sublime-package", filename=sublime.installed_packages_path() + '/Package Control.sublime-package')
+   ```
 
 > [!NOTE]
->
 > Package Control.sublime-package is exactly the same 
 > as if it were downloaded by the installer.
 
@@ -60,7 +59,24 @@ or community driven documentation at https://docs.sublimetext.io.
 
 ## Bug Reports
 
-If you find a bug with Package Control, please follow the directions at https://packagecontrol.io/docs/issues to submit an issue.
+1. Make sure latest version of Package Control is installed
+
+   - open `Command Palette`
+   - run `Package Control: List Packages` command
+   - search `Package Control`
+
+2. Look at Sublime Text Console (ctrl+`) to see if any python errors are listed
+3. Review the list of open GitHub issues to see if the problem has already been reported
+4. Please do not comment on a closed issue, but feel free to reference it from a new one
+
+To provide the info necessary to help solve the issue, please generate a debug log. To do this:
+
+1. Open _Preferences > Package Settings > Package Control > Settings – User_
+2. Add "debug": true to enable the debug log
+3. Restart Sublime Text
+4. Perform the command or operation you are having trouble with
+5. Copy the full contents of the Sublime Text Console
+6. Comment on an existing open issue, or create a new one
 
 ## License
 

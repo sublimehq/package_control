@@ -15,7 +15,7 @@ from urllib.parse import urlencode
 
 import sublime
 
-from . import library, pep440, sys_path
+from . import __version__, library, pep440, sys_path
 from .cache import clear_cache, get_cache, set_cache
 from .clear_directory import clear_directory, delete_directory
 from .console_write import console_write
@@ -129,12 +129,6 @@ class PackageManager:
         # and fetch more packages/libraries before hitting rate limits.
         self.settings['min_api_calls'] = True
         self.settings['max_releases'] = 1
-
-        # We cache these to prevent IPC calls between plugin_host and the main
-        # Sublime Text executable
-        self.settings['platform'] = sublime.platform()
-        self.settings['arch'] = sublime.arch()
-        self.settings['version'] = int(sublime.version())
 
         self.registry = PackageRegistry(self.settings)
 
@@ -1485,7 +1479,7 @@ class PackageManager:
             )
             return False
 
-        case_insensitive_fs = self.settings['platform'] in ['windows', 'osx']
+        case_insensitive_fs = sublime.platform() in ('windows', 'osx')
         changing_case = case_insensitive_fs and package_name.lower() == new_package_name.lower()
 
         def do_rename(old, new):
@@ -1932,9 +1926,9 @@ class PackageManager:
         if not self.settings.get('submit_usage'):
             return
 
-        params['package_control_version'] = self.get_metadata('Package Control').get('version')
-        params['sublime_platform'] = self.settings.get('platform')
-        params['sublime_version'] = self.settings.get('version')
+        params['package_control_version'] = __version__
+        params['sublime_platform'] = sublime.platform()
+        params['sublime_version'] = sublime.version()
 
         # packagecontrol.io
         url = self.settings.get('submit_url', '')
