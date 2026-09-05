@@ -1179,9 +1179,7 @@ class PackageManager:
 
             try:
                 python_version_file = common_folder + '.python-version'
-                python_version_raw = package_zip.read(python_version_file).decode('utf-8').strip()
-                if python_version_raw in supported_python_versions:
-                    python_version = python_version_raw
+                python_version = package_zip.read(python_version_file).decode('utf-8').strip()
             except (KeyError):
                 # no .python-version found in archive,
                 # get best matching python version from upstream release data
