@@ -1173,9 +1173,7 @@ class PackageManager:
             if python_versions:
                 matched = set(python_versions) & set(sys_path.python_versions())
                 if matched:
-                    python_version_raw = str(
-                        max(map(pep440.PEP440Version, matched))
-                    )
+                    python_version_raw = str(max(map(pep440.PEP440Version, matched)))
                     if python_version_raw:
                         python_version = python_version_raw
 
