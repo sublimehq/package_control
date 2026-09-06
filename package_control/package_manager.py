@@ -1115,6 +1115,9 @@ class PackageManager:
 
         # package is to be renamed during upgrade
         old_package_name = package_name
+        old_metadata = self.get_metadata(old_package_name)
+        old_version = old_metadata.get('version')
+        is_upgrade = old_version is not None
 
         package = self.registry.get_package(package_name)
         if package is None:
@@ -1133,140 +1136,125 @@ class PackageManager:
 
         package_name = package["name"]
         release = package['releases'][0]
+        new_version = release['version']
 
         package_dir = get_package_dir(package_name)
         package_file = get_installed_package_path(package_name)
         package_filename = os.path.basename(package_file)
 
-        tmp_dir = sys_path.longpath(tempfile.mkdtemp(''))
-        tmp_package_file = os.path.join(tmp_dir, package_filename)
+        package_zip = self._download_zip_file(package_name, release['url'], release.get("sha256"))
+        if package_zip is False:
+            return False
 
-        # This is refers to the zipfile later on, so we define it here so we can
-        # close the zip file if set during the finally clause
-        package_zip = None
+        common_folder = self._common_folder(package_name, package_zip)
+        if common_folder is False:
+            return False
+
+        # By default, ST prefers .sublime-package files since this allows
+        # overriding files in the Packages/{package_name}/ folder.
+        #
+        # Exceptions:
+        # 1. `Packages/Default` must not be overridden completely,
+        #    to prevent core functionality breaking.
+        # 2. Package maintainer wants it being installed as unpacked folder
+        #    by adding a .no-sublime-package ile
+        unpack = package_name.lower() == 'default'
+        if not unpack:
+            try:
+                package_zip.getinfo(common_folder + '.no-sublime-package')
+                unpack = True
+            except KeyError:
+                unpack = False
+
+        supported_python_versions = sys_path.python_versions()
+        python_version = "3.3"
+        have_python_version_file = False
 
         try:
-            old_metadata = self.get_metadata(old_package_name)
-            old_version = old_metadata.get('version')
-            is_upgrade = old_version is not None
-
-            package_zip = self._download_zip_file(package_name, release['url'], release.get("sha256"))
-            if package_zip is False:
-                return False
-
-            common_folder = self._common_folder(package_name, package_zip)
-            if common_folder is False:
-                return False
-
-            # By default, ST prefers .sublime-package files since this allows
-            # overriding files in the Packages/{package_name}/ folder.
-            #
-            # Exceptions:
-            # 1. `Packages/Default` must not be overridden completely,
-            #    to prevent core functionality breaking.
-            # 2. Package maintainer wants it being installed as unpacked folder
-            #    by adding a .no-sublime-package ile
-            unpack = package_name.lower() == 'default'
-            if not unpack:
-                try:
-                    package_zip.getinfo(common_folder + '.no-sublime-package')
-                    unpack = True
-                except (KeyError):
-                    unpack = False
-
-            supported_python_versions = sys_path.python_versions()
-            python_version = "3.3"
-
-            try:
-                python_version_file = common_folder + '.python-version'
-                python_version = package_zip.read(python_version_file).decode('utf-8').strip()
-            except (KeyError):
-                # no .python-version found in archive,
-                # get best matching python version from upstream release data
-                python_versions = release.get("python_versions")
-                if python_versions:
-                    matched = set(python_versions) & set(supported_python_versions)
-                    if matched:
-                        python_version_raw = str(
-                            max(map(pep440.PEP440Version, matched))
-                        )
-                        if python_version_raw:
-                            python_version = python_version_raw
-
-            original_python_version = python_version
-
-            # Try to read .python-version from existing unpacked package directory to respect local
-            # opt-in to certain plugin_host and to install correct libraries.
-            try:
-                python_version_file = os.path.join(get_package_dir(old_package_name), '.python-version')
-                with open(python_version_file, 'r', encoding='utf-8') as fobj:
-                    python_version_raw = fobj.read().strip()
-                    if python_version_raw in supported_python_versions and (
-                        unpack or pep440.PEP440Version(python_version_raw) > pep440.PEP440Version(python_version)
-                    ):
-                        python_version = python_version_raw
-            except (FileNotFoundError):
-                pass
-
-            if package_name != old_package_name:
-                self.rename_package(old_package_name, package_name)
-
-            # If we determined it should be unpacked, we extract directly
-            # into the Packages/{package_name}/ folder
-            if unpack:
-                # Make sure not to overwrite existing hidden packages or package overrides
-                #
-                # A hidden unpacked package is expected to have been created locally,
-                # either manually by user or dynamically by a plugin.
-                #
-                # It may serve as:
-                # a) override for a *.sublime-package file.
-                # b) invisible helper package, which can't be enabled/disabled/removed
-                #    by user via API/GUI (if no corresponding *.sublime-package file exists)
-                if regular_file_exists(package_name, '.hidden-sublime-package'):
-                    console_write(
-                        '''
-                        Failed to %s %s -
-                        Overwriting existing hidden package not allowed.
-                        ''',
-                        ('upgrade' if is_upgrade else 'install', package_name)
+            python_version_file = common_folder + '.python-version'
+            python_version = package_zip.read(python_version_file).decode('utf-8').strip()
+            have_python_version_file = True
+        except KeyError:
+            # no .python-version found in archive,
+            # get best matching python version from upstream release data
+            python_versions = release.get("python_versions")
+            if python_versions:
+                matched = set(python_versions) & set(supported_python_versions)
+                if matched:
+                    python_version_raw = str(
+                        max(map(pep440.PEP440Version, matched))
                     )
-                    return False
+                    if python_version_raw:
+                        python_version = python_version_raw
 
-                if not self.backup_package_dir(package_name):
-                    return False
+        original_python_version = python_version
 
-            # Otherwise we go into a temp dir since we will be creating a
-            # new .sublime-package file later
-            else:
-                # If we already have a package-metadata.json file in
-                # Packages/{package_name}/, but the package no longer contains
-                # a .no-sublime-package file, then we want to clear the unpacked
-                # dir and install as a .sublime-package file. Since we are only
-                # clearing if a package-metadata.json file exists, we should never
-                # accidentally delete user's customizations. However, we still
-                # create a backup just in case.
-                if regular_file_exists(package_name, 'package-metadata.json'):
-                    if not self.backup_package_dir(package_name):
-                        return False
+        # Try to read .python-version from existing unpacked package directory to respect local
+        # opt-in to certain plugin_host and to install correct libraries.
+        try:
+            python_version_file = os.path.join(get_package_dir(old_package_name), '.python-version')
+            with open(python_version_file, 'r', encoding='utf-8') as fobj:
+                python_version_raw = fobj.read().strip()
+                if python_version_raw in supported_python_versions and (
+                    unpack or pep440.PEP440Version(python_version_raw) > pep440.PEP440Version(python_version)
+                ):
+                    python_version = python_version_raw
+        except FileNotFoundError:
+            pass
 
-                    if not delete_directory(package_dir):
-                        # If deleting failed, queue the package to upgrade upon next start
-                        # when it will be disabled
-                        reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
-                        create_empty_file(reinstall_file)
-                        console_write(
-                            '''
-                            Failed to upgrade %s -
-                            deferring until next start
-                            ''',
-                            package_name
-                        )
-                        return None
+        if package_name != old_package_name:
+            self.rename_package(old_package_name, package_name)
 
-                package_dir = os.path.join(tmp_dir, 'working')
+        # Create and add package-metadata.json to downloaded package file.
+        now = time.time()
+        metadata = {
+            "name": package_name,
+            "version": new_version,
+            "sublime_text": release['sublime_text'],
+            "platforms": release['platforms'],
+            "python_version": original_python_version,
+            "url": package['homepage'],
+            "issues": package['issues'],
+            "author": package['author'],
+            "description": package['description'],
+            "labels": package['labels'],
+            "libraries": release.get('libraries', []),
+            "install_time": old_metadata.get("install_time", now),
+            "release_time": release['date'],
+        }
+        if is_upgrade:
+            metadata['upgrade_time'] = now
 
-            package_metadata_file = os.path.join(package_dir, 'package-metadata.json')
+        # files to ignore from downloaded archives
+        ignored_files = [
+            common_folder + "__init__.py",
+            common_folder + "__main__.py",
+        ]
+
+        # If we determined it should be unpacked, we extract directly
+        # into the Packages/{package_name}/ folder
+        if unpack:
+            # Make sure not to overwrite existing hidden packages or package overrides
+            #
+            # A hidden unpacked package is expected to have been created locally,
+            # either manually by user or dynamically by a plugin.
+            #
+            # It may serve as:
+            # a) override for a *.sublime-package file.
+            # b) invisible helper package, which can't be enabled/disabled/removed
+            #    by user via API/GUI (if no corresponding *.sublime-package file exists)
+            if regular_file_exists(package_name, '.hidden-sublime-package'):
+                console_write(
+                    '''
+                    Failed to %s %s -
+                    Overwriting existing hidden package not allowed.
+                    ''',
+                    ('upgrade' if is_upgrade else 'install', package_name)
+                )
+                return False
+
+            if not self.backup_package_dir(package_name):
+                return False
 
             extracted_files = set()
             should_retry = self._extract_zip(
@@ -1274,25 +1262,21 @@ class PackageManager:
                 package_zip,
                 common_folder,
                 package_dir,
-                [common_folder + "__init__.py"],
+                ignored_files,
                 extracted_files,
             )
 
-            package_zip.close()
-            package_zip = None
-
             # If upgrading failed, queue the package to upgrade upon next start
             if should_retry:
-                if unpack:
-                    reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
-                    create_empty_file(reinstall_file)
+                # Don't delete the metadata file, that way we have it
+                # when the reinstall happens, and the appropriate
+                # usage info can be sent back to the server.
+                # No need to handle symlink at this stage it was already removed
+                # and we are not working with symlink here any more.
+                clear_directory(package_dir)
 
-                    # Don't delete the metadata file, that way we have it
-                    # when the reinstall happens, and the appropriate
-                    # usage info can be sent back to the server.
-                    # No need to handle symlink at this stage it was already removed
-                    # and we are not working with symlink here any more.
-                    clear_directory(package_dir, {reinstall_file, package_metadata_file})
+                reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
+                create_empty_file(reinstall_file)
 
                 console_write(
                     '''
@@ -1308,13 +1292,16 @@ class PackageManager:
             # upgrade, it should be cleaned out successfully then.
             # No need to handle symlink at this stage it was already removed
             # and we are not working with symlink here any more.
-            if unpack:
-                clear_directory(package_dir, extracted_files)
+            clear_directory(package_dir, extracted_files)
+
+            package_metadata_file = os.path.join(package_dir, 'package-metadata.json')
+            with open(package_metadata_file, 'w', encoding='utf-8') as fp:
+                json.dump(metadata, fp)
 
             # Create .python-version file to opt-in to certain plugin_host.
             # It enables unmaintained packages/plugins to be opted-in to newer python version
             # via upstream release information or via local settings.
-            if python_version != '3.3':
+            if python_version != '3.3' and not have_python_version_file:
                 try:
                     python_version_file = os.path.join(package_dir, '.python-version')
                     with open(python_version_file, 'x') as fobj:
@@ -1322,104 +1309,39 @@ class PackageManager:
                 except FileExistsError:
                     pass
 
-            new_version = release['version']
-
-            self.print_messages(package_name, package_dir, is_upgrade, old_version, new_version, unattended)
-
-            with open(package_metadata_file, 'w', encoding='utf-8') as fobj:
-                now = time.time()
-                install_time = old_metadata.get("install_time", now)
-                metadata = {
-                    "name": package_name,
-                    "version": new_version,
-                    "sublime_text": release['sublime_text'],
-                    "platforms": release['platforms'],
-                    "python_version": original_python_version,
-                    "url": package['homepage'],
-                    "issues": package['issues'],
-                    "author": package['author'],
-                    "description": package['description'],
-                    "labels": package['labels'],
-                    "libraries": release.get('libraries', []),
-                    "install_time": install_time,
-                    "release_time": release['date'],
-                }
-                if is_upgrade:
-                    metadata['upgrade_time'] = now
-                json.dump(metadata, fobj)
-
-            # Submit install and upgrade info
-            if is_upgrade:
-                params = {
-                    'package': package_name,
-                    'operation': 'upgrade',
-                    'version': new_version,
-                    'old_version': old_version
-                }
-            else:
-                params = {
-                    'package': package_name,
-                    'operation': 'install',
-                    'version': new_version
-                }
-            self.record_usage(params)
-
-            # Record the install in the settings file so that you can move
-            # settings across computers and have the same packages installed
-            self.update_installed_packages(
-                add=package_name,
-                remove=old_package_name if package_name != old_package_name else None,
-                persist=False
-            )
-
             # If we extracted directly into the Packages/{package_name}/
             # we probably need to remove an old Installed Packages/{package_name].sublime-package
-            if unpack:
-                try:
-                    os.remove(package_file)
-                except (FileNotFoundError):
-                    pass
-                except (OSError) as e:
-                    console_write(
-                        '''
-                        Unable to remove "%s" after upgrade to unpacked package: %s
-                        ''',
-                        (package_filename, e)
-                    )
+            try:
+                os.remove(package_file)
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                console_write(
+                    '''
+                    Unable to remove "%s" after upgrade to unpacked package: %s
+                    ''',
+                    (package_filename, e)
+                )
 
-            # If we didn't extract directly into the Packages/{package_name}/
-            # folder, we need to create a .sublime-package file and install it
-            else:
-                try:
-                    with zipfile.ZipFile(tmp_package_file, "w", compression=zipfile.ZIP_DEFLATED) as fobj:
-                        for root, _, files in os.walk(package_dir):
-                            for file in files:
-                                full_path = os.path.join(root, file)
-                                relative_path = os.path.relpath(full_path, package_dir)
-                                fobj.write(full_path, relative_path)
-
-                except (OSError, IOError) as e:
-                    console_write(
-                        '''
-                        Failed to create the package file "%s" in %s: %s
-                        ''',
-                        (package_filename, tmp_dir, e)
-                    )
+        # Otherwise we go into a temp dir since we will be creating a
+        # new .sublime-package file later
+        else:
+            # If we already have a package-metadata.json file in
+            # Packages/{package_name}/, but the package no longer contains
+            # a .no-sublime-package file, then we want to clear the unpacked
+            # dir and install as a .sublime-package file. Since we are only
+            # clearing if a package-metadata.json file exists, we should never
+            # accidentally delete user's customizations. However, we still
+            # create a backup just in case.
+            if regular_file_exists(package_name, 'package-metadata.json'):
+                if not self.backup_package_dir(package_name):
                     return False
 
-                try:
-                    try:
-                        os.remove(package_file)
-                    except (FileNotFoundError):
-                        pass
-                    shutil.move(tmp_package_file, package_file)
-
-                except (OSError):
-                    try:
-                        shutil.move(tmp_package_file, package_file + '-new')
-                    except (OSError):
-                        pass
-
+                if not delete_directory(package_dir):
+                    # If deleting failed, queue the package to upgrade upon next start
+                    # when it will be disabled
+                    reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
+                    create_empty_file(reinstall_file)
                     console_write(
                         '''
                         Failed to upgrade %s -
@@ -1429,29 +1351,79 @@ class PackageManager:
                     )
                     return None
 
-            if is_upgrade:
-                console_write(
-                    'Upgraded package "%s" from %s to %s',
-                    (package_name, old_version, new_version)
-                )
-            else:
-                console_write(
-                    'Installed package "%s" %s',
-                    (package_name, new_version)
-                )
+            # write archive to disk as new zipfile, to ensure modified metadata is updated
+            new_package_file = package_file + '-new'
+            with zipfile.ZipFile(new_package_file, 'w', zipfile.ZIP_DEFLATED) as pkg:
+                if python_version != '3.3' and not have_python_version_file:
+                    pkg.writestr('.python-version', python_version)
+                pkg.writestr('package-metadata.json', json.dumps(metadata))
+                for zipinfo in package_zip.infolist():
+                    if zipinfo.filename not in ignored_files:
+                        pkg.writestr(
+                            zipinfo.filename[len(common_folder):],
+                            package_zip.read(zipinfo),
+                            zipfile.ZIP_STORED if zipinfo.file_size < 512 else None
+                        )
 
-            return True
+            # replace possibly existing <name>.sublime-package with <name>.sublime-package-new
+            old_package_file = package_file + '-old'
+            try:
+                os.remove(old_package_file)
+            except FileNotFoundError:
+                pass
 
-        finally:
-            # We need to make sure the zipfile is closed to
-            # help prevent permissions errors on Windows
-            if package_zip:
-                package_zip.close()
+            try:
+                os.rename(package_file, old_package_file)
+            except FileNotFoundError:
+                # 1. new package installed
+                # 2. loosen package replaced by sublime-package file
+                pass
 
-            # Try to remove the tmp dir after a second to make sure
-            # a virus scanner is holding a reference to the zipfile
-            # after we close it.
-            sublime.set_timeout_async(lambda: delete_directory(tmp_dir), 1000)
+            os.rename(new_package_file, package_file)
+
+            try:
+                os.remove(old_package_file)
+            except OSError:
+                pass
+
+        # Record the install in the settings file so that you can move
+        # settings across computers and have the same packages installed
+        self.update_installed_packages(
+            add=package_name,
+            remove=old_package_name if package_name != old_package_name else None,
+            persist=False
+        )
+
+        self.print_messages(package_name, package_dir, is_upgrade, old_version, new_version, unattended)
+
+        if is_upgrade:
+            self.record_usage(
+                {
+                    'package': package_name,
+                    'operation': 'upgrade',
+                    'version': new_version,
+                    'old_version': old_version
+                }
+            )
+            console_write(
+                'Upgraded package "%s" from %s to %s',
+                (package_name, old_version, new_version)
+            )
+
+        else:
+            self.record_usage(
+                {
+                    'package': package_name,
+                    'operation': 'install',
+                    'version': new_version
+                }
+            )
+            console_write(
+                'Installed package "%s" %s',
+                (package_name, new_version)
+            )
+
+        return True
 
     def rename_package(self, package_name, new_package_name):
         """
