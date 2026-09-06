@@ -1647,6 +1647,14 @@ class PackageManager:
             delete_directory(package_backup_dir)
         except FileNotFoundError:
             pass
+        except OSError as e:
+            console_write(
+                '''
+                Failed to backup the package directory for "%s": %s
+                ''',
+                (package_name, e)
+            )
+            return False
 
         try:
             os.makedirs(backup_dir, exist_ok=True)
