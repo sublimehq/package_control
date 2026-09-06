@@ -1159,7 +1159,6 @@ class PackageManager:
             except KeyError:
                 unpack = False
 
-        supported_python_versions = sys_path.python_versions()
         python_version = "3.3"
         have_python_version_file = False
 
@@ -1172,7 +1171,7 @@ class PackageManager:
             # get best matching python version from upstream release data
             python_versions = release.get("python_versions")
             if python_versions:
-                matched = set(python_versions) & set(supported_python_versions)
+                matched = set(python_versions) & set(sys_path.python_versions())
                 if matched:
                     python_version_raw = str(
                         max(map(pep440.PEP440Version, matched))
@@ -1188,7 +1187,7 @@ class PackageManager:
             python_version_file = os.path.join(get_package_dir(old_package_name), '.python-version')
             with open(python_version_file, 'r', encoding='utf-8') as fobj:
                 python_version_raw = fobj.read().strip()
-                if python_version_raw in supported_python_versions and (
+                if python_version_raw in sys_path.python_versions() and (
                     unpack or pep440.PEP440Version(python_version_raw) > pep440.PEP440Version(python_version)
                 ):
                     python_version = python_version_raw
