@@ -693,7 +693,7 @@ class PackageManager:
 
         return sep.join(common) + sep if common else ''
 
-    def _extract_zip(self, name, zf, src_dir, dest_dir, exclude=[], extracted_files=None):
+    def _extract_zip(self, name, zf, src_dir, dest_dir, exclude=[]):
         """
         Extracts a zip to a folder
 
@@ -712,9 +712,6 @@ class PackageManager:
 
         :param exclude:
             Files not to extract.
-
-        :param extracted_files:
-            A set of all of the files paths extracted from the zip
 
         :return:
             A bool indication if the install should be retried
@@ -766,10 +763,6 @@ class PackageManager:
                     ''',
                     (source, name, e)
                 )
-
-            else:
-                if extracted_files is not None:
-                    extracted_files.add(os.path.normcase(dest))
 
         return False
 
@@ -1253,17 +1246,15 @@ class PackageManager:
                 )
                 return False
 
-            if not self.backup_package_dir(package_name):
+            if not self.move_package_dir_to_backup(package_name):
                 return False
 
-            extracted_files = set()
             should_retry = self._extract_zip(
                 package_name,
                 package_zip,
                 common_folder,
                 package_dir,
                 ignored_files,
-                extracted_files,
             )
 
             # If upgrading failed, queue the package to upgrade upon next start
@@ -1286,13 +1277,6 @@ class PackageManager:
                     package_name
                 )
                 return None
-
-            # Here we clean out any files that were not just overwritten. It is ok,
-            # if there is an error removing a file. The next time there is an
-            # upgrade, it should be cleaned out successfully then.
-            # No need to handle symlink at this stage it was already removed
-            # and we are not working with symlink here any more.
-            clear_directory(package_dir, extracted_files)
 
             package_metadata_file = os.path.join(package_dir, 'package-metadata.json')
             with open(package_metadata_file, 'w', encoding='utf-8') as fp:
@@ -1333,23 +1317,12 @@ class PackageManager:
             # clearing if a package-metadata.json file exists, we should never
             # accidentally delete user's customizations. However, we still
             # create a backup just in case.
-            if regular_file_exists(package_name, 'package-metadata.json'):
-                if not self.backup_package_dir(package_name):
-                    return False
-
-                if not delete_directory(package_dir):
-                    # If deleting failed, queue the package to upgrade upon next start
-                    # when it will be disabled
-                    reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
-                    create_empty_file(reinstall_file)
-                    console_write(
-                        '''
-                        Failed to upgrade %s -
-                        deferring until next start
-                        ''',
-                        package_name
-                    )
-                    return None
+            #
+            # Note: move_package_dir_to_backup() already moves (and therefore removes)
+            #       loosen package directory.
+            if regular_file_exists(package_name, 'package-metadata.json') \
+                    and not self.move_package_dir_to_backup(package_name):
+                return False
 
             # write archive to disk as new zipfile, to ensure modified metadata is updated
             new_package_file = package_file + '-new'
@@ -1473,7 +1446,7 @@ class PackageManager:
             # delete source file if destination already exists
             try:
                 os.remove(package_file)
-            except (OSError, IOError) as e:
+            except OSError as e:
                 if self.settings.get('debug'):
                     console_write(
                         '''
@@ -1492,10 +1465,10 @@ class PackageManager:
             pass
         except FileExistsError:
             # delete source dir if destination already exists
-            if not self.backup_package_dir(package_name):
-                console_write('It is therefore not removed automatically.')
-
-            elif not delete_directory(package_dir):
+            #
+            # Note: move_package_dir_to_backup() already moves (and therefore removes)
+            #       loosen package directory.
+            if not self.move_package_dir_to_backup(package_name):
                 if self.settings.get('debug'):
                     console_write(
                         '''
@@ -1623,10 +1596,9 @@ class PackageManager:
                     result = None
 
         if can_delete_dir:
-            if not self.backup_package_dir(package_name):
-                console_write('It is therefore not removed automatically.')
-
-            elif not delete_directory(package_dir):
+            # Note: move_package_dir_to_backup() already moves (and therefore removes)
+            #       loosen package directory.
+            if not self.move_package_dir_to_backup(package_name):
                 if self.settings.get('debug'):
                     console_write(
                         '''
@@ -1649,7 +1621,7 @@ class PackageManager:
 
         return result
 
-    def backup_package_dir(self, package_name):
+    def move_package_dir_to_backup(self, package_name):
         """
         Does a full backup of the Packages/{package}/ dir to Backup/
 
@@ -1670,20 +1642,17 @@ class PackageManager:
         package_backup_dir = os.path.join(backup_dir, package_name)
 
         try:
-            if os.path.exists(package_backup_dir):
-                console_write(
-                    '''
-                    Backup folder "%s" already exists!
-                    ''',
-                    package_backup_dir
-                )
-            else:
-                os.makedirs(backup_dir, exist_ok=True)
-            shutil.copytree(package_dir, package_backup_dir)
-            return True
-
-        except (OSError, IOError) as e:
+            # Target directory is in genral not expected to exist, but remove
+            # it just in case it does, to avoid os.rename() failing.
             delete_directory(package_backup_dir)
+        except FileNotFoundError:
+            pass
+
+        try:
+            os.makedirs(backup_dir, exist_ok=True)
+            os.rename(package_dir, package_backup_dir)
+            return True
+        except OSError as e:
             console_write(
                 '''
                 Failed to backup the package directory for "%s": %s
