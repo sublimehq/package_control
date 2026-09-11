@@ -13,7 +13,7 @@ prefix2 = "package_control."    # sub modules of package_control namespace packa
 for module_name in [
     module_name
     for module_name in sys.modules
-    if (module_name.startswith(prefix1) or module_name.startswith(prefix2)) and module_name != __name__
+    if (module_name.startswith((prefix1, prefix2))) and module_name != __name__
 ]:
     del sys.modules[module_name]
 del prefix1
