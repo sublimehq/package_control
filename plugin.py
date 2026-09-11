@@ -1,6 +1,7 @@
 import os
-import sublime
 import sys
+
+import sublime
 
 # Ensure compatibility with python 3.3 to 3.14+
 if sys.version_info > (3, 8):
@@ -19,12 +20,12 @@ for module_name in [
 del prefix1
 del prefix2
 
+from .package_control import text
 from .package_control.package_io import (
     get_installed_package_path,
     get_package_dir,
-    regular_file_exists
+    regular_file_exists,
 )
-from .package_control import text
 
 has_packed = os.path.exists(get_installed_package_path('Package Control'))
 has_unpacked = regular_file_exists('Package Control', 'plugin.py')
