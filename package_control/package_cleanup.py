@@ -415,9 +415,9 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
                 machines in a way that does not check package metadata for
                 compatibility.
 
-                Please visit https://packagecontrol.io/docs/syncing for
-                information about how to properly sync configuration and
-                packages across machines.
+                Usually only "Packages/User" needs to be synced between machines.
+                Package Control then installs or uninstalls all specified packages,
+                automatically.
                 '''
             )
 

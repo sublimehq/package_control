@@ -36,7 +36,7 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
                         """
                         %s
 
-                        Please see https://packagecontrol.io/docs/troubleshooting for help
+                        Please see https://packages.sublimetext.com/docs for help
                         """,
                         message,
                     )
