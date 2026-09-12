@@ -239,7 +239,7 @@ class DistInfoDir:
 
         # make sure not to add duplicate entries
         with open(record, "r", encoding="utf-8") as fobj:
-            items = [item for item in fobj.readlines() if not item.startswith(installer)]
+            items = [item for item in fobj if not item.startswith(installer)]
             items.append(installer + "sha256=Hg_Q6w_I4zpFfb6C24LQdd4oTAMHJZDk9gtuV2yOgkw,16\n")
 
         with open(record, "w", encoding="utf-8", newline="\n") as fobj:
@@ -365,7 +365,7 @@ class DistInfoDir:
 
         with open(self.abs_path("METADATA"), "r", encoding="utf-8") as fobj:
             entries = {}
-            for line in fobj.readlines():
+            for line in fobj:
                 try:
                     key, value = line.split(": ", 1)
                     entries[key.strip().lower()] = value.strip()
@@ -426,7 +426,7 @@ class DistInfoDir:
 
         with open(self.abs_path("RECORD"), "r", encoding="utf-8") as fobj:
             entries = []
-            for line in fobj.readlines():
+            for line in fobj:
                 line = line.strip()
                 elements = line.split(",")
                 if len(elements) != 3:
@@ -515,7 +515,7 @@ class DistInfoDir:
 
         with open(self.abs_path("WHEEL"), "r", encoding="utf-8") as fobj:
             entries = {}
-            for line in fobj.readlines():
+            for line in fobj:
                 key, value = line.split(": ")
                 entries[key.strip().lower()] = value.strip()
             return entries
