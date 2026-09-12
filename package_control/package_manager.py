@@ -853,14 +853,13 @@ class PackageManager:
             console_write(message, (lib.name, lib.python_version))
             return False
 
-        if is_upgrade:
-            if installed_version >= available_version:
-                if debug:
-                    console_write(
-                        'The library "%s" for Python %s is installed and up to date',
-                        (lib.name, lib.python_version)
-                    )
-                return True
+        if is_upgrade and installed_version >= available_version:
+            if debug:
+                console_write(
+                    'The library "%s" for Python %s is installed and up to date',
+                    (lib.name, lib.python_version)
+                )
+            return True
 
         lib_path = sys_path.lib_paths()[lib.python_version]
         tmp_dir = sys_path.longpath(tempfile.mkdtemp(''))
@@ -1592,20 +1591,19 @@ class PackageManager:
                         )
                     result = None
 
-        if can_delete_dir:
-            # Note: move_package_dir_to_backup() already moves (and therefore removes)
-            #       loosen package directory.
-            if not self.move_package_dir_to_backup(package_name):
-                if self.settings.get('debug'):
-                    console_write(
-                        '''
-                        Unable to remove directory for package "%s" -
-                        deferring until next start
-                        ''',
-                        package_name
-                    )
-                create_empty_file(os.path.join(package_dir, 'package-control.cleanup'))
-                result = None
+        # Note: move_package_dir_to_backup() already moves (and therefore removes)
+        #       loosen package directory.
+        if can_delete_dir and not self.move_package_dir_to_backup(package_name):
+            if self.settings.get('debug'):
+                console_write(
+                    '''
+                    Unable to remove directory for package "%s" -
+                    deferring until next start
+                    ''',
+                    package_name
+                )
+            create_empty_file(os.path.join(package_dir, 'package-control.cleanup'))
+            result = None
 
         # remove optionally present cache if exists
         delete_directory(get_package_cache_dir(package_name))
@@ -1672,7 +1670,7 @@ class PackageManager:
         """
 
         age = max(0, self.settings.get('max_backup_age', 14))
-        today = datetime.date.today()
+        today = datetime.datetime.now().date()
         backup_dir = os.path.join(sys_path.data_path(), 'Backup')
 
         if not os.path.isdir(backup_dir):

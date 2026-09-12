@@ -101,7 +101,6 @@ def add_dependency(name, first=False):
 
     2. Some plugins such as AutomaticPackageReloader make use of it, too.
     """
-    pass
 
 
 def python_versions():

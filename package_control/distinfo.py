@@ -58,7 +58,7 @@ class RecordInfo:
     This class describes a the content of a /RECORD line.
     """
 
-    __slots__ = ["relative_path", "absolute_path", "size", "sha256"]
+    __slots__ = ["absolute_path", "relative_path", "sha256", "size"]
 
     def __init__(self, rel_path, abs_path, size, sha256):
         self.relative_path = rel_path.replace("\\", "/")
@@ -100,7 +100,7 @@ class DistInfoDir:
     operations required to read or write meta data of a library.
     """
 
-    __slots__ = ["install_root", "dir_name"]
+    __slots__ = ["dir_name", "install_root"]
 
     def __init__(self, install_root, dist_info_dir):
         """
@@ -459,8 +459,7 @@ class DistInfoDir:
             else:
                 level = ri.relative_path.count("/")
 
-            if level < min_level:
-                min_level = level
+            min_level = min(min_level, level)
 
             path_seg = ri.relative_path
             if level > min_level:

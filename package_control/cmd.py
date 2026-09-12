@@ -7,7 +7,7 @@ from .console_write import console_write
 from .show_error import show_error
 
 if os.name == 'nt':
-    from ctypes import windll, create_unicode_buffer
+    from ctypes import create_unicode_buffer, windll
 
 try:
     # Allow using this file on the website where the sublime
@@ -131,12 +131,7 @@ class Cli:
                 input = input.encode(encoding)
 
             binary_name = os.path.basename(args[0])
-            if re.search('git', binary_name):
-                is_vcs = True
-            elif re.search('hg', binary_name):
-                is_vcs = True
-            else:
-                is_vcs = False
+            is_vcs = re.search('git', binary_name) or re.search('hg', binary_name)
 
             output, error = proc.communicate(input, timeout=60.0)
             output = output.decode(encoding)
