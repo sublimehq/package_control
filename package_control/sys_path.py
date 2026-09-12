@@ -65,7 +65,7 @@ if __installed_packages_path is None:
 
     if __data_path:
         for __leaf in ('Sublime Text Development', 'Sublime Text 3 Development'):
-            if sys.platform not in set(('win32', 'darwin')):
+            if sys.platform not in {'win32', 'darwin'}:
                 __leaf = __leaf.lower().replace(' ', '-')
             __data_path = os.path.join(__data_path, __leaf)
             __installed_packages_path = os.path.join(__data_path, 'Installed Packages')

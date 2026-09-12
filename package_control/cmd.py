@@ -63,7 +63,7 @@ class Cli:
 
     cli_name = None
 
-    ok_returncodes = set([0])
+    ok_returncodes = {0}
 
     def __init__(self, binary_locations, debug):
         self.binary_locations = binary_locations

@@ -613,7 +613,7 @@ class PackageManager:
         if required_libraries is None:
             required_libraries = self.find_required_libraries()
 
-        return set(lib for lib in installed_libraries - required_libraries if lib.is_managed())
+        return {lib for lib in installed_libraries - required_libraries if lib.is_managed()}
 
     def _download_zip_file(self, name, url, sha256=None):
         try:
