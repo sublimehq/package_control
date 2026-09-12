@@ -142,7 +142,7 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
             message += ' Otherwise some packages may not work properly.'
 
         if message:
-            show_message('Sublime Text needs to be restarted %s.' % message)
+            show_message('Sublime Text needs to be restarted %s.', message)
 
     def cleanup_python_environments(self):
         """

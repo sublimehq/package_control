@@ -115,7 +115,7 @@ def version_sort(sortable, *fields, **kwargs):
     def _version_sort_key(item):
         if isinstance(item, dict):
             if "version" not in item:
-                raise TypeError("%s is not a package or library release" % item)
+                raise TypeError("{} is not a package or library release".format(item))
             result = PackageVersion(item["version"])
             if fields:
                 result = (result,)

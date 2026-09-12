@@ -55,7 +55,7 @@ class AddChannelCommand(sublime_plugin.ApplicationCommand):
             channels.append(url)
             settings.set('channels', channels)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message('Channel %s successfully added' % url)
+            sublime.status_message('Channel {} successfully added'.format(url))
             return
 
         sublime.active_window().show_input_panel(

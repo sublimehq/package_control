@@ -596,7 +596,7 @@ class PackageDisabler:
                         scheme_name, scheme_packages = find_color_scheme_packages(scheme_file)
                         missing_scheme_packages = PackageDisabler.color_scheme_packages[scheme_name] - scheme_packages
                         if missing_scheme_packages:
-                            console_write('The color scheme "%s" no longer exists' % scheme_file)
+                            console_write('The color scheme "%s" no longer exists', scheme_file)
                             color_scheme_errors.add(scheme_file)
                             continue
                         view.settings().set(key, scheme_file)
@@ -607,7 +607,7 @@ class PackageDisabler:
                     if not view.is_valid() or syntax in syntax_errors:
                         continue
                     if not resource_exists(syntax):
-                        console_write('The syntax "%s" no longer exists' % syntax)
+                        console_write('The syntax "%s" no longer exists', syntax)
                         syntax_errors.add(syntax)
                         continue
                     view.settings().set('syntax', syntax)

@@ -267,7 +267,7 @@ class PackageManager:
         if upgrader:
             version = upgrader.latest_commit()
             if version:
-                return '%s commit %s' % (upgrader.cli_name, version)
+                return '{} commit {}'.format(upgrader.cli_name, version)
 
         return 'unknown version'
 
@@ -1611,7 +1611,7 @@ class PackageManager:
         delete_directory(get_package_cache_dir(package_name))
         delete_directory(get_package_module_cache_dir(package_name))
 
-        message = 'Removed package "%s"' % package_name
+        message = 'Removed package "{}"'.format(package_name)
         if result is None:
             message += ' and scheduled clean up on next restart'
         console_write(message)
@@ -1741,7 +1741,7 @@ class PackageManager:
 
         def read_message(message_path):
             with open(sys_path.longpath(message_path), 'r', encoding='utf-8', errors='replace') as fobj:
-                return '\n  %s\n' % fobj.read().rstrip().replace('\n', '\n  ')
+                return '\n  {}\n'.format(fobj.read().rstrip().replace('\n', '\n  '))
 
         output = ''
         if not is_upgrade:

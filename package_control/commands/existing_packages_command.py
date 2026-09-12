@@ -62,12 +62,12 @@ class ExistingPackagesCommand(sublime_plugin.ApplicationCommand):
                 url = metadata.get('url', '')
 
             if USE_QUICK_PANEL_ITEM:
-                description = '<em>%s</em>' % html.escape(description)
+                description = '<em>{}</em>'.format(html.escape(description))
                 final_line = '<em>' + action + installed_version + '</em>'
                 url = html.escape(url)
                 url_display = url_pattern.sub('', url)
                 if url_display:
-                    final_line += '; <a href="%s">%s</a>' % (url, url_display)
+                    final_line += '; <a href="{}">{}</a>'.format(url, url_display)
 
                 annotation = ''
                 if upgrade_time:

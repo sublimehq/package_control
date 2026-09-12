@@ -42,7 +42,7 @@ class InstallPackageCommand(sublime_plugin.ApplicationCommand):
                     return
 
                 def worker(task):
-                    with ActivityIndicator('Installing package %s' % task.package_name) as progress:
+                    with ActivityIndicator('Installing package {}'.format(task.package_name)) as progress:
                         installer.run_install_tasks([task], progress)
 
                 threading.Thread(target=worker, args=[tasks[picked]]).start()

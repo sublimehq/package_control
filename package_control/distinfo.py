@@ -157,7 +157,7 @@ class DistInfoDir:
         """
 
         if python_version is not None and python_version not in ("3.3", "3.8", "3.13", "3.14"):
-            raise ValueError("Invalid python_version %s" % repr(python_version))
+            raise ValueError("Invalid python_version {}".format(repr(python_version)))
 
         version_tag = "py3"
         if python_version is not None:
@@ -169,24 +169,24 @@ class DistInfoDir:
             if sys.platform == "darwin":
                 arch = os.uname()[4]
                 if python_version == "3.3":
-                    arch_tag = "macosx_10_7_%s" % arch
+                    arch_tag = "macosx_10_7_{}".format(arch)
                 elif python_version == "3.8":
-                    arch_tag = "macosx_10_9_%s" % arch
+                    arch_tag = "macosx_10_9_{}".format(arch)
                 elif python_version == "3.13" or python_version == "3.14":
-                    arch_tag = "macosx_10_13_%s" % arch
+                    arch_tag = "macosx_10_13_{}".format(arch)
             elif sys.platform == "linux":
-                arch_tag = "linux_%s" % os.uname()[4]
+                arch_tag = "linux_{}".format(os.uname()[4])
             else:
                 if sys.maxsize == 2147483647:
                     arch_tag = "win32"
                 else:
                     arch_tag = "win_amd64"
-        tag = "%s-%s-%s" % (version_tag, abi_tag, arch_tag)
+        tag = "{}-{}-{}".format(version_tag, abi_tag, arch_tag)
 
         output = "Wheel-Version: 1.0\n"
-        output += "Generator: Package Control (%s)\n" % pc_version
+        output += "Generator: Package Control ({})\n".format(pc_version)
         output += "Root-Is-Purelib: true\n"
-        output += "Tag: %s\n" % tag
+        output += "Tag: {}\n".format(tag)
         return output
 
     def generate_metadata(self, name, version, desc, homepage):
@@ -207,12 +207,12 @@ class DistInfoDir:
         """
 
         output = "Metadata-Version: 2.1\n"
-        output += "Name: %s\n" % name
-        output += "Version: %s\n" % version
+        output += "Name: {}\n".format(name)
+        output += "Version: {}\n".format(version)
         if isinstance(desc, str):
-            output += "Summary: %s\n" % desc.replace("\n", " ")
+            output += "Summary: {}\n".format(desc.replace("\n", " "))
         if isinstance(homepage, str):
-            output += "Home-page: %s\n" % homepage
+            output += "Home-page: {}\n".format(homepage)
 
         return output
 
@@ -269,7 +269,7 @@ class DistInfoDir:
             with open(fpath, "rb") as f:
                 digest = hashlib.sha256(f.read()).digest()
                 sha = base64.urlsafe_b64encode(digest).rstrip(b"=")
-            return (_unix_path(rel_path), "sha256=%s" % sha.decode("utf-8"), str(size))
+            return (_unix_path(rel_path), "sha256={}".format(sha.decode("utf-8")), str(size))
 
         for fname in os.listdir(self.path):
             rel_path = os.path.join(self.dir_name, fname)
@@ -430,10 +430,10 @@ class DistInfoDir:
                 line = line.strip()
                 elements = line.split(",")
                 if len(elements) != 3:
-                    raise ValueError("Invalid record entry: %s" % line)
+                    raise ValueError("Invalid record entry: {}".format(line))
                 is_record_path = elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
                 if not elements[1].startswith("sha256=") and not is_record_path:
-                    raise ValueError("Unabled to parse sha256 hash: %s" % line)
+                    raise ValueError("Unabled to parse sha256 hash: {}".format(line))
                 ri = RecordInfo(
                     elements[0],
                     sys_path.longpath(os.path.join(self.install_root, elements[0])),

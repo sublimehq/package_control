@@ -55,7 +55,7 @@ class AddRepositoryCommand(sublime_plugin.ApplicationCommand):
             repositories.append(url)
             settings.set('repositories', repositories)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message('Repository %s successfully added' % url)
+            sublime.status_message('Repository {} successfully added'.format(url))
             return
 
         sublime.active_window().show_input_panel(

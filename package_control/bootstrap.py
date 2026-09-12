@@ -89,7 +89,7 @@ def _migrate_dependencies():
                         with open(json_path, 'r', encoding='utf-8') as fobj:
                             metadata = json.load(fobj)
                     except (OSError, ValueError) as e:
-                        console_write('Error loading dependency metadata during migration - %s' % e)
+                        console_write('Error loading dependency metadata during migration - {}'.format(e))
                         continue
 
                     did = library.convert_dependency(
@@ -106,7 +106,7 @@ def _migrate_dependencies():
                         create_empty_file(os.path.join(dep_path, 'package-control.cleanup'))
 
                 except (Exception) as e:
-                    console_write('Error trying to migrate dependency %s - %s' % (name, e))
+                    console_write('Error trying to migrate dependency {} - {}'.format(name, e))
 
         os.remove(LOADER_PACKAGE_PATH)
 
@@ -123,7 +123,7 @@ def _migrate_dependencies():
         sublime.set_timeout(_reenable_loader, 500)
 
     except (OSError) as e:
-        console_write('Error trying to migrate dependencies - %s' % e)
+        console_write('Error trying to migrate dependencies - {}'.format(e))
 
 
 def _install_injectors():
@@ -191,7 +191,7 @@ def _install_injectors():
         except FileExistsError:
             pass
         except OSError as e:
-            console_write('Unable to write injector to "%s" - %s' % (injector_path, e))
+            console_write('Unable to write injector to "{}" - {}'.format(injector_path, e))
 
 
 _install_injectors()

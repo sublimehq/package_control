@@ -40,7 +40,7 @@ class RemoveChannelCommand(sublime_plugin.ApplicationCommand):
             else:
                 settings.set('channels', channels)
                 sublime.save_settings(pc_settings_filename())
-                sublime.status_message('Channel %s successfully removed' % url)
+                sublime.status_message('Channel {} successfully removed'.format(url))
             return
 
         if len(channels) == 1:

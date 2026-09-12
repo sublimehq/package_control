@@ -120,7 +120,7 @@ def _grab(url, settings):
 
         parsed = urlparse(url)
         if not parsed or not parsed.hostname:
-            raise DownloaderException('The URL "%s" is malformed' % url)
+            raise DownloaderException('The URL "{}" is malformed'.format(url))
         hostname = parsed.hostname.lower()
         if hostname not in _managers:
             _managers[hostname] = []
@@ -147,7 +147,7 @@ def _release(url, manager):
     with _lock:
         parsed = urlparse(url)
         if not parsed or not parsed.hostname:
-            raise DownloaderException('The URL "%s" is malformed' % url)
+            raise DownloaderException('The URL "{}" is malformed'.format(url))
         hostname = parsed.hostname.lower()
 
         # This means the package was reloaded between _grab and _release,
@@ -437,7 +437,7 @@ class DownloadManager:
         url = url.replace(' ', '%20')
         parsed = urlparse(url)
         if not parsed or not parsed.hostname:
-            raise DownloaderException('The URL "%s" is malformed' % url)
+            raise DownloaderException('The URL "{}" is malformed'.format(url))
         hostname = parsed.hostname.lower()
 
         timeout = self.settings.get('timeout', 3)
@@ -483,7 +483,7 @@ class DownloadManager:
         if hostname in rate_limited_domains:
             exception = RateLimitSkipException(hostname)
             if self.settings.get('debug'):
-                console_write('  %s' % exception, prefix=False)
+                console_write('  %s', exception, prefix=False)
             raise exception
 
         try:

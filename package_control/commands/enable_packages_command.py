@@ -27,9 +27,9 @@ class EnablePackagesCommand(sublime_plugin.ApplicationCommand):
             PackageDisabler.reenable_packages({PackageDisabler.ENABLE: unique_packages})
 
             if len(unique_packages) == 1:
-                message = 'Package %s successfully enabled.' % packages[0]
+                message = 'Package {} successfully enabled.'.format(packages[0])
             else:
-                message = '%d packages have been enabled.' % len(unique_packages)
+                message = '{} packages have been enabled.'.format(len(unique_packages))
 
             sublime.status_message(message)
             return
