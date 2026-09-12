@@ -39,6 +39,7 @@ jobs:
         with:
           package-name: Package Control
           sublime-text-version: ${{ matrix.st-version }}
+          install-package-control: false
       - uses: SublimeText/UnitTesting/actions/run-tests@v1
         with:
           package-name: Package Control
