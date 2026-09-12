@@ -24,7 +24,7 @@ def create_empty_file(filename):
         open(filename, 'xb').close()
     except FileExistsError:
         pass
-    except (OSError, IOError) as e:
+    except OSError as e:
         console_write('Unable to create %s: %s', (filename, e))
         return False
     return True
@@ -236,7 +236,7 @@ def _read_zip_file(package, relative_path, binary=False):
             package
         )
 
-    except (IOError):
+    except (OSError):
         console_write(
             '''
             Unable to read file from sublime-package file for %s due to an

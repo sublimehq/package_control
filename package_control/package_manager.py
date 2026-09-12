@@ -917,7 +917,7 @@ class PackageManager:
 
                 try:
                     temp_did.verify_python_version(lib.python_version)
-                except EnvironmentError as e:
+                except OSError as e:
                     console_write(e)
                     return False
 
