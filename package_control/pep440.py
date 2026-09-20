@@ -226,7 +226,7 @@ class PEP440Version:
         """
         match = self._regex.match(string.lower())
         if not match:
-            raise PEP440InvalidVersionError("'{}' is not a valid PEP440 version string".format(string))
+            raise PEP440InvalidVersionError(f"'{string}' is not a valid PEP440 version string")
 
         (
             epoch,
@@ -287,7 +287,7 @@ class PEP440Version:
         self._tup = (epoch, release, prerelease, local)
 
     def __repr__(self):
-        return "<{0.__class__.__name__}('{0!s}')>".format(self)
+        return f"<{self.__class__.__name__}('{self!s}')>"
 
     def __str__(self):
         return self.version_string()
@@ -458,7 +458,7 @@ class PEP440VersionSpecifier:
         match = self._regex.match(string.lower())
         if not match:
             raise PEP440InvalidVersionSpecifierError(
-                "'{}' is not a valid PEP 440 version specifier string".format(string)
+                f"'{string}' is not a valid PEP 440 version specifier string"
             )
 
         (
@@ -489,7 +489,7 @@ class PEP440VersionSpecifier:
         if self._prefix:
             if self._operator not in (self.OP_EQ, self.OP_NE):
                 raise PEP440InvalidVersionSpecifierError(
-                    "'{}' is not a valid PEP 440 version specifier string".format(string)
+                    f"'{string}' is not a valid PEP 440 version specifier string"
                 )
 
             self._tup = (epoch, release)
@@ -497,7 +497,7 @@ class PEP440VersionSpecifier:
 
         if self._operator == self.OP_CPE and len(release) < 2:
             raise PEP440InvalidVersionSpecifierError(
-                "'{}' is not a valid PEP 440 version specifier string".format(string)
+                f"'{string}' is not a valid PEP 440 version specifier string"
             )
 
         prerelease = ()
@@ -524,7 +524,7 @@ class PEP440VersionSpecifier:
         if local:
             if self._operator not in (self.OP_EQ, self.OP_NE, self.OP_ITY):
                 raise PEP440InvalidVersionSpecifierError(
-                    "'{}' is not a valid PEP 440 version specifier string".format(string)
+                    f"'{string}' is not a valid PEP 440 version specifier string"
                 )
 
             for seg in _local_version_separators.split(local):
@@ -537,7 +537,7 @@ class PEP440VersionSpecifier:
         self._tup = (epoch, release, prerelease, local)
 
     def __repr__(self):
-        return "<{0.__class__.__name__}('{0!s}')>".format(self)
+        return f"<{self.__class__.__name__}('{self!s}')>"
 
     def __str__(self):
         return self._op_str[self._operator] + self.version_string()
@@ -615,7 +615,7 @@ class PEP440VersionSpecifier:
                 return ver_tup[:2] < self_tup[:2]
 
         raise PEP440InvalidVersionSpecifierError(
-            "Invalid PEP 440 version specifier operator: {!r}".format(self._operator)
+            f"Invalid PEP 440 version specifier operator: {self._operator!r}"
         )
 
     def filter(self, iterable):

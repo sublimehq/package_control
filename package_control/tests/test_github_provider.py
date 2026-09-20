@@ -1,9 +1,6 @@
-# flake8: noqa: E121,E126,E501
 import unittesting
 
 from ..providers.github_provider import GitHubProvider
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     DEBUG,
     GH_PASS,
@@ -11,6 +8,7 @@ from ._config import (
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -19,7 +17,7 @@ class GitHubProviderTests(unittesting.AsyncTestCase):
 
     def settings(self):
         if not GH_PASS:
-            self.skipTest("GitHub personal access token for {} not set via env var GH_PASS".format(GH_USER))
+            self.skipTest(f"GitHub personal access token for {GH_USER} not set via env var GH_PASS")
 
         return {
             "debug": DEBUG,

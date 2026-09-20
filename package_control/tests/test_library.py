@@ -2,7 +2,7 @@ import sys
 import unittest
 
 from .. import library
-from ._data_decorator import data_decorator, data
+from ._data_decorator import data, data_decorator
 
 PY33 = sys.version_info[:2] == (3, 3)
 

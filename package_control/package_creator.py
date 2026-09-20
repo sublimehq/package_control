@@ -67,7 +67,7 @@ class PackageCreator:
             return
 
         self.profiles = ['Default']
-        for key in rules.keys():
+        for key in rules:
             self.profiles.append(key)
 
         def show_panel():
@@ -173,7 +173,7 @@ class PackageCreator:
                 }
             )
 
-        except (IOError, OSError) as e:
+        except OSError as e:
             show_error(
                 '''
                 An error occurred creating the package file %s in %s.

@@ -1,8 +1,6 @@
 import unittesting
 
 from ..clients.github_client import GitHubClient
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     DEBUG,
     GH_PASS,
@@ -10,6 +8,7 @@ from ._config import (
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -18,7 +17,7 @@ class GitHubClientTests(unittesting.AsyncTestCase):
 
     def settings(self, extra=None):
         if not GH_PASS:
-            self.skipTest("GitHub personal access token for %s not set via env var GH_PASS" % GH_USER)
+            self.skipTest(f"GitHub personal access token for {GH_USER} not set via env var GH_PASS")
 
         settings = {
             "debug": DEBUG,

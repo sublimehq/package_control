@@ -1,6 +1,6 @@
 import unittest
 
-from ..selectors import is_compatible_version, is_compatible_platform
+from ..selectors import is_compatible_platform, is_compatible_version
 
 
 class PlatformSelectorTests(unittest.TestCase):

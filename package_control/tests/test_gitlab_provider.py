@@ -1,14 +1,12 @@
-# flake8: noqa: E121,E126,E501
 import unittesting
 
 from ..providers.gitlab_provider import GitLabProvider
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     DEBUG,
     GL_PASS,
     GL_USER,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -17,7 +15,7 @@ class GitLabProviderTests(unittesting.AsyncTestCase):
 
     def settings(self):
         if not GL_PASS:
-            self.skipTest("GitLab personal access token for {} not set via env var GL_PASS".format(GL_USER))
+            self.skipTest(f"GitLab personal access token for {GL_USER} not set via env var GL_PASS")
 
         return {
             "debug": DEBUG,

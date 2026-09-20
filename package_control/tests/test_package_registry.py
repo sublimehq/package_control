@@ -1,6 +1,6 @@
-# flake8: noqa: E121,E126,E501
-import unittesting
 from unittest import skipUnless
+
+import unittesting
 
 from ..package_registry import PackageRegistry
 from ._config import (

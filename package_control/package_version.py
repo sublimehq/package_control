@@ -27,7 +27,7 @@ class PackageVersion(PEP440Version):
         """
 
         if not isinstance(ver, str):
-            raise TypeError("{!r} is not a string".format(ver))
+            raise TypeError(f"{ver!r} is not a string")
 
         # Store original version string with `v` trimmed to maintain backward compatibility
         # with regards to not normalize it.
@@ -112,7 +112,7 @@ def version_sort(sortable, *fields, **kwargs):
     def _version_sort_key(item):
         if isinstance(item, dict):
             if "version" not in item:
-                raise TypeError("{} is not a package or library release".format(item))
+                raise TypeError(f"{item} is not a package or library release")
             result = PackageVersion(item["version"])
             if fields:
                 result = (result,)

@@ -1,9 +1,6 @@
-# flake8: noqa: E121,E126,E501
 import unittesting
 
 from ..providers.bitbucket_provider import BitBucketProvider
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     BB_PASS,
     BB_USER,
@@ -11,6 +8,7 @@ from ._config import (
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -19,7 +17,7 @@ class BitBucketProviderTests(unittesting.AsyncTestCase):
 
     def settings(self):
         if not BB_PASS:
-            self.skipTest("BitBucket app password for {} not set via env var BB_PASS".format(BB_USER))
+            self.skipTest(f"BitBucket app password for {BB_USER} not set via env var BB_PASS")
 
         return {
             "debug": DEBUG,
