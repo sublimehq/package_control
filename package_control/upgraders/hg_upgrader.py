@@ -13,10 +13,10 @@ class HgUpgrader(VcsUpgrader):
 
     cli_name = 'hg'
 
-    ok_returncodes = set([0, 1])
+    ok_returncodes = {0, 1}
 
     def __init__(self, *args):
-        super(HgUpgrader, self).__init__(*args)
+        super().__init__(*args)
 
         name = 'hg'
         if os.name == 'nt':

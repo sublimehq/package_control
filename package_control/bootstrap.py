@@ -73,7 +73,7 @@ async def _migrate_dependencies():
                         with open(json_path, 'r', encoding='utf-8') as fobj:
                             metadata = json.load(fobj)
                     except (OSError, ValueError) as e:
-                        console_write('Error loading dependency metadata during migration - {}'.format(e))
+                        console_write(f'Error loading dependency metadata during migration - {e}')
                         continue
 
                     did = library.convert_dependency(
@@ -90,7 +90,7 @@ async def _migrate_dependencies():
                         create_empty_file(os.path.join(dep_path, 'package-control.cleanup'))
 
                 except (Exception) as e:
-                    console_write('Error trying to migrate dependency {} - {}'.format(name, e))
+                    console_write(f'Error trying to migrate dependency {name} - {e}')
 
         os.remove(LOADER_PACKAGE_PATH)
 
@@ -106,7 +106,7 @@ async def _migrate_dependencies():
         )
 
     except (OSError) as e:
-        console_write('Error trying to migrate dependencies - {}'.format(e))
+        console_write(f'Error trying to migrate dependencies - {e}')
 
 
 def _install_injectors():
@@ -174,7 +174,7 @@ def _install_injectors():
         except FileExistsError:
             pass
         except OSError as e:
-            console_write('Unable to write injector to "{}" - {}'.format(injector_path, e))
+            console_write(f'Unable to write injector to "{injector_path}" - {e}')
 
 
 _install_injectors()

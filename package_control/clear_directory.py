@@ -72,7 +72,7 @@ def clear_directory(directory, ignored_files=None, ignore_errors=True):
                     if IS_WIN and not os.access(path, os.W_OK):
                         try:
                             os.chmod(path, stat.S_IWUSR)
-                        except EnvironmentError:
+                        except OSError:
                             pass
                     os.remove(path)
                 except OSError:

@@ -16,7 +16,7 @@ class GitUpgrader(VcsUpgrader):
     cli_name = 'git'
 
     def __init__(self, *args):
-        super(GitUpgrader, self).__init__(*args)
+        super().__init__(*args)
 
         name = 'git'
         if os.name == 'nt':
@@ -57,12 +57,12 @@ class GitUpgrader(VcsUpgrader):
         # Figure out the remote and the branch name on the remote
         remote, res = await asyncio.gather(
             self.execute(
-                [self.binary, 'config', '--get', 'branch.{}.remote'.format(branch)],
+                [self.binary, 'config', '--get', f'branch.{branch}.remote'],
                 self.working_copy,
                 ignore_errors='.*'
             ),
             self.execute(
-                [self.binary, 'config', '--get', 'branch.{}.merge'.format(branch)],
+                [self.binary, 'config', '--get', f'branch.{branch}.merge'],
                 self.working_copy,
                 ignore_errors='.*'
             )

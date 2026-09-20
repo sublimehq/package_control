@@ -140,7 +140,7 @@ class RepositoryProvider(BaseProvider):
 
         # Prevent circular includes
         if self.url in self.included_urls:
-            raise ProviderException('Error, repository "{}" already included.'.format(self.url))
+            raise ProviderException(f'Error, repository "{self.url}" already included.')
 
         self.included_urls.add(self.url)
 
@@ -151,7 +151,7 @@ class RepositoryProvider(BaseProvider):
         except InvalidRepoFileException:
             raise
         except Exception as exc:
-            raise InvalidRepoFileException(self, "parsing JSON failed! {}".format(exc)) from None
+            raise InvalidRepoFileException(self, f"parsing JSON failed! {exc}") from None
 
     async def _parse(self, content):
         try:
@@ -176,7 +176,7 @@ class RepositoryProvider(BaseProvider):
             if key not in content:
                 content[key] = []
             elif not isinstance(content[key], list):
-                raise InvalidRepoFileException(self, 'the "{}" key is not an array.'.format(key))
+                raise InvalidRepoFileException(self, f'the "{key}" key is not an array.')
 
         # Allow repositories to include other repositories, recursively
         repo_providers = []
@@ -189,7 +189,7 @@ class RepositoryProvider(BaseProvider):
                 repo_providers.append(repo_provider)
             else:
                 self.failed_sources[include_url] = ProviderException(
-                    "{} is not a supported repository.".format(include_url)
+                    f"{include_url} is not a supported repository."
                 )
 
         # run in parallel
@@ -258,7 +258,7 @@ class RepositoryProvider(BaseProvider):
         if "name" not in lib:
             id = len(self.broken_libraries)
             exc = ProviderException('No "name" specified!')
-            self.broken_libraries["unknown-{}".format(id)] = exc
+            self.broken_libraries[f"unknown-{id}"] = exc
             return None
 
         if any(c in lib["name"] for c in '/\\:*?"<>|'):
@@ -344,9 +344,7 @@ class RepositoryProvider(BaseProvider):
                         release["branch"] = parts[3]
 
                     # stripped url if differs from global details item
-                    base = "{scheme}://{hostname}/{user}/{repo}".format(
-                        scheme=url.scheme, hostname=url.hostname, user=parts[0], repo=parts[1]
-                    )
+                    base = f"{url.scheme}://{url.hostname}/{parts[0]}/{parts[1]}"
                     if base != pkg.get("details"):
                         release["base"] = base
 
@@ -361,9 +359,7 @@ class RepositoryProvider(BaseProvider):
                         release["branch"] = parts[3]
 
                     # stripped url if differs from global details item
-                    base = "{scheme}://{hostname}/{user}/{repo}".format(
-                        scheme=url.scheme, hostname=url.hostname, user=parts[0], repo=parts[1]
-                    )
+                    base = f"{url.scheme}://{url.hostname}/{parts[0]}/{parts[1]}"
                     if base != pkg.get("details"):
                         release["base"] = base
 
@@ -415,7 +411,7 @@ class RepositoryProvider(BaseProvider):
             except IndexError:
                 id = len(self.broken_packages)
                 exc = ProviderException('Neither "name" nor "details" specified!')
-                self.broken_packages["unknown-{}".format(id)] = exc
+                self.broken_packages[f"unknown-{id}"] = exc
                 # unable to resolve package name, skip it
                 return None
 

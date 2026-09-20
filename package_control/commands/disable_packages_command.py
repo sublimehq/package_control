@@ -46,10 +46,10 @@ class DisablePackagesCommand(sublime_aio.ApplicationCommand):
 
         if num_packages == num_disabled:
             if num_packages == 1:
-                message = "Package {} successfully disabled.".format(packages[0])
+                message = f"Package {packages[0]} successfully disabled."
             else:
-                message = "{} packages have been disabled.".format(num_disabled)
+                message = f"{num_disabled} packages have been disabled."
         else:
-            message = "{} of {} packages have been disabled.".format(num_disabled, num_packages)
+            message = f"{num_disabled} of {num_packages} packages have been disabled."
 
         sublime.status_message(message)

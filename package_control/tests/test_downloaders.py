@@ -1,9 +1,6 @@
 import unittest
 
-from ..http import DownloaderException
 from ..http import resolve_url
-
-from ._config import DEBUG
 
 
 class ResolveUrlTests(unittest.TestCase):

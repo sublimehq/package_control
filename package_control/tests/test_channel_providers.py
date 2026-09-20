@@ -1,15 +1,13 @@
-# flake8: noqa: E121,E126,E501
 import unittesting
 
 from ..providers.channel_provider import ChannelProvider
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     DEBUG,
     TEST_FIXTURES_URI,
     TEST_REPOSITORY_URI,
     TEST_REPOSITORY_URL,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
