@@ -55,7 +55,7 @@ if int(sublime.version()) < 4000 or sys.version_info < (3, 8):
         sublime.set_timeout(lambda: PackageDisabler.disable_packages({PackageDisabler.DISABLE: "Package Control"}))
 
 # Ensure the user has installed Package Control properly
-elif __spec__.parent != 'Package Control':
+elif __spec__.parent != "Package Control":
     message = text.format(
         '''
         Package Control
@@ -150,7 +150,7 @@ else:
 
     # Normal execution will finish setting up the package
     else:
-        from .package_control.commands import *  # noqa
+        from .package_control.commands import *
 
         def plugin_loaded():
             """

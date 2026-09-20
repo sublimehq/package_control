@@ -55,7 +55,7 @@ class GitLabClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return 'https://gitlab.com/{}/{}'.format(quote(user_name), quote(repo_name))
+        return f'https://gitlab.com/{quote(user_name)}/{quote(repo_name)}'
 
     async def download_info(self, url, tag_prefix=None):
         """
@@ -118,7 +118,7 @@ class GitLabClient(JSONApiClient):
         if not repo_name:
             return None
 
-        repo_id = '{}%2F{}'.format(user_name, repo_name)
+        repo_id = f'{user_name}%2F{repo_name}'
 
         if branch is None:
             branch = default_branch
@@ -126,7 +126,7 @@ class GitLabClient(JSONApiClient):
                 repo_info = await self.fetch_json(self._api_url(repo_id))
                 branch = repo_info.get('default_branch', 'master')
 
-        branch_url = self._api_url(repo_id, '/repository/branches/{}'.format(branch))
+        branch_url = self._api_url(repo_id, f'/repository/branches/{branch}')
         branch_info = await self.fetch_json(branch_url)
 
         timestamp = branch_info['commit']['committed_date'][0:19].replace('T', ' ')
@@ -231,7 +231,7 @@ class GitLabClient(JSONApiClient):
             used_versions = set()
             for page in range(100):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                api_url = self._api_url(user_repo, '/releases?{}'.format(query_string))
+                api_url = self._api_url(user_repo, f'/releases?{query_string}')
                 releases = await self.fetch_json(api_url)
 
                 for release in releases:
@@ -257,7 +257,7 @@ class GitLabClient(JSONApiClient):
                     return
 
         user_name, repo_name = match.groups()
-        repo_id = '{}%2F{}'.format(user_name, repo_name)
+        repo_id = f'{user_name}%2F{repo_name}'
 
         asset_templates = self._expand_asset_variables(asset_templates)
 
@@ -330,7 +330,7 @@ class GitLabClient(JSONApiClient):
             used_versions = set()
             for page in range(100):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                tags_url = self._api_url(repo_id, '/repository/tags?{}'.format(query_string))
+                tags_url = self._api_url(repo_id, f'/repository/tags?{query_string}')
                 tags_json = await self.fetch_json(tags_url)
 
                 for tag in tags_json:
@@ -347,7 +347,7 @@ class GitLabClient(JSONApiClient):
                     return
 
         user_name, repo_name = tags_match.groups()
-        repo_id = '{}%2F{}'.format(user_name, repo_name)
+        repo_id = f'{user_name}%2F{repo_name}'
 
         max_releases = self.settings.get('max_releases', 0)
         num_releases = 0
@@ -392,7 +392,7 @@ class GitLabClient(JSONApiClient):
         if not user_name or not repo_name:
             return None
 
-        repo_id = '{}%2F{}'.format(user_name, repo_name)
+        repo_id = f'{user_name}%2F{repo_name}'
         repo_url = self._api_url(repo_id)
         repo_info = await self.fetch_json(repo_url)
 
@@ -425,7 +425,7 @@ class GitLabClient(JSONApiClient):
 
         user_name = result['owner']['username'] if result.get('owner') else result['namespace']['name']
         repo_name = result['name']
-        user_repo = '{}/{}'.format(user_name, repo_name)
+        user_repo = f'{user_name}/{repo_name}'
 
         readme_url = None
         if result['readme_url']:
@@ -475,8 +475,7 @@ class GitLabClient(JSONApiClient):
         """
 
         return {
-            'url': 'https://gitlab.com/{}/{}/-/archive/{}/{}-{}.zip'.format(
-                user_name, repo_name, ref_name, repo_name, ref_name),
+            'url': f'https://gitlab.com/{user_name}/{repo_name}/-/archive/{ref_name}/{repo_name}-{ref_name}.zip',
             'version': version,
             'date': timestamp
         }
@@ -495,7 +494,7 @@ class GitLabClient(JSONApiClient):
             The API URL
         """
 
-        return 'https://gitlab.com/api/v4/projects/{}{}'.format(project_id, suffix)
+        return f'https://gitlab.com/api/v4/projects/{project_id}{suffix}'
 
     async def _extract_user_id(self, username):
         """
@@ -508,7 +507,7 @@ class GitLabClient(JSONApiClient):
             A user_id or None if no match
         """
 
-        user_url = 'https://gitlab.com/api/v4/users?username={}'.format(username)
+        user_url = f'https://gitlab.com/api/v4/users?username={username}'
         try:
             repos_info = await self.fetch_json(user_url)
         except (DownloaderException) as e:
@@ -532,7 +531,7 @@ class GitLabClient(JSONApiClient):
             A group_id or (None, None) if no match
         """
 
-        group_url = 'https://gitlab.com/api/v4/groups?search={}'.format(group_name)
+        group_url = f'https://gitlab.com/api/v4/groups?search={group_name}'
         try:
             repos_info = await self.fetch_json(group_url)
         except (DownloaderException) as e:

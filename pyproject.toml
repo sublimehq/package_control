@@ -1,0 +1,7 @@
+[tool.ruff]
+exclude = [
+    "vendor",
+    "stubs"
+]
+line-length = 110
+target-version = "py38"

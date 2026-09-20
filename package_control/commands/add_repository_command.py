@@ -32,7 +32,7 @@ class AddRepositoryCommand(sublime_plugin.ApplicationCommand):
         if isinstance(url, str):
             url = url.strip()
 
-            if re.match(r'^(?:file:///|https?://)', url, re.I) is None:
+            if re.match(r'^(?:file:///|https?://)', url, re.IGNORECASE) is None:
                 if not isabs(url):
                     output_fn = console_write if unattended else show_error
                     output_fn(
@@ -55,7 +55,7 @@ class AddRepositoryCommand(sublime_plugin.ApplicationCommand):
             repositories.append(url)
             settings.set('repositories', repositories)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message('Repository {} successfully added'.format(url))
+            sublime.status_message(f'Repository {url} successfully added')
             return
 
         sublime.active_window().show_input_panel(

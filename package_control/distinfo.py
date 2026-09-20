@@ -48,9 +48,7 @@ def _verify_file(abs_path, hash_, size):
     with open(abs_path, "rb") as f:
         digest = hashlib.sha256(f.read()).digest()
         sha = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("utf-8")
-    if sha != hash_:
-        return False
-    return True
+    return sha == hash_
 
 
 class RecordInfo:
@@ -73,9 +71,7 @@ class RecordInfo:
             return False
         if self.size != rhs.size:
             return False
-        if self.sha256 != rhs.sha256:
-            return False
-        return True
+        return self.sha256 == rhs.sha256
 
     def __hash__(self):
         return hash((self.relative_path, self.absolute_path, self.size, self.sha256))
@@ -86,7 +82,6 @@ class DistInfoNotFoundError(FileNotFoundError):
     This class describes a .dist-info directory not found error.
     """
 
-    pass
 
 
 class DistInfoDir:
@@ -157,7 +152,7 @@ class DistInfoDir:
         """
 
         if python_version is not None and python_version not in ("3.3", "3.8", "3.13", "3.14"):
-            raise ValueError("Invalid python_version {}".format(repr(python_version)))
+            raise ValueError(f"Invalid python_version {python_version!r}")
 
         version_tag = "py3"
         if python_version is not None:
@@ -169,24 +164,24 @@ class DistInfoDir:
             if sys.platform == "darwin":
                 arch = os.uname()[4]
                 if python_version == "3.3":
-                    arch_tag = "macosx_10_7_{}".format(arch)
+                    arch_tag = f"macosx_10_7_{arch}"
                 elif python_version == "3.8":
-                    arch_tag = "macosx_10_9_{}".format(arch)
+                    arch_tag = f"macosx_10_9_{arch}"
                 elif python_version == "3.13" or python_version == "3.14":
-                    arch_tag = "macosx_10_13_{}".format(arch)
+                    arch_tag = f"macosx_10_13_{arch}"
             elif sys.platform == "linux":
-                arch_tag = "linux_{}".format(os.uname()[4])
+                arch_tag = f"linux_{os.uname()[4]}"
             else:
                 if sys.maxsize == 2147483647:
                     arch_tag = "win32"
                 else:
                     arch_tag = "win_amd64"
-        tag = "{}-{}-{}".format(version_tag, abi_tag, arch_tag)
+        tag = f"{version_tag}-{abi_tag}-{arch_tag}"
 
         output = "Wheel-Version: 1.0\n"
-        output += "Generator: Package Control ({})\n".format(pc_version)
+        output += f"Generator: Package Control ({pc_version})\n"
         output += "Root-Is-Purelib: true\n"
-        output += "Tag: {}\n".format(tag)
+        output += f"Tag: {tag}\n"
         return output
 
     def generate_metadata(self, name, version, desc, homepage):
@@ -207,12 +202,12 @@ class DistInfoDir:
         """
 
         output = "Metadata-Version: 2.1\n"
-        output += "Name: {}\n".format(name)
-        output += "Version: {}\n".format(version)
+        output += f"Name: {name}\n"
+        output += f"Version: {version}\n"
         if isinstance(desc, str):
             output += "Summary: {}\n".format(desc.replace("\n", " "))
         if isinstance(homepage, str):
-            output += "Home-page: {}\n".format(homepage)
+            output += f"Home-page: {homepage}\n"
 
         return output
 
@@ -430,10 +425,10 @@ class DistInfoDir:
                 line = line.strip()
                 elements = line.split(",")
                 if len(elements) != 3:
-                    raise ValueError("Invalid record entry: {}".format(line))
+                    raise ValueError(f"Invalid record entry: {line}")
                 is_record_path = elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
                 if not elements[1].startswith("sha256=") and not is_record_path:
-                    raise ValueError("Unabled to parse sha256 hash: {}".format(line))
+                    raise ValueError(f"Unabled to parse sha256 hash: {line}")
                 ri = RecordInfo(
                     elements[0],
                     sys_path.longpath(os.path.join(self.install_root, elements[0])),

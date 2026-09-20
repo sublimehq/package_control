@@ -133,8 +133,7 @@ class PackageCleanup(PackageTaskRunner):
 
         in_process = self.in_process_packages()
         if in_process:
-            message += 'to complete pending package operations on "%s"' \
-                % '", "'.join(sorted(in_process, key=lambda s: s.lower()))
+            message += 'to complete pending package operations on "{}"'.format('", "'.join(sorted(in_process, key=lambda s: s.lower())))
 
         if self.updated_libraries:
             if message:
@@ -339,9 +338,9 @@ class PackageCleanup(PackageTaskRunner):
             if migrate_packages:
                 num_packages = len(migrate_packages)
                 if num_packages == 1:
-                    message = 'Migrating package {}'.format(list(migrate_packages)[0])
+                    message = f'Migrating package {next(iter(migrate_packages))}'
                 else:
-                    message = 'Migrating {} packages...'.format(num_packages)
+                    message = f'Migrating {num_packages} packages...'
                     console_write(message)
 
                 with ActivityIndicator(message) as progress:
@@ -352,7 +351,7 @@ class PackageCleanup(PackageTaskRunner):
 
                     for package_name in sorted(migrate_packages, key=lambda s: s.lower()):
                         try:
-                            progress.set_label('Migrating package {}...'.format(package_name))
+                            progress.set_label(f'Migrating package {package_name}...')
                             result = await self.manager.install_package(package_name, unattended=True)
                             if result is True:
                                 num_success += 1
@@ -369,12 +368,12 @@ class PackageCleanup(PackageTaskRunner):
                             traceback.print_tb(e.__traceback__)
 
                     if num_packages == 1:
-                        message = 'Package {} successfully migrated'.format(list(migrate_packages)[0])
+                        message = f'Package {next(iter(migrate_packages))} successfully migrated'
                     elif num_packages == num_success:
                         message = 'All packages successfully migrated'
                         console_write(message)
                     else:
-                        message = '{} of {} packages successfully migrated'.format(num_success, num_packages)
+                        message = f'{num_success} of {num_packages} packages successfully migrated'
                         console_write(message)
 
                     if reenable_packages:
@@ -433,9 +432,9 @@ class PackageCleanup(PackageTaskRunner):
 
         num_libraries = len(missing_libraries)
         if num_libraries == 1:
-            message = 'Installing library {}'.format(list(missing_libraries)[0])
+            message = f'Installing library {next(iter(missing_libraries))}'
         else:
-            message = 'Installing {} libraries...'.format(num_libraries)
+            message = f'Installing {num_libraries} libraries...'
             console_write(message)
 
         with ActivityIndicator(message) as progress:

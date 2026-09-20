@@ -39,7 +39,7 @@ class RemoveRepositoryCommand(sublime_plugin.ApplicationCommand):
             else:
                 settings.set('repositories', repositories)
                 sublime.save_settings(pc_settings_filename())
-                sublime.status_message('Repository {} successfully removed'.format(url))
+                sublime.status_message(f'Repository {url} successfully removed')
             return
 
         def on_done(index):

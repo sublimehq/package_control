@@ -2,8 +2,6 @@ import os
 import re
 from urllib.request import pathname2url
 
-from .. import __version__
-
 DEBUG = False
 
 LAST_COMMIT_TIMESTAMP = '2014-11-28 20:54:15'

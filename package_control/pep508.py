@@ -88,7 +88,7 @@ def _implementation_name():
 def _implementation_version():
     if hasattr(sys, 'implementation'):
         vi = sys.implementation.version
-        version = '{0.major}.{0.minor}.{0.micro}'.format(vi)
+        version = f'{vi.major}.{vi.minor}.{vi.micro}'
         kind = vi.releaselevel
         if kind != 'final':
             version += kind[0] + str(vi.serial)
@@ -147,7 +147,7 @@ def _category_name(category):
     }[category]
 
 
-class Token():
+class Token:
     token_type = 0
     # Only used for strings
     value = None
@@ -172,12 +172,12 @@ class Token():
             return self.value
 
         if self.token_type not in MARKERS:
-            raise RuntimeError("Unable to realize token of type %s" % _token_name(self.token_type))
+            raise RuntimeError(f"Unable to realize token of type {_token_name(self.token_type)}")
 
         return MARKERS[self.token_type]
 
 
-class Parser():
+class Parser:
     remaining = None
 
     def __init__(self, text):
@@ -206,7 +206,7 @@ class Parser():
         return Token(token_type, value, match.span())
 
 
-class PEP508EnvironmentMarker():
+class PEP508EnvironmentMarker:
     tokens = None
 
     def __init__(self, string):
@@ -247,9 +247,7 @@ class PEP508EnvironmentMarker():
                     expected = LOGICAL_OPERATOR
                 else:
                     expected = COMPARISON_OPERATOR
-            elif expected == COMPARISON_OPERATOR:
-                expected = VALUE
-            elif expected == LOGICAL_OPERATOR:
+            elif expected == COMPARISON_OPERATOR or expected == LOGICAL_OPERATOR:
                 expected = VALUE
 
         if expected != LOGICAL_OPERATOR:

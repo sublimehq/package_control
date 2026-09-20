@@ -3,9 +3,7 @@ import sys
 import tempfile
 import unittest
 
-from .. import distinfo
-from .. import __version__
-
+from .. import __version__, distinfo
 
 tmp_dir = tempfile.TemporaryDirectory
 
@@ -13,15 +11,15 @@ tmp_dir = tempfile.TemporaryDirectory
 def _tag(version):
     if sys.platform == "darwin":
         if version == "3.3":
-            tag = "macosx_10_7_%s" % os.uname()[4]
+            tag = f"macosx_10_7_{os.uname()[4]}"
         elif version == "3.8":
-            tag = "macosx_10_9_%s" % os.uname()[4]
+            tag = f"macosx_10_9_{os.uname()[4]}"
         elif version == "3.13":
-            tag = "macosx_10_13_%s" % os.uname()[4]
+            tag = f"macosx_10_13_{os.uname()[4]}"
         else:
             raise ValueError("Invalid version")
     elif sys.platform == "linux":
-        tag = "linux_%s" % os.uname()[4]
+        tag = f"linux_{os.uname()[4]}"
     else:
         if sys.maxsize == 2147483647:
             tag = "win32"
@@ -183,10 +181,10 @@ class DistinfoTests(unittest.TestCase):
                 self.assertEqual(
                     (
                         "Wheel-Version: 1.0\n"
-                        "Generator: Package Control (%s)\n"
+                        f"Generator: Package Control ({__version__})\n"
                         "Root-Is-Purelib: true\n"
                         "Tag: py33-none-any\n"
-                    ) % (__version__,),
+                    ),
                     f.read()
                 )
 
@@ -202,10 +200,10 @@ class DistinfoTests(unittest.TestCase):
                 self.assertEqual(
                     (
                         "Wheel-Version: 1.0\n"
-                        "Generator: Package Control (%s)\n"
+                        "Generator: Package Control ({})\n"
                         "Root-Is-Purelib: true\n"
-                        "Tag: py33-cp33m-%s\n"
-                    ) % (__version__, _tag("3.3")),
+                        "Tag: py33-cp33m-{}\n"
+                    ).format(__version__, _tag("3.3")),
                     f.read()
                 )
 
@@ -221,10 +219,10 @@ class DistinfoTests(unittest.TestCase):
                 self.assertEqual(
                     (
                         "Wheel-Version: 1.0\n"
-                        "Generator: Package Control (%s)\n"
+                        f"Generator: Package Control ({__version__})\n"
                         "Root-Is-Purelib: true\n"
                         "Tag: py38-none-any\n"
-                    ) % (__version__,),
+                    ),
                     f.read()
                 )
 
@@ -240,10 +238,10 @@ class DistinfoTests(unittest.TestCase):
                 self.assertEqual(
                     (
                         "Wheel-Version: 1.0\n"
-                        "Generator: Package Control (%s)\n"
+                        "Generator: Package Control ({})\n"
                         "Root-Is-Purelib: true\n"
-                        "Tag: py38-cp38m-%s\n"
-                    ) % (__version__, _tag("3.8")),
+                        "Tag: py38-cp38m-{}\n"
+                    ).format(__version__, _tag("3.8")),
                     f.read()
                 )
 
@@ -406,7 +404,7 @@ class DistinfoTests(unittest.TestCase):
             self.assertEqual(0, len(modified))
             self.assertEqual(7, len(unmodified))
 
-            sorted_records = sorted(list(unmodified), key=lambda ri: ri.relative_path)
+            sorted_records = sorted(unmodified, key=lambda ri: ri.relative_path)
 
             self.assertEqual("testing-1.0.0.dist-info/INSTALLER", sorted_records[0].relative_path)
             self.assertEqual("Hg_Q6w_I4zpFfb6C24LQdd4oTAMHJZDk9gtuV2yOgkw", sorted_records[0].sha256)

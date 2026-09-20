@@ -28,18 +28,12 @@ class ClearPackageCacheCommand(sublime_plugin.ApplicationCommand):
         folder = cache_path()
 
         if not unattended:
-            msg = 'Do you want to clear "{}" to reset all packages to freshly installed state?'.format(
-                shortpath(folder)
-            )
+            msg = f'Do you want to clear "{shortpath(folder)}" to reset all packages to freshly installed state?'
 
             # ST4 supports modal dialogs with title
             if hasattr(sublime.ok_cancel_dialog, "title") and not sublime.ok_cancel_dialog(
                 msg, title="Clear Sublime Text Cache Directory?"
-            ):
-                return
-
-            # ST3
-            elif not sublime.ok_cancel_dialog(msg):
+            ) or not sublime.ok_cancel_dialog(msg):
                 return
 
         if not clear_directory(folder, ignore_errors=False):

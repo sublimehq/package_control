@@ -74,5 +74,5 @@ class InstallPackageCommand(sublime_plugin.ApplicationCommand):
 
         task = tasks[picked]
 
-        with ActivityIndicator("Installing package {}".format(task.package_name)) as progress:
+        with ActivityIndicator(f"Installing package {task.package_name}") as progress:
             await installer.run_install_tasks([task], progress)

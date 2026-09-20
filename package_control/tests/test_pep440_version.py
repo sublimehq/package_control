@@ -4,7 +4,7 @@ from ..pep440 import (
     PEP440InvalidVersionError,
     PEP440Version,
 )
-from ._data_decorator import data_decorator, data
+from ._data_decorator import data, data_decorator
 
 # This list must be in the correct sorting order
 VERSIONS = [

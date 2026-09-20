@@ -5,7 +5,7 @@ from ..pep440 import (
     PEP440VersionSpecifier,
     check_version,
 )
-from ._data_decorator import data_decorator, data
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator

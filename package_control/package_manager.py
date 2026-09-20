@@ -261,7 +261,7 @@ class PackageManager:
         if upgrader:
             version = await upgrader.latest_commit()
             if version:
-                return '{} commit {}'.format(upgrader.cli_name, version)
+                return f'{upgrader.cli_name} commit {version}'
 
         return 'unknown version'
 
@@ -706,7 +706,7 @@ class PackageManager:
 
         return sep.join(common) + sep if common else ''
 
-    def _extract_zip(self, name, zf, src_dir, dest_dir, exclude=[]):
+    def _extract_zip(self, name, zf, src_dir, dest_dir, exclude=None):
         """
         Extracts a zip to a folder
 
@@ -730,6 +730,8 @@ class PackageManager:
             A bool indication if the install should be retried
         """
 
+        if exclude is None:
+            exclude = []
         is_win = os.name == 'nt'
 
         # Here we don't use .extractall() since it was having issues on OS X
@@ -902,7 +904,7 @@ class PackageManager:
                 # search '<name>-<version>.dist-info/RECORD' directory in archive
                 # be permissive with version part as it may have a different format as `available_version`
                 new_did_name = None
-                pattern = re.compile(r'({0.dist_name}-\S+\.dist-info)/RECORD'.format(lib), re.IGNORECASE)
+                pattern = re.compile(rf'({lib.dist_name}-\S+\.dist-info)/RECORD', re.IGNORECASE)
                 for i in library_zip.infolist():
                     match = pattern.match(i.filename)
                     if match:
@@ -1631,7 +1633,7 @@ class PackageManager:
         delete_directory(get_package_cache_dir(package_name))
         delete_directory(get_package_module_cache_dir(package_name))
 
-        message = 'Removed package "{}"'.format(package_name)
+        message = f'Removed package "{package_name}"'
         if result is None:
             message += ' and scheduled clean up on next restart'
         console_write(message)

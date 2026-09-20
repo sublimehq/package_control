@@ -90,11 +90,10 @@ def names_to_libraries(names, python_version):
         if name not in builtins:
             yield Library(name, python_version)
 
-    return None
 
 
 class Library:
-    __slots__ = ["name", "dist_name", "python_version"]
+    __slots__ = ["dist_name", "name", "python_version"]
 
     def __init__(self, name, python_version):
         if not isinstance(name, str):
@@ -106,9 +105,7 @@ class Library:
             raise TypeError("python_version must be a unicode string")
         if python_version not in BUILTIN_LIBRARIES:
             raise ValueError(
-                "python_version must be one of {}, not {!r}".format(
-                    sys_path.python_versions(), python_version
-                )
+                f"python_version must be one of {sys_path.python_versions()}, not {python_version!r}"
             )
 
         self.name = name
@@ -116,7 +113,7 @@ class Library:
         self.python_version = python_version
 
     def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__, self.name, self.python_version)
+        return f"{self.__class__.__name__}({self.name!r}, {self.python_version!r})"
 
     def __str__(self):
         return self.name
@@ -217,7 +214,7 @@ def find_installed(lib):
     returns:
         An InstalledLibrary() object
     """
-    pattern = re.compile(r"{0.dist_name}-\S+\.dist-info".format(lib), re.IGNORECASE)
+    pattern = re.compile(rf"{lib.dist_name}-\S+\.dist-info", re.IGNORECASE)
     install_root = sys_path.lib_paths()[lib.python_version]
     for fname in os.listdir(install_root):
         if pattern.match(fname):
@@ -280,16 +277,16 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
     if int(sublime.version()) >= 4000:
         # platform / arch specific releases must exactly match requested python version
         # as they are expected to contain compiled libraries
-        install_rel_paths.append(("st4_arch", "st4_py{}_{}_{}".format(py, plat, arch)))
-        install_rel_paths.append(("st4_plat", "st4_py{}_{}".format(py, plat)))
+        install_rel_paths.append(("st4_arch", f"st4_py{py}_{plat}_{arch}"))
+        install_rel_paths.append(("st4_plat", f"st4_py{py}_{plat}"))
         # pure python releases for python 3.8+
         install_rel_paths.append(("st4_py", "st4_py38"))
         install_rel_paths.append(("st4", "st4"))
 
     # platform/arch specific st3 dependencies are most likely only compatible with python 3.3
     if python_version == "3.3":
-        install_rel_paths.append(("st3_arch", "st3_{}_{}".format(plat, arch)))
-        install_rel_paths.append(("st3_plat", "st3_{}".format(plat)))
+        install_rel_paths.append(("st3_arch", f"st3_{plat}_{arch}"))
+        install_rel_paths.append(("st3_plat", f"st3_{plat}"))
 
     # commonly supported variants
     install_rel_paths.append(("st3", "st3"))
@@ -310,7 +307,7 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
     if not src_dir:
         raise ValueError("Unrecognized or incompatible source archive layout")
 
-    did_name = "{}-{}.dist-info".format(escape_name(name), version)
+    did_name = f"{escape_name(name)}-{version}.dist-info"
     did = distinfo.DistInfoDir(src_dir, did_name)
     did.ensure_exists()
     did.write_metadata(name, version, description, url)
@@ -331,9 +328,7 @@ def convert_dependency(dependency_path, python_version, name, version, descripti
         lf = fname.lower()
         if os.path.isdir(path):
             package_dirs.append(fname)
-        elif ext in {".py", ".pyc"}:
-            package_files.append(fname)
-        elif ext in shared_exts:
+        elif ext in {".py", ".pyc"} or ext in shared_exts:
             package_files.append(fname)
         elif lf in extra_filenames:
             # Extra files in the root need to be put into the

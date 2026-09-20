@@ -28,7 +28,7 @@ class PyPiClient(JSONApiClient):
         if not name:
             return None
 
-        pypi_url = "https://pypi.org/pypi/{}/json".format(name)
+        pypi_url = f"https://pypi.org/pypi/{name}/json"
         info = await self.fetch_json(pypi_url)
 
         return {
@@ -43,15 +43,15 @@ class PyPiClient(JSONApiClient):
 
     async def download_info(self, url, tag_prefix=None):
         """Branch or tag based releases are not supported."""
-        return None
+        return
 
     async def download_info_from_branch(self, url, default_branch=None):
         """Branch or tag based releases are not supported."""
-        return None
+        return
 
     async def download_info_from_tags(self, url, tag_prefix=None):
         """Branch or tag based releases are not supported."""
-        return None
+        return
 
     async def download_info_from_releases(self, url, asset_templates, tag_prefix=None):
         """
@@ -169,7 +169,7 @@ class PyPiClient(JSONApiClient):
             following keys:
         """
 
-        pypi_url = "https://pypi.org/pypi/{}/{}/json".format(name, version)
+        pypi_url = f"https://pypi.org/pypi/{name}/{version}/json"
         content = await self.fetch_json(pypi_url)
         assets = content["urls"]
 
@@ -199,7 +199,7 @@ class PyPiClient(JSONApiClient):
             following keys:
         """
 
-        pypi_url = "https://pypi.org/pypi/{}/json".format(name)
+        pypi_url = f"https://pypi.org/pypi/{name}/json"
 
         # fetch dictionary of form `version: [asset, asset]`
         content = await self.fetch_json(pypi_url)

@@ -2,7 +2,7 @@ import unittest
 
 from .. import pep508
 from ..pep508 import PEP508EnvironmentMarker
-from ._data_decorator import data_decorator, data
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator

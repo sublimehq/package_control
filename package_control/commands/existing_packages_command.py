@@ -59,12 +59,12 @@ class ExistingPackagesCommand(sublime_aio.ApplicationCommand):
 
                 url = metadata.get('url', '')
 
-            description = '<em>{}</em>'.format(html.escape(description))
+            description = f'<em>{html.escape(description)}</em>'
             final_line = '<em>' + action + installed_version + '</em>'
             url = html.escape(url)
             url_display = url_pattern.sub('', url)
             if url_display:
-                final_line += '; <a href="{}">{}</a>'.format(url, url_display)
+                final_line += f'; <a href="{url}">{url_display}</a>'
 
             annotation = ''
             if upgrade_time:

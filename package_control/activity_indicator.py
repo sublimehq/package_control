@@ -1,5 +1,6 @@
-import sublime
 from threading import RLock
+
+import sublime
 
 
 class ActivityIndicator:
