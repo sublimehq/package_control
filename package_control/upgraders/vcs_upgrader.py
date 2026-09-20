@@ -25,4 +25,4 @@ class VcsUpgrader(Cli):
         self.update_command = update_command
         self.working_copy = working_copy
         self.cache_length = cache_length
-        super(VcsUpgrader, self).__init__(vcs_binary_paths, debug)
+        super().__init__(vcs_binary_paths, debug)

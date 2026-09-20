@@ -52,7 +52,7 @@ class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
             issues_display = re.sub(r"^https?://", "", issues)
             if issues_display:
                 details.append(
-                    'report bug: <a href="{}">{}</a>'.format(issues, issues_display)
+                    f'report bug: <a href="{issues}">{issues_display}</a>'
                 )
 
             try:
@@ -85,7 +85,7 @@ class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
 
         if len(versions) > 1 and versions[0][0] != versions[1][0]:
             return ",".join(
-                " v{} (py{})".format(ver, pyver)
+                f" v{ver} (py{pyver})"
                 for ver, pyver in versions
             )
 

@@ -32,7 +32,7 @@ class AddChannelCommand(sublime_plugin.ApplicationCommand):
         if isinstance(url, str):
             url = url.strip()
 
-            if re.match(r'^(?:file:///|https?://)', url, re.I) is None:
+            if re.match(r'^(?:file:///|https?://)', url, re.IGNORECASE) is None:
                 if not isabs(url):
                     output_fn = console_write if unattended else show_error
                     output_fn(
@@ -55,7 +55,7 @@ class AddChannelCommand(sublime_plugin.ApplicationCommand):
             channels.append(url)
             settings.set('channels', channels)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message('Channel {} successfully added'.format(url))
+            sublime.status_message(f'Channel {url} successfully added')
             return
 
         sublime.active_window().show_input_panel(

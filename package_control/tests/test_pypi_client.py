@@ -1,9 +1,8 @@
 import unittesting
 
 from ..clients.pypi_client import PyPiClient
-from ._data_decorator import data_decorator, data
-
 from ._config import DEBUG
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator

@@ -89,7 +89,7 @@ class ChannelProvider(RepositoryProvider):
         except InvalidChannelFileException:
             raise
         except Exception as exc:
-            raise InvalidChannelFileException(self, "parsing JSON failed! {}".format(exc)) from None
+            raise InvalidChannelFileException(self, f"parsing JSON failed! {exc}") from None
 
     async def _parse(self, content):
         try:
@@ -131,7 +131,7 @@ class ChannelProvider(RepositoryProvider):
                     repo_providers[repo_url] = repo_provider
                 else:
                     self.failed_sources[repo_url] = ProviderException(
-                        "{} is not a supported repository.".format(repo_url)
+                        f"{repo_url} is not a supported repository."
                     )
 
         # run in parallel

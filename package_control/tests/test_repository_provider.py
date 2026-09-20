@@ -1,14 +1,8 @@
-# flake8: noqa: E121,E126,E501
 import unittesting
 
 from ..providers.repository_provider import RepositoryProvider
-from ._data_decorator import data_decorator, data
-
-from ._config import (
-    DEBUG,
-    TEST_FIXTURES_URI,
-    TEST_REPOSITORY_URI
-)
+from ._config import DEBUG, TEST_FIXTURES_URI, TEST_REPOSITORY_URI
+from ._data_decorator import data, data_decorator
 
 TEST_FIXTURE_01_URL = TEST_FIXTURES_URI + "fixture-01/"
 

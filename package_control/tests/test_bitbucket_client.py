@@ -1,8 +1,6 @@
 import unittesting
 
 from ..clients.bitbucket_client import BitBucketClient
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     BB_PASS,
     BB_USER,
@@ -10,6 +8,7 @@ from ._config import (
     LAST_COMMIT_TIMESTAMP,
     LAST_COMMIT_VERSION,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -18,7 +17,7 @@ class BitBucketClientTests(unittesting.AsyncTestCase):
 
     def settings(self, extra=None):
         if not BB_PASS:
-            self.skipTest("BitBucket app password for %s not set via env var BB_PASS" % BB_USER)
+            self.skipTest(f"BitBucket app password for {BB_USER} not set via env var BB_PASS")
 
         settings = {
             "debug": DEBUG,

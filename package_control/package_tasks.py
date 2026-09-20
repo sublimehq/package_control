@@ -21,7 +21,7 @@ class BasePackageTask:
         self.package_name = name
 
     def __repr__(self):
-        return '{}({}, {})'.format(self.__class__.__name__, self.action, self.package_name)
+        return f'{self.__class__.__name__}({self.action}, {self.package_name})'
 
 
 class PackageInstallTask(BasePackageTask):
@@ -267,9 +267,9 @@ class PackageTaskRunner(PackageDisabler):
 
         num_packages = len(packages)
         if num_packages == 1:
-            message = 'Removing {}package {}'.format(package_kind, list(packages)[0])
+            message = f'Removing {package_kind}package {next(iter(packages))}'
         else:
-            message = 'Removing {} {}packages...'.format(num_packages, package_kind)
+            message = f'Removing {num_packages} {package_kind}packages...'
             console_write(message)
 
         if progress:
@@ -301,13 +301,12 @@ class PackageTaskRunner(PackageDisabler):
             await self.manager.cleanup_libraries()
 
             if num_packages == 1:
-                message = 'Package {} successfully removed'.format(list(packages)[0])
+                message = f'Package {next(iter(packages))} successfully removed'
             elif num_packages == num_success:
-                message = 'All {}packages successfully removed'.format(package_kind)
+                message = f'All {package_kind}packages successfully removed'
                 console_write(message)
             else:
-                message = '{} of {} {}packages successfully removed'.format(
-                    num_success, num_packages, package_kind)
+                message = f'{num_success} of {num_packages} {package_kind}packages successfully removed'
                 console_write(message)
 
             if progress:
@@ -376,15 +375,15 @@ class PackageTaskRunner(PackageDisabler):
 
         num_packages = len(tasks)
         if num_packages == 1:
-            message = 'Installing {}package {}'.format(package_kind, tasks[0].package_name)
+            message = f'Installing {package_kind}package {tasks[0].package_name}'
         else:
-            message = 'Installing {} {}packages...'.format(num_packages, package_kind)
+            message = f'Installing {num_packages} {package_kind}packages...'
             console_write(message)
 
         if progress:
             progress.set_label(message)
 
-        package_names = set(task.package_name for task in tasks)
+        package_names = {task.package_name for task in tasks}
 
         self.disable_packages({self.INSTALL: package_names})
         await asyncio.sleep(0.7)
@@ -414,15 +413,15 @@ class PackageTaskRunner(PackageDisabler):
 
             if num_packages == num_success:
                 if package_kind or num_packages > 1:
-                    message = 'All {}packages successfully installed'.format(package_kind)
+                    message = f'All {package_kind}packages successfully installed'
                 else:
-                    message = 'Package {} successfully installed'.format(tasks[0].package_name)
+                    message = f'Package {tasks[0].package_name} successfully installed'
                 console_write(message)
             else:
                 message = (
-                    '{} of {} {}packages successfully installed. '
+                    f'{num_success} of {num_packages} {package_kind}packages successfully installed. '
                     'Restart Sublime Text to attempt to install the remaining ones.'
-                    .format(num_success, num_packages, package_kind)
+                    
                 )
                 console_write(message)
 
@@ -478,9 +477,9 @@ class PackageTaskRunner(PackageDisabler):
 
         num_packages = len(tasks)
         if num_packages == 1:
-            message = 'Upgrading package {}'.format(tasks[0].package_name)
+            message = f'Upgrading package {tasks[0].package_name}'
         else:
-            message = 'Upgrading {} packages...'.format(num_packages)
+            message = f'Upgrading {num_packages} packages...'
             console_write(message)
 
         if progress:
@@ -519,13 +518,13 @@ class PackageTaskRunner(PackageDisabler):
                 if num_packages > 1:
                     message = 'All packages successfully upgraded'
                 else:
-                    message = 'Package {} successfully upgraded'.format(tasks[0].package_name)
+                    message = f'Package {tasks[0].package_name} successfully upgraded'
                 console_write(message)
             else:
                 message = (
-                    '{} of {} packages successfully upgraded. '
+                    f'{num_success} of {num_packages} packages successfully upgraded. '
                     'Restart Sublime Text to attempt to upgrade the remaining ones.'
-                    .format(num_success, num_packages)
+                    
                 )
                 console_write(message)
 
@@ -673,30 +672,30 @@ class PackageTaskRunner(PackageDisabler):
         for task in tasks:
             action = task.action
             if action == self.INSTALL or action == self.REINSTALL:
-                extra = ' v{}'.format(task.available_version)
+                extra = f' v{task.available_version}'
             elif action == self.DOWNGRADE or action == self.UPGRADE:
-                extra = ' to v{} from v{}'.format(task.available_version, task.package_version)
+                extra = f' to v{task.available_version} from v{task.package_version}'
             elif action == self.OVERWRITE:
-                extra = ' v{} with v{}'.format(task.package_version, task.available_version)
+                extra = f' v{task.package_version} with v{task.available_version}'
             elif action == self.PULL:
-                extra = ' with {}'.format(task.upgrader.cli_name)
+                extra = f' with {task.upgrader.cli_name}'
             else:
                 action = ''
                 extra = ''
 
             final_line = action + extra
 
-            description = '<em>{}</em>'.format(html.escape(task.package_description))
+            description = f'<em>{html.escape(task.package_description)}</em>'
 
             if final_line:
-                final_line = '<em>{}</em>'.format(final_line)
+                final_line = f'<em>{final_line}</em>'
 
             homepage = html.escape(task.package_homepage)
             homepage_display = re.sub(r'^https?://', '', homepage)
             if homepage_display:
                 if final_line:
                     final_line += ' '
-                final_line += '<a href="{}">{}</a>'.format(homepage, homepage_display)
+                final_line += f'<a href="{homepage}">{homepage_display}</a>'
 
             annotation = ''
             if task.last_modified:

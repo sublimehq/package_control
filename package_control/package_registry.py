@@ -135,7 +135,7 @@ class PackageRegistry:
                 providers.append(provider)
             else:
                 failed_sources[url] = ProviderException(
-                    "{} is not a supported channel.".format(url)
+                    f"{url} is not a supported channel."
                 )
 
         for url in reversed(self.settings.get("repositories", [])):
@@ -144,7 +144,7 @@ class PackageRegistry:
                 providers.append(provider)
             else:
                 failed_sources[url] = ProviderException(
-                    "{} is not a supported repository.".format(url)
+                    f"{url} is not a supported repository."
                 )
 
         # run in parallel
@@ -211,23 +211,23 @@ class PackageRegistry:
             msg = "Fetched {} packages and {} libraries in {:.3f}s."
             msg = msg.format(len(packages), len(libraries), time.time() - start_time)
             if broken_packages:
-                msg += "\n  {} broken packages dropped.".format(len(broken_packages))
+                msg += f"\n  {len(broken_packages)} broken packages dropped."
                 for name, exc in sorted(broken_packages.items()):
-                    msg += "\n  - {}: {}".format(name, exc)
+                    msg += f"\n  - {name}: {exc}"
             if unavailable_packages:
-                msg += "\n  {} incompatible packages dropped.".format(len(unavailable_packages))
+                msg += f"\n  {len(unavailable_packages)} incompatible packages dropped."
                 msg += "\n    " + ", ".join(sorted(unavailable_packages))
             if broken_libraries:
-                msg += "\n  {} broken libraries dropped.".format(len(broken_libraries))
+                msg += f"\n  {len(broken_libraries)} broken libraries dropped."
                 for name, exc in sorted(broken_libraries.items()):
-                    msg += "\n  - {}: {}".format(name, exc)
+                    msg += f"\n  - {name}: {exc}"
             if unavailable_libraries:
-                msg += "\n  {} incompatible libraries dropped.".format(len(unavailable_libraries))
+                msg += f"\n  {len(unavailable_libraries)} incompatible libraries dropped."
                 msg += "\n    " + ", ".join(sorted(unavailable_libraries))
             if failed_sources:
-                msg += "\n  {} sources failed downloading.".format(len(failed_sources))
+                msg += f"\n  {len(failed_sources)} sources failed downloading."
                 for name, exc in sorted(failed_sources.items()):
-                    msg += "\n  - {}: {}".format(name, exc)
+                    msg += f"\n  - {name}: {exc}"
             console_write(msg)
 
         # apply results

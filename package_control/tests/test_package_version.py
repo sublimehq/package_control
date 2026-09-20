@@ -1,7 +1,7 @@
 import unittest
 
 from ..package_version import PackageVersion, PEP440Version
-from ._data_decorator import data_decorator, data
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator

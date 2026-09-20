@@ -1,13 +1,12 @@
 import unittesting
 
 from ..clients.gitlab_client import GitLabClient
-from ._data_decorator import data_decorator, data
-
 from ._config import (
     DEBUG,
     GL_PASS,
     GL_USER,
 )
+from ._data_decorator import data, data_decorator
 
 
 @data_decorator
@@ -16,7 +15,7 @@ class GitLabClientTests(unittesting.AsyncTestCase):
 
     def settings(self, extra=None):
         if not GL_PASS:
-            self.skipTest("GitLab personal access token for %s not set via env var GL_PASS" % GL_USER)
+            self.skipTest(f"GitLab personal access token for {GL_USER} not set via env var GL_PASS")
 
         settings = {
             "debug": DEBUG,
