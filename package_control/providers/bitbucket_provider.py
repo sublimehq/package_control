@@ -4,6 +4,7 @@ from .base_provider import BaseProvider
 from .provider_exception import (
     GitProviderDownloadInfoException,
     GitProviderRepoInfoException,
+    InvalidPackageNameException,
 )
 
 
@@ -69,6 +70,9 @@ class BitBucketProvider(BaseProvider):
 
             name = repo_info["name"]
             name = self.settings.get("package_name_map", {}).get(name, name)
+            if any(c in name for c in '/\\:*?"<>|'):
+                raise InvalidPackageNameException(name)
+
             self.packages[name] = {
                 "name": name,
                 "description": repo_info["description"],

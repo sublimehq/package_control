@@ -29,6 +29,15 @@ class InvalidRepoFileException(ProviderException):
         )
 
 
+class InvalidPackageNameException(ProviderException):
+
+    def __init__(self, package_name):
+        self.package_name = package_name
+
+    def __str__(self):
+        return 'Package "{}" contains invalid character!'.format(self.package_name)
+
+
 class GitProviderUserInfoException(ProviderException):
     """
     Exception for signalling user information download error.

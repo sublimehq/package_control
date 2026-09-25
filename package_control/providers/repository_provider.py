@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from ..download_manager import http_get, resolve_url, update_url
 from .base_provider import BaseProvider
 from .provider_exception import (
+    InvalidPackageNameException,
     InvalidRepoFileException,
     ProviderException,
 )
@@ -255,6 +256,9 @@ class RepositoryProvider(BaseProvider):
             self.broken_libraries["unknown-{}".format(id)] = exc
             return None
 
+        if any(c in lib["name"] for c in '/\\:*?"<>|'):
+            raise InvalidPackageNameException(lib["name"])
+
         valid_releases = []
         for release in lib.get("releases", []):
             # drop malformed releases
@@ -409,6 +413,9 @@ class RepositoryProvider(BaseProvider):
                 self.broken_packages["unknown-{}".format(id)] = exc
                 # unable to resolve package name, skip it
                 return None
+
+        if any(c in pkg["name"] for c in '/\\:*?"<>|'):
+            raise InvalidPackageNameException(pkg["name"])
 
         valid_releases = []
         for release in pkg.get("releases", []):
