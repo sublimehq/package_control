@@ -82,19 +82,17 @@ class ChannelProvider(RepositoryProvider):
         json_string = http_get(self.url, self.settings, "Error downloading channel.")
 
         try:
-            content = json.loads(json_string.decode("utf-8"))
-        except ValueError:
-            raise InvalidChannelFileException(self, "parsing JSON failed.")
-        else:
-            self._parse(content)
+            self._parse(json.loads(json_string.decode("utf-8")))
+        except InvalidChannelFileException:
+            raise
+        except Exception as exc:
+            raise InvalidChannelFileException(self, "parsing JSON failed! {}".format(exc)) from None
 
     def _parse(self, content):
         try:
             schema_version = SchemaVersion(content["schema_version"])
         except KeyError:
-            raise InvalidChannelFileException(self, 'the "schema_version" JSON key is missing.')
-        except ValueError as e:
-            raise InvalidChannelFileException(self, e)
+            raise InvalidChannelFileException(self, 'the "schema_version" JSON key is missing.') from None
 
         if "repositories" not in content:
             raise InvalidChannelFileException(self, 'the "repositories" JSON key is missing.')

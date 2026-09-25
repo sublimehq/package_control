@@ -143,11 +143,11 @@ class RepositoryProvider(BaseProvider):
         json_string = http_get(self.url, self.settings, "Error downloading repository.")
 
         try:
-            content = json.loads(json_string.decode("utf-8"))
-        except ValueError:
-            raise InvalidRepoFileException(self, "parsing JSON failed.") from None
-        else:
-            self._parse(content)
+            self._parse(json.loads(json_string.decode("utf-8")))
+        except InvalidRepoFileException:
+            raise
+        except Exception as exc:
+            raise InvalidRepoFileException(self, "parsing JSON failed! {}".format(exc)) from None
 
     def _parse(self, content):
         try:
@@ -156,8 +156,6 @@ class RepositoryProvider(BaseProvider):
             raise InvalidRepoFileException(
                 self, 'the "schema_version" JSON key is missing.'
             ) from None
-        except ValueError:
-            raise InvalidRepoFileException(self, "parsing JSON failed.") from None
 
         # Main keys depending on scheme version
         if schema_version.major < 4:

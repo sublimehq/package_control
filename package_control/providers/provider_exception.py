@@ -12,7 +12,7 @@ class InvalidChannelFileException(ProviderException):
         self.url = provider.url
 
     def __str__(self):
-        return 'Channel {} does not appear to be a valid channel file because "{}".'.format(
+        return 'Channel {} does not appear to be a valid channel file because {}.'.format(
             self.url, self.reason_message
         )
 
