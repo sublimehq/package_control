@@ -1,4 +1,4 @@
-from http.client import HTTPResponse, IncompleteRead
+from http.client import HTTPResponse
 
 from ..console_write import console_write
 
