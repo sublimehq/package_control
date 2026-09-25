@@ -74,6 +74,8 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
             self.curl,
             '--connect-timeout',
             str(int(timeout)),
+            '--max-time',
+            str(int(timeout)),
             '-sSL',
             '--tlsv1',
             # We have to capture the headers to check for rate limit info
