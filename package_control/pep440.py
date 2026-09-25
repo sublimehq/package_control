@@ -31,6 +31,8 @@ __all__ = [
     "check_version"
 ]
 
+NORM_VERSION_0 = (0, (0, 0, 0, 0, 0), ((0, 0), (0, 0), (0, 0)), ())
+
 _local_version_separators = re.compile(r"[-._]")
 
 
@@ -315,7 +317,7 @@ class PEP440Version:
         return a >= b
 
     def __hash__(self):
-        return hash(self._tup)
+        return hash(_norm_tuples(self._tup, NORM_VERSION_0)[0])
 
     def version_info(self, verbose=False):
         return _version_info(*self._tup, verbose=verbose)

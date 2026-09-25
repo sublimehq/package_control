@@ -300,6 +300,23 @@ class PEP440VersionTests(unittest.TestCase):
 
     @data(
         (
+            ("1.0.0rc1", "1.0c1"),
+            ("1.0.0rc", "1.0rc0"),
+            ("1.0.0", "1.0"),
+            ("1.0.0", "1"),
+            ("1.0.0.0", "1.0.0.0"),
+            ("1.0.0.0", "1.0.0"),
+            ("1.0.0.0", "1.0"),
+            ("1.0.0.0", "1"),
+        )
+    )
+    def equal_hash(self, a, b):
+        va = PEP440Version(a)
+        vb = PEP440Version(b)
+        self.assertEqual(hash(va), hash(vb))
+
+    @data(
+        (
             ("1!1.0", "0!1.0"),
         )
         # compare global versions
