@@ -641,7 +641,7 @@ class WinINetDownloader(DecodingDownloader, LimitingDownloader, CachingDownloade
                         )
                     continue
 
-                if len(result) != int(headers.get('content-length', 0)):
+                if 'content-length' in headers and len(result) != int(headers['content-length']):
                     if self.debug:
                         console_write(
                             '''
@@ -661,7 +661,7 @@ class WinINetDownloader(DecodingDownloader, LimitingDownloader, CachingDownloade
 
                 return result
 
-            except (NonHttpError, HttpError) as e:
+            except Exception as e:
 
                 # GitHub and BitBucket seem to time out a lot
                 if str(e).find('timed out') != -1:
