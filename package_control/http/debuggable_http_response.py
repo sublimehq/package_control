@@ -60,9 +60,3 @@ class DebuggableHTTPResponse(HTTPResponse):
         if connection and connection.lower() == 'keep-alive':
             return True
         return False
-
-    def read(self, *args):
-        try:
-            return HTTPResponse.read(self, *args)
-        except (IncompleteRead) as e:
-            return e.partial

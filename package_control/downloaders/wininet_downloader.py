@@ -641,6 +641,16 @@ class WinINetDownloader(DecodingDownloader, LimitingDownloader, CachingDownloade
                         )
                     continue
 
+                if len(result) != int(headers.get('content-length', 0)):
+                    if self.debug:
+                        console_write(
+                            '''
+                            Downloading %s returned incomplete body, trying again
+                            ''',
+                            url
+                        )
+                    continue
+
                 encoding = headers.get('content-encoding')
                 result = self.decode_response(encoding, result)
 
