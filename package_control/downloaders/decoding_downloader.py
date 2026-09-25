@@ -54,17 +54,36 @@ class DecodingDownloader:
 
         if encoding == 'zstd':
             if zstd:
-                return zstd.decompress(response)
+                try:
+                    return zstd.decompress(response)
+                except Exception as exc:
+                    raise DownloaderException('Unable to decompress response! {}'.format(exc)) from None
             # reaching this would mean the server misbehaving
             raise DownloaderException('Received zstd file contents, but was unable to import the zstd module')
         elif encoding == 'bzip2':
             if bz2:
-                return bz2.decompress(response)
+                try:
+                    return bz2.decompress(response)
+                except Exception as exc:
+                    raise DownloaderException('Unable to decompress response! {}'.format(exc)) from None
             # reaching this would mean the server misbehaving
             raise DownloaderException('Received bzip2 file contents, but was unable to import the bz2 module')
         elif encoding == 'gzip':
-            return gzip.GzipFile(fileobj=BytesIO(response)).read()
+            try:
+                return gzip.GzipFile(fileobj=BytesIO(response)).read()
+            except Exception as exc:
+                raise DownloaderException('Unable to decompress response! {}'.format(exc)) from None
         elif encoding == 'deflate':
-            decompresser = zlib.decompressobj(-zlib.MAX_WBITS)
-            return decompresser.decompress(response) + decompresser.flush()
+            try:
+                decompresser = zlib.decompressobj()
+                return decompresser.decompress(response) + decompresser.flush()
+            except zlib.error:
+                try:
+                    decompresser = zlib.decompressobj(-zlib.MAX_WBITS)
+                    return decompresser.decompress(response) + decompresser.flush()
+                except Exception as exc:
+                    raise DownloaderException('Unable to decompress response! {}'.format(exc)) from None
+            except Exception as exc:
+                raise DownloaderException('Unable to decompress response! {}'.format(exc)) from None
+
         return response
