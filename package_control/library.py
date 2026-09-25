@@ -104,7 +104,7 @@ class Library:
 
         if not isinstance(python_version, str):
             raise TypeError("python_version must be a unicode string")
-        if python_version not in sys_path.lib_paths():
+        if python_version not in BUILTIN_LIBRARIES:
             raise ValueError(
                 "python_version must be one of {}, not {!r}".format(
                     sys_path.python_versions(), python_version
