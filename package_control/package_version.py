@@ -32,10 +32,7 @@ class PackageVersion(PEP440Version):
         # Store original version string with `v` trimmed to maintain backward compatibility
         # with regards to not normalize it.
         # The one and only use case is to keep existing CI tests working without change.
-        if ver[0] == 'v':
-            self._str = ver[1:]
-        else:
-            self._str = ver
+        self._str = ver[1:] if ver.startswith("v") else ver
 
         # We prepend 0 to all date-based version numbers so that developers
         # may switch to explicit versioning from GitHub/GitLab/BitBucket

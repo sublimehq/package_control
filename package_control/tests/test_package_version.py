@@ -45,6 +45,11 @@ class PackageVersionTests(unittest.TestCase):
         vb = PackageVersion(b)
         self.assertGreater(va, vb)
 
+    def test_invalid_empty_string(self):
+        with self.assertRaises(ValueError) as cm:
+            PackageVersion("")
+        self.assertEqual("'' is not a valid PEP440 version string", str(cm.exception))
+
     def test_invalid_number(self):
         with self.assertRaises(TypeError) as cm:
             PackageVersion(1.2)
