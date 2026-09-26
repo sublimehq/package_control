@@ -9,7 +9,7 @@ from ._exceptions import ExceptionMapping, PoolTimeout, map_exceptions
 # on if they're running under asyncio or trio.
 
 try:
-    import trio
+    from .. import trio
 except (ImportError, NotImplementedError):  # pragma: no cover
     trio = None  # type: ignore
 
@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover
     anyio = None  # type: ignore
 
 try:
-    import sniffio
+    from .. import sniffio
 except ImportError:  # pragma: no cover
     sniffio = None  # type: ignore
 

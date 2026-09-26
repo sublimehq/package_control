@@ -348,7 +348,7 @@ class TLSListener(Listener[TLSStream]):
             # any asyncio implementation, so we explicitly pass the exception to log
             # (https://github.com/python/cpython/issues/108668). Trio does not have this
             # issue because it works around the CPython bug.
-            logging.getLogger(__name__).exception(
+            logging.getLogger("anyio.streams.tls").exception(
                 "Error during TLS handshake", exc_info=exc
             )
 

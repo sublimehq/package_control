@@ -5,7 +5,7 @@ from typing import Optional
 
 from .exceptions import InvalidTableIndex
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("hpack.table")
 
 
 def table_entry_size(name: bytes, value: bytes) -> int:
