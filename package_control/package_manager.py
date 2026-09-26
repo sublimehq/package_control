@@ -669,6 +669,9 @@ class PackageManager:
         for info in zf.infolist():
             path = info.filename
 
+            if not path or info.is_dir():
+                continue
+
             # Make sure there are no paths that look like security vulnerabilities
             if path[0] == '/' or any(p in path for p in unsafe):
                 console_write(
@@ -681,6 +684,10 @@ class PackageManager:
                 return False
 
             split_paths.append(path.split(sep))
+
+        # An archive containing at most one file can't have a common directory
+        if len(split_paths) < 2:
+            return ''
 
         split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
         s1 = min(split_paths)
@@ -723,7 +730,7 @@ class PackageManager:
         for info in zf.infolist():
             source = info.filename
 
-            if source.endswith('/'):
+            if not source or info.is_dir():
                 continue
 
             if source in exclude:
