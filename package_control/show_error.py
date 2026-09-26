@@ -24,7 +24,8 @@ def show_error(string, params=None, strip=True, indent=None):
     """
 
     string = text.format(string, params, strip=strip, indent=indent)
-    sublime.set_timeout(functools.partial(sublime.error_message, 'Package Control\n\n' + string), 50)
+    if string:
+        sublime.set_timeout(functools.partial(sublime.error_message, 'Package Control\n\n' + string), 50)
 
 
 def show_message(string, params=None, strip=True, indent=None):
@@ -46,4 +47,5 @@ def show_message(string, params=None, strip=True, indent=None):
     """
 
     string = text.format(string, params, strip=strip, indent=indent)
-    sublime.set_timeout(functools.partial(sublime.message_dialog, 'Package Control\n\n' + string), 50)
+    if string:
+        sublime.set_timeout(functools.partial(sublime.message_dialog, 'Package Control\n\n' + string), 50)

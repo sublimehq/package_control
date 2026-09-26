@@ -28,6 +28,8 @@ def format(string, params=None, strip=True, indent=None):
     """
 
     output = string
+    if not output:
+        return ''
 
     # Only dedent if not a single-line string. This allows for
     # single-line-formatted string to be printed that include intentional

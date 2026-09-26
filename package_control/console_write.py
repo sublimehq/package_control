@@ -24,9 +24,8 @@ def console_write(string, params=None, strip=True, indent=None, prefix=True):
         If the string "Package Control: " should be prefixed to the string
     """
 
-    string = text.format(str(string), params, strip=strip, indent=indent)
-
-    if prefix:
-        sys.stdout.write('Package Control: ')
-
-    print(string)
+    string = text.format(str(string) or repr(string), params, strip=strip, indent=indent)
+    if string:
+        if prefix:
+            sys.stdout.write('Package Control: ')
+        print(string)
