@@ -227,9 +227,9 @@ class GitLabClient(JSONApiClient):
         if not match:
             return None
 
-        def _get_releases(user_repo, tag_prefix=None, page_size=1000):
+        def _get_releases(user_repo, tag_prefix=None, page_size=100):
             used_versions = set()
-            for page in range(10):
+            for page in range(100):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
                 api_url = self._api_url(user_repo, '/releases?{}'.format(query_string))
                 releases = self.fetch_json(api_url)
@@ -326,9 +326,9 @@ class GitLabClient(JSONApiClient):
         if not tags_match:
             return None
 
-        def _get_releases(repo_id, tag_prefix=None, page_size=1000):
+        def _get_releases(repo_id, tag_prefix=None, page_size=100):
             used_versions = set()
-            for page in range(10):
+            for page in range(100):
                 query_string = urlencode({'page': page * page_size, 'per_page': page_size})
                 tags_url = self._api_url(repo_id, '/repository/tags?{}'.format(query_string))
                 tags_json = self.fetch_json(tags_url)
