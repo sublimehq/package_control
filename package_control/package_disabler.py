@@ -23,38 +23,37 @@ from .settings import (
 from .show_error import show_error
 from .sys_path import pc_cache_dir
 
-IGNORED_PACKAGES = 'ignored_packages'
-IN_PROCESS_PACKAGES = 'in_process_packages'
+IGNORED_PACKAGES = "ignored_packages"
+IN_PROCESS_PACKAGES = "in_process_packages"
 
 
 class PackageDisabler:
-
-    DISABLE = 'disable'
+    DISABLE = "disable"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
 
-    ENABLE = 'enable'
+    ENABLE = "enable"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
 
-    INSTALL = 'install'
+    INSTALL = "install"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
 
-    REMOVE = 'remove'
+    REMOVE = "remove"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
 
-    UPGRADE = 'upgrade'
+    UPGRADE = "upgrade"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
 
-    LOADER = 'loader'
+    LOADER = "loader"
     """
     A key used to create package_actions for disable_packages or reenable_packages.
     """
@@ -192,19 +191,19 @@ class PackageDisabler:
             The string version
         """
 
-        metadata_json = read_package_file(package, 'package-metadata.json')
+        metadata_json = read_package_file(package, "package-metadata.json")
         if metadata_json:
             try:
-                return json.loads(metadata_json).get('version', 'unknown version')
-            except (ValueError):
+                return json.loads(metadata_json).get("version", "unknown version")
+            except ValueError:
                 console_write(
-                    '''
+                    """
                     An error occurred while trying to parse package metadata for %s.
-                    ''',
-                    package
+                    """,
+                    package,
                 )
 
-        return 'unknown version'
+        return "unknown version"
 
     @staticmethod
     def disable_packages(package_actions):
@@ -288,20 +287,10 @@ class PackageDisabler:
             PackageDisabler.backup_and_reset_settings(affected, need_restore)
 
             save_list_setting(
-                pc_settings,
-                pc_settings_filename(),
-                IN_PROCESS_PACKAGES,
-                in_process,
-                in_process_at_start
+                pc_settings, pc_settings_filename(), IN_PROCESS_PACKAGES, in_process, in_process_at_start
             )
 
-            save_list_setting(
-                settings,
-                preferences_filename(),
-                IGNORED_PACKAGES,
-                ignored,
-                ignored_at_start
-            )
+            save_list_setting(settings, preferences_filename(), IGNORED_PACKAGES, ignored, ignored_at_start)
 
             return affected
 
@@ -373,18 +362,11 @@ class PackageDisabler:
                 # always flush settings to disk
                 # to make sure to also save updated `installed_packages`
                 save_list_setting(
-                    pc_settings,
-                    pc_settings_filename(),
-                    IN_PROCESS_PACKAGES,
-                    in_process - affected
+                    pc_settings, pc_settings_filename(), IN_PROCESS_PACKAGES, in_process - affected
                 )
 
                 save_list_setting(
-                    settings,
-                    preferences_filename(),
-                    IGNORED_PACKAGES,
-                    ignored - affected,
-                    ignored
+                    settings, preferences_filename(), IGNORED_PACKAGES, ignored - affected, ignored
                 )
 
             finally:
@@ -405,15 +387,15 @@ class PackageDisabler:
         if PackageDisabler.default_themes:
             return
 
-        resource_name = 'Packages/Default/Preferences.sublime-settings'
+        resource_name = "Packages/Default/Preferences.sublime-settings"
         settings = sublime.decode_value(sublime.load_resource(resource_name))
 
-        for key in ('color_scheme', 'dark_color_scheme', 'light_color_scheme'):
+        for key in ("color_scheme", "dark_color_scheme", "light_color_scheme"):
             value = settings.get(key)
             if value:
                 PackageDisabler.default_color_schemes[key] = value
 
-        for key in ('theme', 'dark_theme', 'light_theme'):
+        for key in ("theme", "dark_theme", "light_theme"):
             value = settings.get(key)
             if value:
                 PackageDisabler.default_themes[key] = value
@@ -445,7 +427,7 @@ class PackageDisabler:
         # Backup and reset global theme(s)
         for key, default_file in PackageDisabler.default_themes.items():
             theme_file = settings.get(key)
-            if theme_file in (None, '', 'auto', default_file):
+            if theme_file in (None, "", "auto", default_file):
                 continue
             theme_name, theme_packages = find_theme_packages(theme_file)
             theme_packages &= packages
@@ -468,7 +450,7 @@ class PackageDisabler:
         for key, default_file in PackageDisabler.default_color_schemes.items():
             scheme_file = settings.get(key)
             cached_settings[key] = scheme_file
-            if scheme_file in (None, '', 'auto', default_file):
+            if scheme_file in (None, "", "auto", default_file):
                 continue
             scheme_name, scheme_packages = find_color_scheme_packages(scheme_file)
             scheme_packages &= packages
@@ -485,8 +467,8 @@ class PackageDisabler:
         for window in sublime.windows():
             # create a list of real and output panel views
             views = window.views()
-            for panel_name in filter(lambda p: p.startswith('output.'), window.panels()):
-                panel = window.find_output_panel(panel_name[len('output.'):])
+            for panel_name in filter(lambda p: p.startswith("output."), window.panels()):
+                panel = window.find_output_panel(panel_name[len("output.") :])
                 views.append(panel)
 
             for view in views:
@@ -496,7 +478,7 @@ class PackageDisabler:
                 # of by resetting the global color scheme above
                 for key, default_file in PackageDisabler.default_color_schemes.items():
                     scheme_file = view_settings.get(key)
-                    if scheme_file in (None, '', 'auto', default_file, cached_settings[key]):
+                    if scheme_file in (None, "", "auto", default_file, cached_settings[key]):
                         continue
                     scheme_name, scheme_packages = find_color_scheme_packages(scheme_file)
                     scheme_packages &= packages
@@ -513,13 +495,15 @@ class PackageDisabler:
                     view_settings.erase(key)
 
                 # Backup and reset assigned syntaxes
-                syntax = view_settings.get('syntax')
-                if syntax and isinstance(syntax, str) and any(
-                    syntax.startswith('Packages/' + package + '/') for package in packages
+                syntax = view_settings.get("syntax")
+                if (
+                    syntax
+                    and isinstance(syntax, str)
+                    and any(syntax.startswith("Packages/" + package + "/") for package in packages)
                 ):
                     if backup:
                         PackageDisabler.view_syntaxes[view.id()] = syntax
-                    view_settings.set('syntax', 'Packages/Text/Plain text.tmLanguage')
+                    view_settings.set("syntax", "Packages/Text/Plain text.tmLanguage")
 
     @staticmethod
     def restore_settings():
@@ -549,15 +533,15 @@ class PackageDisabler:
 
                 if all_missing_theme_packages:
                     show_error(
-                        '''
+                        """
                         The following packages no longer participate in your active theme after upgrade.
 
                            - %s
 
                         As one of them may contain the primary theme, Sublime Text is configured
                         to use the default theme to prevent you ending up with a broken UI.
-                        ''',
-                        '\n   - '.join(sorted(all_missing_theme_packages, key=lambda s: s.lower()))
+                        """,
+                        "\n   - ".join(sorted(all_missing_theme_packages, key=lambda s: s.lower())),
                     )
 
                 # restore global color scheme
@@ -565,7 +549,9 @@ class PackageDisabler:
 
                 for key, scheme_file in PackageDisabler.global_color_schemes.items():
                     scheme_name, scheme_packages = find_color_scheme_packages(scheme_file)
-                    missing_scheme_packages = PackageDisabler.color_scheme_packages[scheme_name] - scheme_packages
+                    missing_scheme_packages = (
+                        PackageDisabler.color_scheme_packages[scheme_name] - scheme_packages
+                    )
                     if missing_scheme_packages:
                         all_missing_scheme_packages |= missing_scheme_packages
                     else:
@@ -574,15 +560,15 @@ class PackageDisabler:
 
                 if all_missing_scheme_packages:
                     show_error(
-                        '''
+                        """
                         The following packages no longer participate in your active color scheme after upgrade.
 
                            - %s
 
                         As one of them may contain the primary color scheme, Sublime Text is configured
                         to use the default color scheme to prevent you ending up with a broken UI.
-                        ''',
-                        '\n   - '.join(sorted(all_missing_scheme_packages, key=lambda s: s.lower()))
+                        """,
+                        "\n   - ".join(sorted(all_missing_scheme_packages, key=lambda s: s.lower())),
                     )
 
                 # restore viewa-specific color scheme assignments
@@ -594,7 +580,9 @@ class PackageDisabler:
                         if scheme_file in color_scheme_errors:
                             continue
                         scheme_name, scheme_packages = find_color_scheme_packages(scheme_file)
-                        missing_scheme_packages = PackageDisabler.color_scheme_packages[scheme_name] - scheme_packages
+                        missing_scheme_packages = (
+                            PackageDisabler.color_scheme_packages[scheme_name] - scheme_packages
+                        )
                         if missing_scheme_packages:
                             console_write('The color scheme "%s" no longer exists', scheme_file)
                             color_scheme_errors.add(scheme_file)
@@ -610,7 +598,7 @@ class PackageDisabler:
                         console_write('The syntax "%s" no longer exists', syntax)
                         syntax_errors.add(syntax)
                         continue
-                    view.settings().set('syntax', syntax)
+                    view.settings().set("syntax", syntax)
 
             finally:
                 save_settings |= PackageDisabler.resume_indexer(False)
@@ -635,35 +623,35 @@ class PackageDisabler:
         # for each one individually. Also we don't want to re-index while a syntax
         # package is being disabled for upgrade - just once after upgrade is finished.
         settings = sublime.load_settings(preferences_filename())
-        index_files = settings.get('index_files', True)
+        index_files = settings.get("index_files", True)
         if index_files:
             try:
                 # note: uses persistent cookie to survive PC updates.
-                with open(os.path.join(pc_cache_dir(), 'backup.json'), 'x', encoding='utf-8') as fobj:
-                    json.dump({'index_files': index_files}, fobj)
-                settings.set('index_files', False)
-                console_write('pausing indexer')
+                with open(os.path.join(pc_cache_dir(), "backup.json"), "x", encoding="utf-8") as fobj:
+                    json.dump({"index_files": index_files}, fobj)
+                settings.set("index_files", False)
+                console_write("pausing indexer")
             except OSError:
                 pass
 
     @staticmethod
     def resume_indexer(persist=True):
         result = False
-        backup_json = os.path.join(pc_cache_dir(), 'backup.json')
+        backup_json = os.path.join(pc_cache_dir(), "backup.json")
         try:
-            with open(backup_json, 'r', encoding='utf-8') as fobj:
-                if json.load(fobj).get('index_files') is True:
+            with open(backup_json, "r", encoding="utf-8") as fobj:
+                if json.load(fobj).get("index_files") is True:
                     settings_file = preferences_filename()
                     settings = sublime.load_settings(settings_file)
-                    settings.set('index_files', True)
+                    settings.set("index_files", True)
                     if persist:
                         sublime.save_settings(settings_file)
-                    console_write('resuming indexer')
+                    console_write("resuming indexer")
                     result = True
         except FileNotFoundError:
             pass
         except Exception as e:
-            console_write('failed to resume indexer! %s', e)
+            console_write("failed to resume indexer! %s", e)
 
         try:
             os.remove(backup_json)
@@ -684,10 +672,10 @@ def resource_exists(path):
         A bool if it exists
     """
 
-    if not path.startswith('Packages/'):
+    if not path.startswith("Packages/"):
         return False
 
-    parts = path[9:].split('/', 1)
+    parts = path[9:].split("/", 1)
     if len(parts) != 2:
         return False
 
@@ -711,9 +699,9 @@ def find_color_scheme_packages(color_scheme):
     packages = set()
     name = os.path.basename(os.path.splitext(color_scheme)[0])
 
-    for ext in ('.sublime-color-scheme', '.tmTheme'):
+    for ext in (".sublime-color-scheme", ".tmTheme"):
         for path in sublime.find_resources(name + ext):
-            parts = path[9:].split('/', 1)
+            parts = path[9:].split("/", 1)
             if len(parts) == 2:
                 packages.add(parts[0])
 
@@ -738,7 +726,7 @@ def find_theme_packages(theme):
     name = os.path.splitext(file_name)[0]
 
     for path in sublime.find_resources(file_name):
-        parts = path[9:].split('/', 1)
+        parts = path[9:].split("/", 1)
         if len(parts) == 2:
             packages.add(parts[0])
 

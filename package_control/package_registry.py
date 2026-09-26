@@ -134,18 +134,14 @@ class PackageRegistry:
             if provider:
                 providers.append(provider)
             else:
-                failed_sources[url] = ProviderException(
-                    f"{url} is not a supported channel."
-                )
+                failed_sources[url] = ProviderException(f"{url} is not a supported channel.")
 
         for url in reversed(self.settings.get("repositories", [])):
             provider = repo_provider_for(update_url(url), self.settings)
             if provider:
                 providers.append(provider)
             else:
-                failed_sources[url] = ProviderException(
-                    f"{url} is not a supported repository."
-                )
+                failed_sources[url] = ProviderException(f"{url} is not a supported repository.")
 
         # run in parallel
         await asyncio.gather(*(p.fetch() for p in providers), return_exceptions=True)

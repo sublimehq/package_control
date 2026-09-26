@@ -27,5 +27,5 @@ def console_write(string, params=None, strip=True, indent=None, prefix=True):
     string = text.format(str(string) or repr(string), params, strip=strip, indent=indent)
     if string:
         if prefix:
-            sys.stdout.write('Package Control: ')
+            sys.stdout.write("Package Control: ")
         print(string)

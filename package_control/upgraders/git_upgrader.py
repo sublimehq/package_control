@@ -8,24 +8,23 @@ from .vcs_upgrader import VcsUpgrader
 
 
 class GitUpgrader(VcsUpgrader):
-
     """
     Allows upgrading a local git-repository-based package
     """
 
-    cli_name = 'git'
+    cli_name = "git"
 
     def __init__(self, *args):
         super().__init__(*args)
 
-        name = 'git'
-        if os.name == 'nt':
-            name += '.exe'
+        name = "git"
+        if os.name == "nt":
+            name += ".exe"
 
         self.binary = self.find_binary(name)
         if not self.binary:
             show_error(
-                '''
+                """
                 Unable to find %s.
 
                 Please set the "git_binary" setting by accessing the
@@ -34,49 +33,42 @@ class GitUpgrader(VcsUpgrader):
 
                 The Settings \u2013 Default entry can be used for reference,
                 but changes to that will be overwritten upon next upgrade.
-                ''',
-                name
+                """,
+                name,
             )
 
-        if os.name == 'nt' and 'GIT_SSH' not in os.environ:
-            tortoise_plink = self.find_binary('TortoisePlink.exe')
-            if tortoise_plink and 'pageant.exe' in list_process_names():
-                os.environ.setdefault('GIT_SSH', tortoise_plink)
+        if os.name == "nt" and "GIT_SSH" not in os.environ:
+            tortoise_plink = self.find_binary("TortoisePlink.exe")
+            if tortoise_plink and "pageant.exe" in list_process_names():
+                os.environ.setdefault("GIT_SSH", tortoise_plink)
 
     async def get_working_copy_info(self):
         # Get the current branch name
-        res = await self.execute(
-            args=[self.binary, 'symbolic-ref', '-q', 'HEAD'],
-            cwd=self.working_copy
-        )
+        res = await self.execute(args=[self.binary, "symbolic-ref", "-q", "HEAD"], cwd=self.working_copy)
         # Handle the detached head state
         if not res:
             return False
-        branch = res.replace('refs/heads/', '')
+        branch = res.replace("refs/heads/", "")
 
         # Figure out the remote and the branch name on the remote
         remote, res = await asyncio.gather(
             self.execute(
-                [self.binary, 'config', '--get', f'branch.{branch}.remote'],
+                [self.binary, "config", "--get", f"branch.{branch}.remote"],
                 self.working_copy,
-                ignore_errors='.*'
+                ignore_errors=".*",
             ),
             self.execute(
-                [self.binary, 'config', '--get', f'branch.{branch}.merge'],
+                [self.binary, "config", "--get", f"branch.{branch}.merge"],
                 self.working_copy,
-                ignore_errors='.*'
-            )
+                ignore_errors=".*",
+            ),
         )
         if not remote or not res:
             return False
 
-        remote_branch = res.replace('refs/heads/', '')
+        remote_branch = res.replace("refs/heads/", "")
 
-        return {
-            'branch': branch,
-            'remote': remote,
-            'remote_branch': remote_branch
-        }
+        return {"branch": branch, "remote": remote, "remote_branch": remote_branch}
 
     async def run(self):
         """
@@ -90,12 +82,12 @@ class GitUpgrader(VcsUpgrader):
             return False
 
         result = await self.execute(
-            args=[self.binary, *self.update_command, info['remote'], info['remote_branch']],
+            args=[self.binary, *self.update_command, info["remote"], info["remote_branch"]],
             cwd=self.working_copy,
-            meaningful_output=True
+            meaningful_output=True,
         )
         if result is not False:
-            cache_key = self.working_copy + '.incoming'
+            cache_key = self.working_copy + ".incoming"
             set_cache(cache_key, None, 0)
 
         return True
@@ -103,7 +95,7 @@ class GitUpgrader(VcsUpgrader):
     async def incoming(self):
         """:return: bool if remote revisions are available"""
 
-        cache_key = self.working_copy + '.incoming'
+        cache_key = self.working_copy + ".incoming"
         incoming = get_cache(cache_key)
         if incoming is not None:
             return incoming
@@ -112,17 +104,14 @@ class GitUpgrader(VcsUpgrader):
         if info is False:
             return False
 
-        res = await self.execute(
-            args=[self.binary, 'fetch', info['remote']],
-            cwd=self.working_copy
-        )
+        res = await self.execute(args=[self.binary, "fetch", info["remote"]], cwd=self.working_copy)
         if res is False:
             return False
 
         output = await self.execute(
-            args=[self.binary, 'log', '--', '..{}/{}'.format(info['remote'], info['remote_branch'])],
+            args=[self.binary, "log", "--", "..{}/{}".format(info["remote"], info["remote_branch"])],
             cwd=self.working_copy,
-            meaningful_output=True
+            meaningful_output=True,
         )
         if output is False:
             return False
@@ -138,10 +127,7 @@ class GitUpgrader(VcsUpgrader):
             The latest commit hash
         """
 
-        output = await self.execute(
-            args=[self.binary, 'rev-parse', '--short', 'HEAD'],
-            cwd=self.working_copy
-        )
+        output = await self.execute(args=[self.binary, "rev-parse", "--short", "HEAD"], cwd=self.working_copy)
         if output is False:
             return False
 

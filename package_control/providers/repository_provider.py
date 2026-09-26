@@ -157,9 +157,7 @@ class RepositoryProvider(BaseProvider):
         try:
             schema_version = content["schema_version"] = SchemaVersion(content["schema_version"])
         except KeyError:
-            raise InvalidRepoFileException(
-                self, 'the "schema_version" JSON key is missing.'
-            ) from None
+            raise InvalidRepoFileException(self, 'the "schema_version" JSON key is missing.') from None
 
         # Main keys depending on scheme version
         if schema_version.major < 4:
@@ -181,9 +179,7 @@ class RepositoryProvider(BaseProvider):
         # Allow repositories to include other repositories, recursively
         repo_providers = []
         for include_url in reversed(content["includes"]):
-            repo_provider = RepositoryProvider(
-                update_url(resolve_url(self.url, include_url)), self.settings
-            )
+            repo_provider = RepositoryProvider(update_url(resolve_url(self.url, include_url)), self.settings)
             if repo_provider:
                 repo_provider.included_urls = self.included_urls
                 repo_providers.append(repo_provider)

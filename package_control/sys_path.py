@@ -3,7 +3,7 @@ import sys
 
 import sublime
 
-PREFIX, UNC_PREFIX = ('\\\\?\\', '\\\\?\\UNC\\') if sys.platform == 'win32' else ('', '')
+PREFIX, UNC_PREFIX = ("\\\\?\\", "\\\\?\\UNC\\") if sys.platform == "win32" else ("", "")
 
 __executable_path = sublime.executable_path()
 if not __executable_path:
@@ -12,10 +12,11 @@ if not __executable_path:
     __executable_path = os.path.abspath(sys.executable)
 
 # Default packages are located in application installation directory next to executables.
-__default_packages_path = os.path.join(os.path.dirname(__executable_path), 'Packages')
+__default_packages_path = os.path.join(os.path.dirname(__executable_path), "Packages")
 if not os.path.isdir(__default_packages_path):
     # Fall back to detecting the path using the location of the module
     import Default.sort as default_module
+
     try:
         # python 3.8+
         __default_packages_path = os.path.dirname(os.path.dirname(default_module.__spec__.origin))
@@ -24,7 +25,7 @@ if not os.path.isdir(__default_packages_path):
         __default_packages_path = os.path.dirname(os.path.dirname(default_module.__file__))
 
 if not os.path.isdir(__default_packages_path):
-    raise FileNotFoundError('Default Packages')
+    raise FileNotFoundError("Default Packages")
 
 # Determine user's data path.
 # - for portable setups resolves to __executable_path/Data
@@ -41,39 +42,39 @@ except (AttributeError, NameError):
     __data_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Determine extracted packages path
-__packages_path = os.path.join(__data_path, 'Packages')
+__packages_path = os.path.join(__data_path, "Packages")
 if not os.path.isdir(__packages_path):
     # in ST development environment default package must be a directory
-    if not os.path.isdir(os.path.join(__default_packages_path, 'Default')):
-        raise FileNotFoundError('Packages')
+    if not os.path.isdir(os.path.join(__default_packages_path, "Default")):
+        raise FileNotFoundError("Packages")
     __packages_path = __default_packages_path
 
 # Determine installed packages path
-__installed_packages_path = os.path.join(__data_path, 'Installed Packages')
+__installed_packages_path = os.path.join(__data_path, "Installed Packages")
 if not os.path.isdir(__installed_packages_path):
     __installed_packages_path = None
 
 if __installed_packages_path is None:
-    if sys.platform == 'darwin':
-        __data_path = os.path.expanduser('~/Library/Application Support')
-    elif sys.platform == 'win32':
-        __data_path = os.environ.get('APPDATA')
+    if sys.platform == "darwin":
+        __data_path = os.path.expanduser("~/Library/Application Support")
+    elif sys.platform == "win32":
+        __data_path = os.environ.get("APPDATA")
     else:
-        __data_path = os.environ.get('XDG_CONFIG_HOME')
+        __data_path = os.environ.get("XDG_CONFIG_HOME")
         if __data_path is None:
-            __data_path = os.path.expanduser('~/.config')
+            __data_path = os.path.expanduser("~/.config")
 
     if __data_path:
-        for __leaf in ('Sublime Text Development', 'Sublime Text 3 Development'):
-            if sys.platform not in {'win32', 'darwin'}:
-                __leaf = __leaf.lower().replace(' ', '-')
+        for __leaf in ("Sublime Text Development", "Sublime Text 3 Development"):
+            if sys.platform not in {"win32", "darwin"}:
+                __leaf = __leaf.lower().replace(" ", "-")
             __data_path = os.path.join(__data_path, __leaf)
-            __installed_packages_path = os.path.join(__data_path, 'Installed Packages')
+            __installed_packages_path = os.path.join(__data_path, "Installed Packages")
             if not os.path.exists(__installed_packages_path):
                 __installed_packages_path = None
 
     if __installed_packages_path is None:
-        raise FileNotFoundError('Installed Packages')
+        raise FileNotFoundError("Installed Packages")
 
 assert __data_path
 
@@ -224,9 +225,9 @@ def python_libs_cache_path(python_version):
 
     if __python_libs_cache_path is None:
         if __is_portable:
-            root = os.path.join(cache_path(), '__pycache__', 'install', 'Data', 'Lib')
+            root = os.path.join(cache_path(), "__pycache__", "install", "Data", "Lib")
         else:
-            root = os.path.join(cache_path(), '__pycache__', 'data', 'Lib')
+            root = os.path.join(cache_path(), "__pycache__", "data", "Lib")
 
         __python_libs_cache_path = {
             py: None if py == "3.3" else os.path.join(root, os.path.basename(lib))
@@ -249,12 +250,10 @@ def python_packages_cache_path():
     if __python_packages_cache_path is None:
         if __is_portable:
             __python_packages_cache_path = os.path.join(
-                cache_path(), '__pycache__', 'install', 'Data', 'Packages'
+                cache_path(), "__pycache__", "install", "Data", "Packages"
             )
         else:
-            __python_packages_cache_path = os.path.join(
-                cache_path(), '__pycache__', 'data', 'Packages'
-            )
+            __python_packages_cache_path = os.path.join(cache_path(), "__pycache__", "data", "Packages")
 
     return str(__python_packages_cache_path)
 
@@ -270,7 +269,7 @@ def pc_cache_dir():
     global __package_control_cache_path
 
     if __package_control_cache_path is None:
-        __package_control_cache_path = os.path.join(cache_path(), 'Package Control')
+        __package_control_cache_path = os.path.join(cache_path(), "Package Control")
 
     return str(__package_control_cache_path)
 
@@ -308,8 +307,8 @@ def longpath(path):
     """
     path = os.path.normpath(path)
 
-    if PREFIX and not path.startswith((PREFIX, '\\\\.\\')):
-        if path.startswith('\\\\'):
+    if PREFIX and not path.startswith((PREFIX, "\\\\.\\")):
+        if path.startswith("\\\\"):
             return UNC_PREFIX + path[2:]
         return PREFIX + path
     return path
@@ -327,9 +326,9 @@ def shortpath(path):
     """
     if PREFIX:
         if path.startswith(UNC_PREFIX):
-            return '\\\\' + path[len(UNC_PREFIX):]
+            return "\\\\" + path[len(UNC_PREFIX) :]
         if path.startswith(PREFIX):
-            return path[len(PREFIX):]
+            return path[len(PREFIX) :]
     return path
 
 
@@ -344,5 +343,5 @@ __package_control_cache_path = None
 __python_libs_cache_path = None
 __python_packages_cache_path = None
 __trash_path = os.path.join(__data_path, "Trash")
-__user_config_path = os.path.join(__packages_path, 'User')
+__user_config_path = os.path.join(__packages_path, "User")
 __is_portable = __data_path == os.path.join(os.path.dirname(__executable_path), "Data")

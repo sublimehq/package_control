@@ -90,7 +90,6 @@ def names_to_libraries(names, python_version):
             yield Library(name, python_version)
 
 
-
 class Library:
     __slots__ = ["dist_name", "name", "python_version"]
 
@@ -411,8 +410,7 @@ def remove(installed_library):
             os.remove(path)
         except OSError:
             trash_path = os.path.join(
-                trash_dir,
-                sha1((session_id + path).encode('utf-8')).hexdigest().lower()
+                trash_dir, sha1((session_id + path).encode("utf-8")).hexdigest().lower()
             )
             os.rename(path, trash_path)
 

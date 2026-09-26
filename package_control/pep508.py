@@ -80,24 +80,24 @@ VALUE = 3
 
 
 def _implementation_name():
-    if hasattr(sys, 'implementation'):
+    if hasattr(sys, "implementation"):
         return sys.implementation.name
-    return ''
+    return ""
 
 
 def _implementation_version():
-    if hasattr(sys, 'implementation'):
+    if hasattr(sys, "implementation"):
         vi = sys.implementation.version
-        version = f'{vi.major}.{vi.minor}.{vi.micro}'
+        version = f"{vi.major}.{vi.minor}.{vi.micro}"
         kind = vi.releaselevel
-        if kind != 'final':
+        if kind != "final":
             version += kind[0] + str(vi.serial)
         return version
-    return '0'
+    return "0"
 
 
 MARKERS = {
-    PYTHON_VERSION: '.'.join(platform.python_version_tuple()[:2]),
+    PYTHON_VERSION: ".".join(platform.python_version_tuple()[:2]),
     PYTHON_FULL_VERSION: platform.python_version(),
     OS_NAME: os.name,
     SYS_PLATFORM: sys.platform,
@@ -202,7 +202,7 @@ class Parser:
         if token_type == STRING:
             value = match.group(token_type)[1:-1]
 
-        self.remaining = self.remaining[match.end():]
+        self.remaining = self.remaining[match.end() :]
         return Token(token_type, value, match.span())
 
 
@@ -217,11 +217,8 @@ class PEP508EnvironmentMarker:
             token = parser.next()
             if token.token_type == OP_COMMA:
                 raise ValueError(
-                    "Unexpected token %s of type %s at %d" % (
-                        _token_name(token.token_type),
-                        _category_name(token.category),
-                        token.span[0]
-                    )
+                    "Unexpected token %s of type %s at %d"
+                    % (_token_name(token.token_type), _category_name(token.category), token.span[0])
                 )
             if token.token_type != 0:
                 tokens.append(token)
@@ -233,11 +230,12 @@ class PEP508EnvironmentMarker:
 
             if category != expected:
                 raise ValueError(
-                    "Unexpected token %s of type %s at %d, expecting %s" % (
+                    "Unexpected token %s of type %s at %d, expecting %s"
+                    % (
                         _token_name(token.token_type),
                         _category_name(category),
                         token.span[0],
-                        _category_name(expected)
+                        _category_name(expected),
                     )
                 )
 
@@ -252,10 +250,7 @@ class PEP508EnvironmentMarker:
 
         if expected != LOGICAL_OPERATOR:
             raise ValueError(
-                "Incomplete expression, expecting %s at %d" % (
-                    _category_name(expected),
-                    len(string)
-                )
+                "Incomplete expression, expecting %s at %d" % (_category_name(expected), len(string))
             )
 
         self.tokens = tokens

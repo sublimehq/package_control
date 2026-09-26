@@ -40,7 +40,6 @@ def generate_key(request: httpx2.Request, suffix: str = "") -> str:
 
 
 class AsyncHttpCache:
-
     def __init__(self, max_age: int = 600, ttl: int = 604800):
         self.max_age: int = max_age
         self.ttl: int = ttl
@@ -86,7 +85,6 @@ class AsyncHttpCache:
 
 
 class AsyncHttpCacheEntry:
-
     def __init__(self, cache: AsyncHttpCache, request: httpx2.Request):
         self.cache: AsyncHttpCache = cache
         self.key: str = generate_key(request)
@@ -124,9 +122,7 @@ class AsyncHttpCacheEntry:
         # is stored in cache and thus must not be decoded again when retrieving cache.
         ignored_headers = ("content-encoding", "content-length")
         content = "\n".join(
-            f"{key}: {value}"
-            for key, value in response.headers.items()
-            if key not in ignored_headers
+            f"{key}: {value}" for key, value in response.headers.items() if key not in ignored_headers
         )
         await self.meta_file.write_text(content, encoding="utf-8")
 
@@ -137,10 +133,7 @@ class AsyncHttpCacheEntry:
 
 
 class AsyncCacheTransport(httpx2.AsyncBaseTransport):
-
-    def __init__(
-        self, transport: httpx2.AsyncBaseTransport, cache: AsyncHttpCache | None = None
-    ) -> None:
+    def __init__(self, transport: httpx2.AsyncBaseTransport, cache: AsyncHttpCache | None = None) -> None:
         self.transport: httpx2.AsyncBaseTransport = transport
         self.cache: AsyncHttpCache = cache or AsyncHttpCache()
 

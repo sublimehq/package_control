@@ -31,7 +31,7 @@ class ActivityIndicator:
 
     def clear(self):
         if self._view:
-            self._view.erase_status('_package_control')
+            self._view.erase_status("_package_control")
             self._view = None
 
     def start(self):
@@ -43,7 +43,7 @@ class ActivityIndicator:
 
         with self._lock:
             if self._running:
-                raise RuntimeError('Timer is already running')
+                raise RuntimeError("Timer is already running")
             self._running = True
             self._ticks = 0
             self.update(self.render_indicator_text())
@@ -101,10 +101,10 @@ class ActivityIndicator:
         view = sublime.active_window().active_view()
         if view and view != self._view:
             if self._view:
-                self._view.erase_status('_package_control')
+                self._view.erase_status("_package_control")
             self._view = view
         if self._view:
-            self._view.set_status('_package_control', text)
+            self._view.set_status("_package_control", text)
 
     def render_indicator_text(self):
         """
@@ -114,7 +114,7 @@ class ActivityIndicator:
             The activity indicator string to display in the status bar
         """
 
-        text = '⣷⣯⣟⡿⢿⣻⣽⣾'[self._ticks % 8]
+        text = "⣷⣯⣟⡿⢿⣻⣽⣾"[self._ticks % 8]
         if self.label:
             text += " " + self.label
         return text

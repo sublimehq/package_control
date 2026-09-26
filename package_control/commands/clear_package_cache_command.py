@@ -8,7 +8,6 @@ from ..sys_path import cache_path, shortpath
 
 
 class ClearPackageCacheCommand(sublime_plugin.ApplicationCommand):
-
     """
     A command that clears out ST's Cache directory.
 
@@ -31,9 +30,11 @@ class ClearPackageCacheCommand(sublime_plugin.ApplicationCommand):
             msg = f'Do you want to clear "{shortpath(folder)}" to reset all packages to freshly installed state?'
 
             # ST4 supports modal dialogs with title
-            if hasattr(sublime.ok_cancel_dialog, "title") and not sublime.ok_cancel_dialog(
-                msg, title="Clear Sublime Text Cache Directory?"
-            ) or not sublime.ok_cancel_dialog(msg):
+            if (
+                hasattr(sublime.ok_cancel_dialog, "title")
+                and not sublime.ok_cancel_dialog(msg, title="Clear Sublime Text Cache Directory?")
+                or not sublime.ok_cancel_dialog(msg)
+            ):
                 return
 
         if not clear_directory(folder, ignore_errors=False):

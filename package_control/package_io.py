@@ -23,11 +23,11 @@ def create_empty_file(filename):
     """
 
     try:
-        open(filename, 'xb').close()
+        open(filename, "xb").close()
     except FileExistsError:
         pass
     except OSError as e:
-        console_write('Unable to create %s: %s', (filename, e))
+        console_write("Unable to create %s: %s", (filename, e))
         return False
     return True
 
@@ -46,21 +46,22 @@ async def list_sublime_package_dirs(path, include_hidden=False):
     :return:
         A generator of directory names
     """
+
     def worker():
         files = set()
         try:
             for filename in os.listdir(path):
-                if filename[0] == '.':
+                if filename[0] == ".":
                     continue
                 file_path = os.path.join(path, filename)
                 # Don't include files
                 if not os.path.isdir(file_path):
                     continue
                 # Don't include hidden packages
-                if not include_hidden and os.path.exists(os.path.join(file_path, '.hidden-sublime-package')):
+                if not include_hidden and os.path.exists(os.path.join(file_path, ".hidden-sublime-package")):
                     continue
                 # Don't include a dir if it is going to be cleaned up
-                if os.path.exists(os.path.join(file_path, 'package-control.cleanup')):
+                if os.path.exists(os.path.join(file_path, "package-control.cleanup")):
                     continue
                 files.add(filename)
 
@@ -85,12 +86,13 @@ async def list_sublime_package_files(path, include_hidden=False):
     :return:
         A generator of package names with .sublime-package suffix removed
     """
+
     def worker():
         files = set()
         try:
             for filename in os.listdir(path):
                 name, ext = os.path.splitext(filename)
-                if ext.lower() != '.sublime-package':
+                if ext.lower() != ".sublime-package":
                     continue
                 file_path = os.path.join(path, filename)
                 if not os.path.isfile(file_path):
@@ -98,7 +100,7 @@ async def list_sublime_package_files(path, include_hidden=False):
                 if not include_hidden:
                     try:
                         with zipfile.ZipFile(file_path) as fobj:
-                            if '.hidden-sublime-package' in fobj.NameToInfo:
+                            if ".hidden-sublime-package" in fobj.NameToInfo:
                                 continue
                     except (OSError, zipfile.BadZipfile):
                         pass
@@ -214,14 +216,14 @@ def get_installed_package_path(package):
         The full filesystem path to the sublime-package file
     """
 
-    return os.path.join(sys_path.installed_packages_path(), package + '.sublime-package')
+    return os.path.join(sys_path.installed_packages_path(), package + ".sublime-package")
 
 
 def _read_regular_file(package, relative_path, binary=False):
     package_dir = get_package_dir(package)
     file_path = os.path.join(package_dir, relative_path)
 
-    mode, encoding = ('rb', None) if binary else ('r', 'utf-8')
+    mode, encoding = ("rb", None) if binary else ("r", "utf-8")
     with open(file_path, mode=mode, encoding=encoding) as fobj:
         return fobj.read()
 
@@ -236,37 +238,37 @@ def _read_zip_file(package, relative_path, binary=False):
         with zipfile.ZipFile(zip_path) as package_zip:
             contents = package_zip.read(relative_path)
             if not binary:
-                contents = contents.decode('utf-8')
+                contents = contents.decode("utf-8")
             return contents
 
-    except (KeyError):
+    except KeyError:
         pass
 
-    except (zipfile.BadZipfile):
+    except zipfile.BadZipfile:
         console_write(
-            '''
+            """
             Unable to read file from sublime-package file for %s due to the
             package file being corrupt
-            ''',
-            package
+            """,
+            package,
         )
 
-    except (OSError):
+    except OSError:
         console_write(
-            '''
+            """
             Unable to read file from sublime-package file for %s due to an
             invalid filename
-            ''',
-            package
+            """,
+            package,
         )
 
-    except (UnicodeDecodeError):
+    except UnicodeDecodeError:
         console_write(
-            '''
+            """
             Unable to read file from sublime-package file for %s due to an
             invalid filename or character encoding issue
-            ''',
-            package
+            """,
+            package,
         )
 
     return False
@@ -288,10 +290,7 @@ def zip_file_exists(package, relative_path):
         with zipfile.ZipFile(zip_path) as package_zip:
             return relative_path in package_zip.NameToInfo
 
-    except (zipfile.BadZipfile):
-        console_write(
-            ' An error occurred while trying to unzip the sublime-package file for %s.',
-            package
-        )
+    except zipfile.BadZipfile:
+        console_write(" An error occurred while trying to unzip the sublime-package file for %s.", package)
 
     return False

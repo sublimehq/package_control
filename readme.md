@@ -30,7 +30,12 @@ The easiest way to install is ...
 2. Paste and run the following script:
 
    ```py
-   from urllib.request import urlretrieve; urlretrieve(url="https://download.sublimetext.com/Package%20Control.sublime-package", filename=sublime.installed_packages_path() + '/Package Control.sublime-package')
+   from urllib.request import urlretrieve
+
+   urlretrieve(
+       url="https://download.sublimetext.com/Package%20Control.sublime-package",
+       filename=sublime.installed_packages_path() + "/Package Control.sublime-package",
+   )
    ```
 
 > [!NOTE]
