@@ -428,6 +428,11 @@ def remove(installed_library):
         if rel_path == dist_info.dir_name:
             continue
 
+        # Prevent removal of files and directories outside of Lib/pythonXY path
+        rel_path = os.path.normpath(rel_path)
+        if rel_path.startswith(".." + os.sep):
+            continue
+
         abs_path = os.path.join(dist_info.install_root, rel_path)
 
         if os.path.isdir(abs_path):
