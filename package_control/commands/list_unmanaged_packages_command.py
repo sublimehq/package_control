@@ -5,7 +5,6 @@ from .list_packages_command import ListPackagesCommand
 
 
 class ListUnmanagedPackagesCommand(ListPackagesCommand):
-
     """
     A command that shows a list of all packages that are not managed by
     Package Control, i.e. that are installed, but not mentioned in
@@ -24,8 +23,8 @@ class ListUnmanagedPackagesCommand(ListPackagesCommand):
         """
 
         settings = sublime.load_settings(pc_settings_filename())
-        ignored_packages = load_list_setting(settings, 'unmanaged_packages_ignore')
-        ignored_packages |= load_list_setting(settings, 'installed_packages')
+        ignored_packages = load_list_setting(settings, "unmanaged_packages_ignore")
+        ignored_packages |= load_list_setting(settings, "installed_packages")
 
         packages = await manager.list_packages() - ignored_packages
         return sorted(packages, key=lambda s: s.lower())

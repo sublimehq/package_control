@@ -42,9 +42,7 @@ class InstallPackageCommand(sublime_plugin.ApplicationCommand):
         installer = PackageTaskRunner()
 
         with ActivityIndicator("Loading packages...") as progress:
-            tasks = await installer.create_package_tasks(
-                actions=(installer.INSTALL, installer.OVERWRITE)
-            )
+            tasks = await installer.create_package_tasks(actions=(installer.INSTALL, installer.OVERWRITE))
             if not tasks:
                 window.run_command("hide_overlay")
                 message = "There are no packages available for installation"

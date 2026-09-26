@@ -6,13 +6,12 @@ class ProviderException(DownloaderException):
 
 
 class InvalidChannelFileException(ProviderException):
-
     def __init__(self, provider, reason_message):
         self.reason_message = reason_message
         self.url = provider.url
 
     def __str__(self):
-        return f'Channel {self.url} does not appear to be a valid channel file because {self.reason_message}.'
+        return f"Channel {self.url} does not appear to be a valid channel file because {self.reason_message}."
 
 
 class InvalidRepoFileException(ProviderException):
@@ -25,7 +24,6 @@ class InvalidRepoFileException(ProviderException):
 
 
 class InvalidPackageNameException(ProviderException):
-
     def __init__(self, package_name):
         self.package_name = package_name
 

@@ -82,9 +82,7 @@ def update_url(url: str) -> str:
     original_url = url
     url = url.replace("://raw.github.com/", "://raw.githubusercontent.com/")
     url = url.replace("://nodeload.github.com/", "://codeload.github.com/")
-    url = re.sub(
-        r"^(https://codeload\.github\.com/[^/#?]+/[^/#?]+/)zipball(/.*)$", "\\1zip\\2", url
-    )
+    url = re.sub(r"^(https://codeload\.github\.com/[^/#?]+/[^/#?]+/)zipball(/.*)$", "\\1zip\\2", url)
 
     # Fix URLs from old versions of Package Control since we are going to
     # remove all packages but Package Control from them to force upgrades

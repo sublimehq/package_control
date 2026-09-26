@@ -7,20 +7,19 @@ from .json_api_client import JSONApiClient
 
 # A predefined list of readme filenames to look for
 _readme_filenames = [
-    'readme',
-    'readme.txt',
-    'readme.md',
-    'readme.mkd',
-    'readme.mdown',
-    'readme.markdown',
-    'readme.textile',
-    'readme.creole',
-    'readme.rst'
+    "readme",
+    "readme.txt",
+    "readme.md",
+    "readme.mkd",
+    "readme.mdown",
+    "readme.markdown",
+    "readme.textile",
+    "readme.creole",
+    "readme.rst",
 ]
 
 
 class BitBucketClient(JSONApiClient):
-
     @staticmethod
     def user_repo_branch(url):
         """
@@ -42,8 +41,7 @@ class BitBucketClient(JSONApiClient):
         """
 
         match = re.match(
-            r'^https?://bitbucket\.org/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/src/([^#?]*[^/#?])/?|/?)|/?)$',
-            url
+            r"^https?://bitbucket\.org/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/src/([^#?]*[^/#?])/?|/?)|/?)$", url
         )
         if match:
             return match.groups()
@@ -66,7 +64,7 @@ class BitBucketClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return f'https://bitbucket.org/{quote(user_name)}/{quote(repo_name)}'
+        return f"https://bitbucket.org/{quote(user_name)}/{quote(repo_name)}"
 
     async def download_info(self, url, tag_prefix=None):
         """
@@ -135,13 +133,13 @@ class BitBucketClient(JSONApiClient):
             branch = default_branch
             if branch is None:
                 repo_info = await self.fetch_json(self._api_url(user_repo))
-                branch = repo_info['mainbranch'].get('name', 'master')
+                branch = repo_info["mainbranch"].get("name", "master")
 
-        branch_url = self._api_url(user_repo, f'/refs/branches/{branch}')
+        branch_url = self._api_url(user_repo, f"/refs/branches/{branch}")
         branch_info = await self.fetch_json(branch_url)
 
-        timestamp = branch_info['target']['date'][0:19].replace('T', ' ')
-        version = re.sub(r'[\-: ]', '.', timestamp)
+        timestamp = branch_info["target"]["date"][0:19].replace("T", " ")
+        version = re.sub(r"[\-: ]", ".", timestamp)
 
         return [self._make_download_info(user_repo, branch, version, timestamp)]
 
@@ -183,31 +181,27 @@ class BitBucketClient(JSONApiClient):
               `date` - the ISO-8601 timestamp string when the version was published
         """
 
-        tags_match = re.match(r'https?://bitbucket\.org/([^/#?]+/[^/#?]+)/?(?:#tags)?$', url)
+        tags_match = re.match(r"https?://bitbucket\.org/([^/#?]+/[^/#?]+)/?(?:#tags)?$", url)
         if not tags_match:
             return None
 
         async def _get_releases(user_repo, tag_prefix, page_size=100):
             used_versions = set()
-            query_string = urlencode({'pagelen': page_size})
-            tags_url = self._api_url(user_repo, f'/refs/tags?{query_string}')
+            query_string = urlencode({"pagelen": page_size})
+            tags_url = self._api_url(user_repo, f"/refs/tags?{query_string}")
             while tags_url:
                 tags_json = await self.fetch_json(tags_url)
-                for tag in tags_json['values']:
-                    version = version_match_prefix(tag['name'], tag_prefix)
+                for tag in tags_json["values"]:
+                    version = version_match_prefix(tag["name"], tag_prefix)
                     if version and version not in used_versions:
                         used_versions.add(version)
-                        yield (
-                            version,
-                            tag['name'],
-                            tag['target']['date'][0:19].replace('T', ' ')
-                        )
+                        yield (version, tag["name"], tag["target"]["date"][0:19].replace("T", " "))
 
-                tags_url = tags_json.get('next')
+                tags_url = tags_json.get("next")
 
         user_repo = tags_match.group(1)
 
-        max_releases = self.settings.get('max_releases', 0)
+        max_releases = self.settings.get("max_releases", 0)
         num_releases = 0
 
         output = []
@@ -256,26 +250,26 @@ class BitBucketClient(JSONApiClient):
         repo_info = await self.fetch_json(api_url)
 
         if branch is None:
-            branch = repo_info['mainbranch'].get('name', 'master')
+            branch = repo_info["mainbranch"].get("name", "master")
 
-        issues_url = f'https://bitbucket.org/{user_repo}/issues'
+        issues_url = f"https://bitbucket.org/{user_repo}/issues"
 
-        author = repo_info['owner'].get('nickname')
+        author = repo_info["owner"].get("nickname")
         if author is None:
-            author = repo_info['owner'].get('username')
+            author = repo_info["owner"].get("username")
 
-        is_client = self.settings.get('min_api_calls', False)
+        is_client = self.settings.get("min_api_calls", False)
         readme_url = None if is_client else await self._readme_url(user_repo, branch)
 
         return {
-            'name': repo_info['name'],
-            'description': repo_info['description'] or 'No description provided',
-            'homepage': repo_info['website'] or url,
-            'author': author,
-            'donate': None,
-            'readme': readme_url,
-            'issues': issues_url if repo_info['has_issues'] else None,
-            'default_branch': branch
+            "name": repo_info["name"],
+            "description": repo_info["description"] or "No description provided",
+            "homepage": repo_info["website"] or url,
+            "author": author,
+            "donate": None,
+            "readme": readme_url,
+            "issues": issues_url if repo_info["has_issues"] else None,
+            "default_branch": branch,
         }
 
     def _make_download_info(self, user_repo, ref_name, version, timestamp):
@@ -306,12 +300,12 @@ class BitBucketClient(JSONApiClient):
         """
 
         return {
-            'url': f'https://bitbucket.org/{user_repo}/get/{ref_name}.zip',
-            'version': version,
-            'date': timestamp
+            "url": f"https://bitbucket.org/{user_repo}/get/{ref_name}.zip",
+            "version": version,
+            "date": timestamp,
         }
 
-    def _api_url(self, user_repo, suffix=''):
+    def _api_url(self, user_repo, suffix=""):
         """
         Generate a URL for the BitBucket API
 
@@ -325,7 +319,7 @@ class BitBucketClient(JSONApiClient):
             The API URL
         """
 
-        return f'https://api.bitbucket.org/2.0/repositories/{user_repo}{suffix}'
+        return f"https://api.bitbucket.org/2.0/repositories/{user_repo}{suffix}"
 
     async def _readme_url(self, user_repo, branch):
         """
@@ -346,20 +340,20 @@ class BitBucketClient(JSONApiClient):
             The URL to the readme file, or None
         """
 
-        listing_url = self._api_url(user_repo, f'/src/{branch}/?pagelen=100')
+        listing_url = self._api_url(user_repo, f"/src/{branch}/?pagelen=100")
 
         try:
             while listing_url:
                 root_dir_info = await self.fetch_json(listing_url)
 
-                for entry in root_dir_info['values']:
-                    if entry['path'].lower() in _readme_filenames:
-                        return 'https://bitbucket.org/{}/raw/{}/{}'.format(user_repo, branch, entry['path'])
+                for entry in root_dir_info["values"]:
+                    if entry["path"].lower() in _readme_filenames:
+                        return "https://bitbucket.org/{}/raw/{}/{}".format(user_repo, branch, entry["path"])
 
-                listing_url = root_dir_info.get('next', None)
+                listing_url = root_dir_info.get("next", None)
 
-        except (DownloaderException) as e:
-            if 'HTTP error 404' not in str(e):
+        except DownloaderException as e:
+            if "HTTP error 404" not in str(e):
                 raise
 
         return None

@@ -5,7 +5,7 @@ import sublime
 
 # Clear module cache to force reloading all modules of this package.
 prefix1 = __spec__.parent + "."  # sub modules of Package Control package
-prefix2 = "package_control."     # sub modules of package_control namespace package
+prefix2 = "package_control."  # sub modules of package_control namespace package
 for module_name in [
     module_name
     for module_name in sys.modules
@@ -19,6 +19,7 @@ try:
     import sublime_aio
 except ImportError:
     from .package_control.vendor import sublime_aio
+
     # claim it being the global one to avoid monkey patching each module.
     sys.modules["sublime_aio"] = sublime_aio
 
@@ -29,19 +30,19 @@ from .package_control.package_io import (
     regular_file_exists,
 )
 
-has_packed = os.path.exists(get_installed_package_path('Package Control'))
-has_unpacked = regular_file_exists('Package Control', 'plugin.py')
+has_packed = os.path.exists(get_installed_package_path("Package Control"))
+has_unpacked = regular_file_exists("Package Control", "plugin.py")
 
 # Ensure least required ST and python version
 if int(sublime.version()) < 4000 or sys.version_info < (3, 8):
     message = text.format(
-        '''
+        """
         Package Control
 
         This package requires Sublime Text 4 and python 3.8 or higher.
 
         Please consider updating ST or install Package Control 4.
-        '''
+        """
     )
     sublime.error_message(message)
 
@@ -57,7 +58,7 @@ if int(sublime.version()) < 4000 or sys.version_info < (3, 8):
 # Ensure the user has installed Package Control properly
 elif __spec__.parent != "Package Control":
     message = text.format(
-        '''
+        """
         Package Control
 
         This package appears to be installed incorrectly.
@@ -69,36 +70,36 @@ elif __spec__.parent != "Package Control":
 
         1. Open the "Preferences" menu
         2. Select "Browse Packages\u2026"
-        ''',
+        """,
         __spec__.parent,
-        strip=False
+        strip=False,
     )
 
     # If installed unpacked
     if os.path.exists(get_package_dir(__spec__.parent)):
         message += text.format(
-            '''
+            """
             3. Rename the folder "%s" to "Package Control"
             4. Restart Sublime Text
-            ''',
-            __spec__.parent
+            """,
+            __spec__.parent,
         )
     # If installed as a .sublime-package file
     else:
         message += text.format(
-            '''
+            """
             3. Browse up a folder
             4. Browse into the "Installed Packages/" folder
             5. Rename "%s.sublime-package" to "Package Control.sublime-package"
             6. Restart Sublime Text
-            ''',
-            __spec__.parent
+            """,
+            __spec__.parent,
         )
     sublime.error_message(message)
 
 elif has_packed and has_unpacked:
     message = text.format(
-        '''
+        """
         Package Control
 
         It appears you have Package Control installed as both a
@@ -110,7 +111,7 @@ elif has_packed and has_unpacked:
         2. Select "Browse Packages\u2026"
         3. Delete the folder "Package Control"
         4. Restart Sublime Text
-        '''
+        """
     )
     sublime.error_message(message)
 
@@ -123,9 +124,9 @@ else:
     # could be installed, they could not be loaded properly.
     try:
         os.path.exists(get_package_dir("fran\u2013ais"))
-    except (UnicodeEncodeError) as exception:
+    except UnicodeEncodeError as exception:
         message = text.format(
-            '''
+            """
             Package Control
 
             Your system's locale is set to a value that can not handle
@@ -142,9 +143,9 @@ else:
             Error Details:
 
               %s
-            ''',
+            """,
             exception,
-            strip=False
+            strip=False,
         )
         sublime.error_message(message)
 
@@ -162,4 +163,5 @@ else:
             """
 
             from .package_control.bootstrap import bootstrap
+
             sublime_aio.run_coroutine(bootstrap())

@@ -12,7 +12,6 @@ from .show_error import show_error, show_message
 
 
 class PackageCreator:
-
     """
     Abstract class for commands that create .sublime-package files
     """
@@ -35,14 +34,10 @@ class PackageCreator:
 
         self.packages = sorted(await self.manager.list_packages(unpacked_only=True), key=lambda s: s.lower())
         if not self.packages:
-            show_message('There are no packages available to be packaged')
+            show_message("There are no packages available to be packaged")
             return
 
-        self.window.show_quick_panel(
-            self.packages,
-            self.on_done_packages,
-            sublime.KEEP_OPEN_ON_FOCUS_LOST
-        )
+        self.window.show_quick_panel(self.packages, self.on_done_packages, sublime.KEEP_OPEN_ON_FOCUS_LOST)
 
     def on_done_packages(self, picked):
         """
@@ -61,21 +56,18 @@ class PackageCreator:
             return
         self.package_name = self.packages[picked]
 
-        rules = self.manager.settings.get('package_profiles')
+        rules = self.manager.settings.get("package_profiles")
         if not rules:
             self.select_destination()
             return
 
-        self.profiles = ['Default']
+        self.profiles = ["Default"]
         for key in rules:
             self.profiles.append(key)
 
         def show_panel():
-            self.window.show_quick_panel(
-                self.profiles,
-                self.on_done_profile,
-                sublime.KEEP_OPEN_ON_FOCUS_LOST
-            )
+            self.window.show_quick_panel(self.profiles, self.on_done_profile, sublime.KEEP_OPEN_ON_FOCUS_LOST)
+
         sublime.set_timeout(show_panel, 50)
 
     def on_done_profile(self, picked):
@@ -104,7 +96,7 @@ class PackageCreator:
 
         destination = self.get_package_destination()
 
-        if hasattr(sublime, 'select_folder_dialog'):
+        if hasattr(sublime, "select_folder_dialog"):
             sublime.select_folder_dialog(self.do_create_package, directory=destination)
         else:
             self.do_create_package(destination)
@@ -120,25 +112,24 @@ class PackageCreator:
         package_dir = get_package_dir(self.package_name)
         if not os.path.isdir(package_dir):
             show_error(
-                '''
+                """
                 The folder for the package name specified, %s,
                 does not exists in %s
-                ''',
-                (self.package_name, sys_path.packages_path())
+                """,
+                (self.package_name, sys_path.packages_path()),
             )
             return False
 
-        package_filename = self.package_name + '.sublime-package'
+        package_filename = self.package_name + ".sublime-package"
         package_path = os.path.join(destination, package_filename)
 
         try:
             os.makedirs(destination, exist_ok=True)
 
             with zipfile.ZipFile(package_path, "w", compression=zipfile.ZIP_DEFLATED) as package_file:
-
                 compileall.compile_dir(package_dir, quiet=True, legacy=True, optimize=2)
 
-                profile_settings = self.manager.settings.get('package_profiles', {}).get(self.profile)
+                profile_settings = self.manager.settings.get("package_profiles", {}).get(self.profile)
 
                 def get_profile_setting(setting, default):
                     if profile_settings:
@@ -147,9 +138,9 @@ class PackageCreator:
                             return profile_value
                     return self.manager.settings.get(setting, default)
 
-                dirs_to_ignore = get_profile_setting('dirs_to_ignore', [])
-                files_to_ignore = get_profile_setting('files_to_ignore', [])
-                files_to_include = get_profile_setting('files_to_include', [])
+                dirs_to_ignore = get_profile_setting("dirs_to_ignore", [])
+                files_to_ignore = get_profile_setting("files_to_ignore", [])
+                files_to_include = get_profile_setting("files_to_include", [])
 
                 for root, dirs, files in os.walk(package_dir):
                     # remove all "dirs_to_ignore" from "dirs" to make os.walk ignore them
@@ -166,21 +157,18 @@ class PackageCreator:
                         package_file.write(full_path, relative_path)
 
             self.window.run_command(
-                'open_dir',
-                {
-                    "dir": sys_path.shortpath(destination),
-                    "file": self.package_name + '.sublime-package'
-                }
+                "open_dir",
+                {"dir": sys_path.shortpath(destination), "file": self.package_name + ".sublime-package"},
             )
 
         except OSError as e:
             show_error(
-                '''
+                """
                 An error occurred creating the package file %s in %s.
 
                 %s
-                ''',
-                (package_filename, destination, e)
+                """,
+                (package_filename, destination, e),
             )
 
     def get_package_destination(self):
@@ -194,18 +182,18 @@ class PackageCreator:
         destination = None
 
         if self.profile:
-            profile_settings = self.manager.settings.get('package_profiles', {}).get(self.profile, {})
-            destination = profile_settings.get('package_destination')
+            profile_settings = self.manager.settings.get("package_profiles", {}).get(self.profile, {})
+            destination = profile_settings.get("package_destination")
 
         if not destination:
-            destination = self.manager.settings.get('package_destination')
+            destination = self.manager.settings.get("package_destination")
 
             # We check destination via an if statement instead of using
             # the dict.get() method since the key may be set, but to a blank value
             if not destination:
-                destination = os.environ.get('XDG_DESKTOP_DIR', '')
+                destination = os.environ.get("XDG_DESKTOP_DIR", "")
 
                 if not destination:
-                    destination = os.path.join(os.path.expanduser('~'), 'Desktop')
+                    destination = os.path.join(os.path.expanduser("~"), "Desktop")
 
         return os.path.normpath(os.path.expandvars(destination))

@@ -6,7 +6,6 @@ from ..show_error import show_message
 
 
 class RemoveRepositoryCommand(sublime_plugin.ApplicationCommand):
-
     """
     A command to remove a repository from the user's Package Control settings
 
@@ -25,21 +24,21 @@ class RemoveRepositoryCommand(sublime_plugin.ApplicationCommand):
 
     def run(self, url=None, unattended=False):
         settings = sublime.load_settings(pc_settings_filename())
-        repositories = settings.get('repositories')
+        repositories = settings.get("repositories")
         if not repositories:
             if not url or not unattended:
-                show_message('There are no repositories to remove')
+                show_message("There are no repositories to remove")
             return
 
         if url:
             try:
                 repositories.remove(url)
-            except (ValueError):
+            except ValueError:
                 pass
             else:
-                settings.set('repositories', repositories)
+                settings.set("repositories", repositories)
                 sublime.save_settings(pc_settings_filename())
-                sublime.status_message(f'Repository {url} successfully removed')
+                sublime.status_message(f"Repository {url} successfully removed")
             return
 
         def on_done(index):
@@ -48,8 +47,4 @@ class RemoveRepositoryCommand(sublime_plugin.ApplicationCommand):
 
             self.run(repositories[index])
 
-        sublime.active_window().show_quick_panel(
-            repositories,
-            on_done,
-            sublime.KEEP_OPEN_ON_FOCUS_LOST
-        )
+        sublime.active_window().show_quick_panel(repositories, on_done, sublime.KEEP_OPEN_ON_FOCUS_LOST)

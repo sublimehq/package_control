@@ -7,7 +7,6 @@ from .json_api_client import JSONApiClient
 
 
 class GitHubClient(JSONApiClient):
-
     @staticmethod
     def user_repo_branch(url):
         """
@@ -28,8 +27,7 @@ class GitHubClient(JSONApiClient):
                 (None, None, None) if no match.
         """
         match = re.match(
-            r'^https?://github\.com/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/tree/([^#?]*[^/#?])/?|/?)|/?)$',
-            url
+            r"^https?://github\.com/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/tree/([^#?]*[^/#?])/?|/?)|/?)$", url
         )
         if match:
             return match.groups()
@@ -52,7 +50,7 @@ class GitHubClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return f'https://github.com/{quote(user_name)}/{quote(repo_name)}'
+        return f"https://github.com/{quote(user_name)}/{quote(repo_name)}"
 
     async def download_info(self, url, tag_prefix=None):
         """
@@ -121,13 +119,13 @@ class GitHubClient(JSONApiClient):
             branch = default_branch
             if branch is None:
                 repo_info = await self.fetch_json(self._api_url(user_repo))
-                branch = repo_info.get('default_branch', 'master')
+                branch = repo_info.get("default_branch", "master")
 
-        branch_url = self._api_url(user_repo, f'/branches/{branch}')
+        branch_url = self._api_url(user_repo, f"/branches/{branch}")
         branch_info = await self.fetch_json(branch_url)
 
-        timestamp = branch_info['commit']['commit']['committer']['date'][0:19].replace('T', ' ')
-        version = re.sub(r'[\-: ]', '.', timestamp)
+        timestamp = branch_info["commit"]["commit"]["committer"]["date"][0:19].replace("T", " ")
+        version = re.sub(r"[\-: ]", ".", timestamp)
 
         return [self._make_download_info(user_repo, branch, version, timestamp)]
 
@@ -220,21 +218,21 @@ class GitHubClient(JSONApiClient):
             ```
         """
 
-        match = re.match(r'https?://github\.com/([^/#?]+/[^/#?]+)(?:/releases)?/?$', url)
+        match = re.match(r"https?://github\.com/([^/#?]+/[^/#?]+)(?:/releases)?/?$", url)
         if not match:
             return None
 
         async def _get_releases(user_repo, tag_prefix=None, page_size=100):
             used_versions = set()
             for page in range(100):
-                query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                api_url = self._api_url(user_repo, f'/releases?{query_string}')
+                query_string = urlencode({"page": page * page_size, "per_page": page_size})
+                api_url = self._api_url(user_repo, f"/releases?{query_string}")
                 releases = await self.fetch_json(api_url)
 
                 for release in releases:
-                    if release['draft']:
+                    if release["draft"]:
                         continue
-                    version = version_match_prefix(release['tag_name'], tag_prefix)
+                    version = version_match_prefix(release["tag_name"], tag_prefix)
                     if not version or version in used_versions:
                         continue
 
@@ -242,15 +240,15 @@ class GitHubClient(JSONApiClient):
 
                     yield (
                         version,
-                        release['published_at'][0:19].replace('T', ' '),
+                        release["published_at"][0:19].replace("T", " "),
                         [
                             (
-                                a['label'] or a['browser_download_url'].rpartition("/")[-1],
-                                a['browser_download_url']
+                                a["label"] or a["browser_download_url"].rpartition("/")[-1],
+                                a["browser_download_url"],
                             )
-                            for a in release['assets']
-                            if a['state'] == 'uploaded'
-                        ]
+                            for a in release["assets"]
+                            if a["state"] == "uploaded"
+                        ],
                     )
 
                 if len(releases) < page_size:
@@ -259,7 +257,7 @@ class GitHubClient(JSONApiClient):
         asset_templates = self._expand_asset_variables(asset_templates)
 
         user_repo = match.group(1)
-        max_releases = self.settings.get('max_releases', 0)
+        max_releases = self.settings.get("max_releases", 0)
         num_releases = [0] * len(asset_templates)
 
         output = []
@@ -273,17 +271,17 @@ class GitHubClient(JSONApiClient):
                 if max_releases > 0 and num_releases[idx] >= max_releases:
                     continue
 
-                pattern = pattern.replace('${version}', version_string)
-                pattern = pattern.replace('.', r'\.')
-                pattern = pattern.replace('?', r'.')
-                pattern = pattern.replace('*', r'.*?')
+                pattern = pattern.replace("${version}", version_string)
+                pattern = pattern.replace(".", r"\.")
+                pattern = pattern.replace("?", r".")
+                pattern = pattern.replace("*", r".*?")
                 regex = re.compile(pattern)
 
                 for asset_name, asset_url in assets:
                     if not regex.match(asset_name):
                         continue
 
-                    info = {'url': asset_url, 'version': version_string, 'date': timestamp}
+                    info = {"url": asset_url, "version": version_string, "date": timestamp}
                     info.update(selectors)
                     output.append(info)
                     num_releases[idx] += version.is_final
@@ -320,29 +318,29 @@ class GitHubClient(JSONApiClient):
               `date` - the ISO-8601 timestamp string when the version was published
         """
 
-        tags_match = re.match(r'https?://github\.com/([^/#?]+/[^/#?]+)(?:/tags)?/?$', url)
+        tags_match = re.match(r"https?://github\.com/([^/#?]+/[^/#?]+)(?:/tags)?/?$", url)
         if not tags_match:
             return None
 
         async def _get_releases(user_repo, tag_prefix=None, page_size=100):
             used_versions = set()
             for page in range(100):
-                query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                tags_url = self._api_url(user_repo, f'/tags?{query_string}')
+                query_string = urlencode({"page": page * page_size, "per_page": page_size})
+                tags_url = self._api_url(user_repo, f"/tags?{query_string}")
                 tags_json = await self.fetch_json(tags_url)
 
                 for tag in tags_json:
-                    version = version_match_prefix(tag['name'], tag_prefix)
+                    version = version_match_prefix(tag["name"], tag_prefix)
                     if version and version not in used_versions:
                         used_versions.add(version)
-                        yield (version, tag['name'], tag['commit']['url'])
+                        yield (version, tag["name"], tag["commit"]["url"])
 
                 if len(tags_json) < page_size:
                     return
 
         user_repo = tags_match.group(1)
-        is_client = self.settings.get('min_api_calls', False)
-        max_releases = self.settings.get('max_releases', 0)
+        is_client = self.settings.get("min_api_calls", False)
+        max_releases = self.settings.get("max_releases", 0)
         num_releases = 0
 
         output = []
@@ -350,10 +348,10 @@ class GitHubClient(JSONApiClient):
             version, tag, tag_url = release
 
             if is_client:
-                timestamp = '1970-01-01 00:00:00'
+                timestamp = "1970-01-01 00:00:00"
             else:
                 tag_info = await self.fetch_json(tag_url)
-                timestamp = tag_info['commit']['committer']['date'][0:19].replace('T', ' ')
+                timestamp = tag_info["commit"]["committer"]["date"][0:19].replace("T", " ")
 
             output.append(self._make_download_info(user_repo, tag, str(version), timestamp))
 
@@ -397,7 +395,7 @@ class GitHubClient(JSONApiClient):
         repo_info = await self.fetch_json(api_url)
 
         if branch is None:
-            branch = repo_info.get('default_branch', 'master')
+            branch = repo_info.get("default_branch", "master")
 
         return await self._extract_repo_info(branch, repo_info)
 
@@ -423,26 +421,26 @@ class GitHubClient(JSONApiClient):
               `default_branch`
         """
 
-        user_name = result['owner']['login']
-        repo_name = result['name']
-        user_repo = f'{user_name}/{repo_name}'
+        user_name = result["owner"]["login"]
+        repo_name = result["name"]
+        user_repo = f"{user_name}/{repo_name}"
 
         issues_url = None
-        if result['has_issues']:
-            issues_url = f'https://github.com/{user_repo}/issues'
+        if result["has_issues"]:
+            issues_url = f"https://github.com/{user_repo}/issues"
 
-        is_client = self.settings.get('min_api_calls', False)
+        is_client = self.settings.get("min_api_calls", False)
         readme_url = None if is_client else await self._readme_url(user_repo, branch)
 
         return {
-            'name': repo_name,
-            'description': result['description'] or 'No description provided',
-            'homepage': result['homepage'] or result['html_url'],
-            'author': user_name,
-            'readme': readme_url,
-            'issues': issues_url,
-            'donate': None,
-            'default_branch': branch
+            "name": repo_name,
+            "description": result["description"] or "No description provided",
+            "homepage": result["homepage"] or result["html_url"],
+            "author": user_name,
+            "readme": readme_url,
+            "issues": issues_url,
+            "donate": None,
+            "default_branch": branch,
         }
 
     def _make_download_info(self, user_repo, ref_name, version, timestamp):
@@ -473,12 +471,12 @@ class GitHubClient(JSONApiClient):
         """
 
         return {
-            'url': f'https://codeload.github.com/{user_repo}/zip/{ref_name}',
-            'version': version,
-            'date': timestamp
+            "url": f"https://codeload.github.com/{user_repo}/zip/{ref_name}",
+            "version": version,
+            "date": timestamp,
         }
 
-    def _api_url(self, user_repo, suffix=''):
+    def _api_url(self, user_repo, suffix=""):
         """
         Generate a URL for the BitBucket API
 
@@ -492,7 +490,7 @@ class GitHubClient(JSONApiClient):
             The API URL
         """
 
-        return f'https://api.github.com/repos/{user_repo}{suffix}'
+        return f"https://api.github.com/repos/{user_repo}{suffix}"
 
     async def _readme_url(self, user_repo, branch):
         """
@@ -512,17 +510,17 @@ class GitHubClient(JSONApiClient):
             A dict containing all of the info from the GitHub API, or None if no readme exists
         """
 
-        query_string = urlencode({'ref': branch})
-        readme_url = self._api_url(user_repo, f'/readme?{query_string}')
+        query_string = urlencode({"ref": branch})
+        readme_url = self._api_url(user_repo, f"/readme?{query_string}")
 
         try:
             readme_file = await self.fetch_json(readme_url)
-            readme_file = readme_file.get('path')
+            readme_file = readme_file.get("path")
             if readme_file:
-                return f'https://raw.githubusercontent.com/{user_repo}/{branch}/{readme_file}'
+                return f"https://raw.githubusercontent.com/{user_repo}/{branch}/{readme_file}"
 
-        except (DownloaderException) as e:
-            if 'HTTP error 404' not in str(e):
+        except DownloaderException as e:
+            if "HTTP error 404" not in str(e):
                 raise
 
         return None

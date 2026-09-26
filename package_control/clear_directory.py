@@ -7,7 +7,7 @@ from hashlib import sha1
 
 from . import sys_path
 
-IS_WIN = sys.platform == 'win32'
+IS_WIN = sys.platform == "win32"
 if IS_WIN:
     import ctypes
 
@@ -77,8 +77,7 @@ def clear_directory(directory, ignored_files=None, ignore_errors=True):
                     os.remove(path)
                 except OSError:
                     trash_path = os.path.join(
-                        trash_dir,
-                        sha1((session_id + path).encode('utf-8')).hexdigest().lower()
+                        trash_dir, sha1((session_id + path).encode("utf-8")).hexdigest().lower()
                     )
                     os.rename(path, trash_path)
 

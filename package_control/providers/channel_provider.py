@@ -124,9 +124,7 @@ class ChannelProvider(RepositoryProvider):
         repo_providers = {}
         for repo_url in repo_urls:
             if repo_url not in libs and repo_url not in pkgs:
-                repo_provider = repo_provider_for(
-                    update_url(resolve_url(self.url, repo_url)), self.settings
-                )
+                repo_provider = repo_provider_for(update_url(resolve_url(self.url, repo_url)), self.settings)
                 if repo_provider:
                     repo_providers[repo_url] = repo_provider
                 else:

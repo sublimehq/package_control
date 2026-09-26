@@ -21,6 +21,7 @@ The patterns include additional pre-release tag names
 (e.g: ``patch``, ``prerelease``, ``developmment``, ``test``)
 to maintain compatibility with various existing packages on packagecontrol.io
 """
+
 import re
 
 __all__ = [
@@ -28,7 +29,7 @@ __all__ = [
     "PEP440InvalidVersionSpecifierError",
     "PEP440Version",
     "PEP440VersionSpecifier",
-    "check_version"
+    "check_version",
 ]
 
 NORM_VERSION_0 = (0, (0, 0, 0, 0, 0), ((0, 0), (0, 0), (0, 0)), ())

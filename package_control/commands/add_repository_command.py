@@ -11,7 +11,6 @@ from ..show_error import show_error
 
 
 class AddRepositoryCommand(sublime_plugin.ApplicationCommand):
-
     """
     A command to add a new repository to the user's Package Control settings
 
@@ -32,36 +31,32 @@ class AddRepositoryCommand(sublime_plugin.ApplicationCommand):
         if isinstance(url, str):
             url = url.strip()
 
-            if re.match(r'^(?:file:///|https?://)', url, re.IGNORECASE) is None:
+            if re.match(r"^(?:file:///|https?://)", url, re.IGNORECASE) is None:
                 if not isabs(url):
                     output_fn = console_write if unattended else show_error
                     output_fn(
-                        '''
+                        """
                         Unable to add the repository "%s" since it does not appear to
                         be a local URL (file://) or served via HTTP (http:// or https://).
-                        ''',
-                        url
+                        """,
+                        url,
                     )
                     return
 
                 url = "file:" + pathname2url(normcase(normpath(url)))
 
             settings = sublime.load_settings(pc_settings_filename())
-            repositories = settings.get('repositories')
+            repositories = settings.get("repositories")
             if not repositories:
                 repositories = []
             elif url in repositories:
                 return
             repositories.append(url)
-            settings.set('repositories', repositories)
+            settings.set("repositories", repositories)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message(f'Repository {url} successfully added')
+            sublime.status_message(f"Repository {url} successfully added")
             return
 
         sublime.active_window().show_input_panel(
-            'GitHub, GitLab, BitBucket or JSON repository URL',
-            '',
-            self.run,
-            None,
-            None
+            "GitHub, GitLab, BitBucket or JSON repository URL", "", self.run, None, None
         )
