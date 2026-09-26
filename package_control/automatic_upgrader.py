@@ -63,8 +63,11 @@ class AutomaticUpgrader:
         except (FileNotFoundError, ValueError, TypeError):
             pass
 
-        frequency = self.manager.settings.get('auto_upgrade_frequency')
-        if frequency and self.last_run:
+        try:
+            frequency = int(self.manager.settings.get('auto_upgrade_frequency', 24))
+        except Exception:
+            frequency = 24
+        if frequency > 0 and self.last_run:
             self.next_run = int(self.last_run) + (frequency * 60 * 60)
 
     def save_last_run(self):
