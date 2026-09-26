@@ -3,7 +3,7 @@ import sys
 
 import sublime
 
-PREFIX = '\\\\?\\' if sys.platform == 'win32' else ''
+PREFIX, UNC_PREFIX = ('\\\\?\\', '\\\\?\\UNC\\') if sys.platform == 'win32' else ('', '')
 
 __executable_path = sublime.executable_path()
 if not __executable_path:
@@ -77,20 +77,6 @@ if __installed_packages_path is None:
 
 assert __data_path
 
-if PREFIX:
-    __data_path = PREFIX + __data_path
-    __default_packages_path = PREFIX + __default_packages_path
-    __installed_packages_path = PREFIX + __installed_packages_path
-    __packages_path = PREFIX + __packages_path
-
-__cache_path = None
-__package_control_cache_path = None
-__python_libs_cache_path = None
-__python_packages_cache_path = None
-__trash_path = os.path.join(__data_path, "Trash")
-__user_config_path = os.path.join(__packages_path, 'User')
-__is_portable = __data_path == os.path.join(os.path.dirname(__executable_path), "Data")
-
 
 def add_dependency(name, first=False):
     """
@@ -126,7 +112,7 @@ def cache_path():
         cache_path = sublime.cache_path()
         if not cache_path:
             raise RuntimeError("ST API error: cache_path() returned None!")
-        __cache_path = PREFIX + sublime.cache_path()
+        __cache_path = longpath(sublime.cache_path())
 
     return str(__cache_path)
 
@@ -320,13 +306,13 @@ def longpath(path):
     :returns:
         A normalized path string
     """
+    path = os.path.normpath(path)
 
-    if PREFIX:
-        special_prefixes = (PREFIX, '\\\\.\\')
-        if path.startswith(special_prefixes):
-            return os.path.normpath(path.replace('/', '\\'))
-        return PREFIX + os.path.normpath(path)
-    return os.path.normpath(path)
+    if PREFIX and not path.startswith((PREFIX, '\\\\.\\')):
+        if path.startswith('\\\\'):
+            return UNC_PREFIX + path[2:]
+        return PREFIX + path
+    return path
 
 
 def shortpath(path):
@@ -339,4 +325,23 @@ def shortpath(path):
     :returns:
         An unprefixed path string
     """
-    return path[len(PREFIX):] if path.startswith(PREFIX) else path
+    if path.startswith(UNC_PREFIX):
+        return '\\\\' + path[len(UNC_PREFIX):]
+    if path.startswith(PREFIX):
+        return path[len(PREFIX):]
+    return path
+
+
+if PREFIX:
+    __data_path = longpath(__data_path)
+    __default_packages_path = longpath(__default_packages_path)
+    __installed_packages_path = longpath(__installed_packages_path)
+    __packages_path = longpath(__packages_path)
+
+__cache_path = None
+__package_control_cache_path = None
+__python_libs_cache_path = None
+__python_packages_cache_path = None
+__trash_path = os.path.join(__data_path, "Trash")
+__user_config_path = os.path.join(__packages_path, 'User')
+__is_portable = __data_path == os.path.join(os.path.dirname(__executable_path), "Data")
