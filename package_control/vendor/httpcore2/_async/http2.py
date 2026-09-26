@@ -8,20 +8,16 @@ import typing
 from collections.abc import AsyncGenerator
 
 from ... import h2
-from ...h2 import config as ___vendorize__0
-h2.config = ___vendorize__0
-from ... import h2
-from ...h2 import connection as ___vendorize__0
-h2.connection = ___vendorize__0
-from ... import h2
-from ...h2 import events as ___vendorize__0
-h2.events = ___vendorize__0
-from ... import h2
-from ...h2 import exceptions as ___vendorize__0
-h2.exceptions = ___vendorize__0
-from ... import h2
-from ...h2 import settings as ___vendorize__0
-h2.settings = ___vendorize__0
+from ...h2 import config as h2_config
+h2.config = h2_config
+from ...h2 import connection as h2_connection
+h2.connection = h2_connection
+from ...h2 import events as h2_events
+h2.events = h2_events
+from ...h2 import exceptions as h2_exceptions
+h2.exceptions = h2_exceptions
+from ...h2 import settings as h2_settings
+h2.settings = h2_settings
 
 from .._backends.base import AsyncNetworkStream
 from .._exceptions import ConnectionNotAvailable, LocalProtocolError, RemoteProtocolError

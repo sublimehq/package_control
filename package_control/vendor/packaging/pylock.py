@@ -40,7 +40,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from .tags import Tag
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("packaging.pylock")
 
 __all__ = [
     "Package",
