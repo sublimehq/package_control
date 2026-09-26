@@ -49,8 +49,18 @@ class PyPiClientTests(unittest.TestCase):
                 ("coverage", None)
             ),
             (
+                "latest",
+                "https://pypi.org/project/coverage/",
+                ("coverage", None)
+            ),
+            (
                 "pinned",
                 "https://pypi.org/project/coverage/4.0",
+                ("coverage", "4.0")
+            ),
+            (
+                "pinned",
+                "https://pypi.org/project/coverage/4.0/",
                 ("coverage", "4.0")
             ),
             (

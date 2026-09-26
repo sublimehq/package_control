@@ -16,7 +16,7 @@ class PyPiClient(JSONApiClient):
     @staticmethod
     def name_and_version(url):
         match = re.match(
-            r"^https?://pypi\.org/project/([^/#?]+)(?:/([^/#?]+?)|/?)$", url
+            r"^https?://pypi\.org/project/([^/#?]+)(?:/([^/#?]+?))?/?$", url
         )
         if match:
             return match.groups()
