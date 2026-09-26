@@ -82,7 +82,7 @@ def version_match_prefix(version, filter_prefix):
     try:
         if filter_prefix:
             if version.startswith(filter_prefix):
-                return PackageVersion(version[len(filter_prefix):])
+                return PackageVersion(version[len(filter_prefix) :])
         else:
             return PackageVersion(version)
     except ValueError:

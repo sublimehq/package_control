@@ -6,7 +6,6 @@ from .client_exception import ClientException
 
 
 class JSONApiClient:
-
     def __init__(self, settings):
         self.settings = settings
 
@@ -25,14 +24,14 @@ class JSONApiClient:
         """
 
         # If there are extra params for the domain name, add them
-        extra_params = self.settings.get('query_string_params')
+        extra_params = self.settings.get("query_string_params")
         domain_name = urlparse(url).netloc
         if extra_params and domain_name in extra_params:
             params = urlencode(extra_params[domain_name])
-            joiner = '?%s' if url.find('?') == -1 else '&%s'
+            joiner = "?%s" if url.find("?") == -1 else "&%s"
             url += joiner % params
 
-        return await http_get(url, self.settings, 'Error downloading repository.')
+        return await http_get(url, self.settings, "Error downloading repository.")
 
     async def fetch_json(self, url):
         """
@@ -51,9 +50,9 @@ class JSONApiClient:
         repository_json = await self.fetch(url)
 
         try:
-            return json.loads(repository_json.decode('utf-8'))
-        except (ValueError):
-            error_string = f'Error parsing JSON from URL {url}.'
+            return json.loads(repository_json.decode("utf-8"))
+        except ValueError:
+            error_string = f"Error parsing JSON from URL {url}."
             raise ClientException(error_string)
 
     @staticmethod
@@ -136,16 +135,16 @@ class JSONApiClient:
             If no sublime_text is present in selectors,
             assumes ``"sublime_text": "*"``.
             """
-            var = '${st_build}'
+            var = "${st_build}"
             for pattern, selectors in templates:
-                if 'sublime_text' not in selectors:
-                    selectors['sublime_text'] = '*'
+                if "sublime_text" not in selectors:
+                    selectors["sublime_text"] = "*"
                 # resolve ${st_build}
                 if var in pattern:
                     # convert st_specifier version specifier to build number
-                    st_specifier = selectors['sublime_text']
-                    if st_specifier == '*':
-                        st_build = 'any'
+                    st_specifier = selectors["sublime_text"]
+                    if st_specifier == "*":
+                        st_build = "any"
                     elif st_specifier[0].isdigit():
                         # 4107, 4107 - 4126
                         st_build = st_specifier[:4]
@@ -167,16 +166,16 @@ class JSONApiClient:
             If no platforms is present in selectors,
             assumes ``"platforms": ["*"]``.
             """
-            var = '${platform}'
+            var = "${platform}"
             for pattern, selectors in templates:
                 if var not in pattern:
                     yield (pattern, selectors)
                     continue
 
-                for value in selectors.get('platforms', ['*']):
+                for value in selectors.get("platforms", ["*"]):
                     new_selectors = selectors.copy()
-                    new_selectors['platforms'] = [value]
-                    val = 'any' if value == '*' else value
+                    new_selectors["platforms"] = [value]
+                    val = "any" if value == "*" else value
                     yield (pattern.replace(var, val), new_selectors)
 
         def resolve_python_versions(templates):
@@ -186,20 +185,20 @@ class JSONApiClient:
             If no python_versions is present in selectors, resolves ``${py_version}``
             to "any" and returns template with unchanges selectors.
             """
-            var = '${py_version}'
+            var = "${py_version}"
             for pattern, selectors in templates:
                 if var not in pattern:
                     yield (pattern, selectors)
                     continue
 
-                if 'python_versions' not in selectors:
-                    yield (pattern.replace(var, 'any'), selectors)
+                if "python_versions" not in selectors:
+                    yield (pattern.replace(var, "any"), selectors)
                     continue
 
-                for value in selectors.get('python_versions', []):
+                for value in selectors.get("python_versions", []):
                     new_selectors = selectors.copy()
-                    new_selectors['python_versions'] = [value]
-                    yield (pattern.replace(var, value.replace('.', '')), new_selectors)
+                    new_selectors["python_versions"] = [value]
+                    yield (pattern.replace(var, value.replace(".", "")), new_selectors)
 
         output = resolve_st_build(asset_templates)
         output = resolve_platforms(output)

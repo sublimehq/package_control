@@ -5,6 +5,7 @@ except ImportError:
     from sys import modules
 
     from . import mock_sublime, mock_sublime_plugin
+
     modules["sublime"] = mock_sublime
     modules["sublime_plugin"] = mock_sublime_plugin
 else:

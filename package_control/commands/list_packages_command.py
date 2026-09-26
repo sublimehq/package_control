@@ -7,7 +7,6 @@ from .existing_packages_command import ExistingPackagesCommand
 
 
 class ListPackagesCommand(ExistingPackagesCommand):
-
     """
     A command that shows a list of all installed packages in the quick panel
     """
@@ -61,8 +60,8 @@ class ListPackagesCommand(ExistingPackagesCommand):
             else:
                 package_dir = os.path.dirname(package_path)
 
-        open_dir_file = {'dir': sys_path.shortpath(package_dir)}
+        open_dir_file = {"dir": sys_path.shortpath(package_dir)}
         if package_file is not None:
-            open_dir_file['file'] = package_file
+            open_dir_file["file"] = package_file
 
-        sublime.active_window().run_command('open_dir', open_dir_file)
+        sublime.active_window().run_command("open_dir", open_dir_file)

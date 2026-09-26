@@ -7,7 +7,6 @@ from .json_api_client import JSONApiClient
 
 
 class GitLabClient(JSONApiClient):
-
     @staticmethod
     def user_repo_branch(url):
         """
@@ -31,8 +30,7 @@ class GitLabClient(JSONApiClient):
         """
 
         match = re.match(
-            r'^https?://gitlab\.com/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/-/tree/([^#?]*[^/#?])/?|/?)|/?)$',
-            url
+            r"^https?://gitlab\.com/([^/#?]+)(?:/([^/#?]+?)(?:\.git|/-/tree/([^#?]*[^/#?])/?|/?)|/?)$", url
         )
         if match:
             return match.groups()
@@ -55,7 +53,7 @@ class GitLabClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return f'https://gitlab.com/{quote(user_name)}/{quote(repo_name)}'
+        return f"https://gitlab.com/{quote(user_name)}/{quote(repo_name)}"
 
     async def download_info(self, url, tag_prefix=None):
         """
@@ -118,19 +116,19 @@ class GitLabClient(JSONApiClient):
         if not repo_name:
             return None
 
-        repo_id = f'{user_name}%2F{repo_name}'
+        repo_id = f"{user_name}%2F{repo_name}"
 
         if branch is None:
             branch = default_branch
             if branch is None:
                 repo_info = await self.fetch_json(self._api_url(repo_id))
-                branch = repo_info.get('default_branch', 'master')
+                branch = repo_info.get("default_branch", "master")
 
-        branch_url = self._api_url(repo_id, f'/repository/branches/{branch}')
+        branch_url = self._api_url(repo_id, f"/repository/branches/{branch}")
         branch_info = await self.fetch_json(branch_url)
 
-        timestamp = branch_info['commit']['committed_date'][0:19].replace('T', ' ')
-        version = re.sub(r'[\-: ]', '.', timestamp)
+        timestamp = branch_info["commit"]["committed_date"][0:19].replace("T", " ")
+        version = re.sub(r"[\-: ]", ".", timestamp)
 
         return [self._make_download_info(user_name, repo_name, branch, version, timestamp)]
 
@@ -223,19 +221,19 @@ class GitLabClient(JSONApiClient):
             ```
         """
 
-        match = re.match(r'https?://gitlab\.com/([^/#?]+)/([^/#?]+)(?:/-/releases)?/?$', url)
+        match = re.match(r"https?://gitlab\.com/([^/#?]+)/([^/#?]+)(?:/-/releases)?/?$", url)
         if not match:
             return None
 
         async def _get_releases(user_repo, tag_prefix=None, page_size=100):
             used_versions = set()
             for page in range(100):
-                query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                api_url = self._api_url(user_repo, f'/releases?{query_string}')
+                query_string = urlencode({"page": page * page_size, "per_page": page_size})
+                api_url = self._api_url(user_repo, f"/releases?{query_string}")
                 releases = await self.fetch_json(api_url)
 
                 for release in releases:
-                    version = version_match_prefix(release['tag_name'], tag_prefix)
+                    version = version_match_prefix(release["tag_name"], tag_prefix)
                     if not version or version in used_versions:
                         continue
 
@@ -243,25 +241,22 @@ class GitLabClient(JSONApiClient):
 
                     yield (
                         version,
-                        release['released_at'][0:19].replace('T', ' '),
+                        release["released_at"][0:19].replace("T", " "),
                         [
-                            (
-                                a['name'] or a['direct_asset_url'].rpartition("/")[-1],
-                                a['direct_asset_url']
-                            )
-                            for a in release['assets']['links']
-                        ]
+                            (a["name"] or a["direct_asset_url"].rpartition("/")[-1], a["direct_asset_url"])
+                            for a in release["assets"]["links"]
+                        ],
                     )
 
                 if len(releases) < page_size:
                     return
 
         user_name, repo_name = match.groups()
-        repo_id = f'{user_name}%2F{repo_name}'
+        repo_id = f"{user_name}%2F{repo_name}"
 
         asset_templates = self._expand_asset_variables(asset_templates)
 
-        max_releases = self.settings.get('max_releases', 0)
+        max_releases = self.settings.get("max_releases", 0)
         num_releases = [0] * len(asset_templates)
 
         output = []
@@ -275,17 +270,17 @@ class GitLabClient(JSONApiClient):
                 if max_releases > 0 and num_releases[idx] >= max_releases:
                     continue
 
-                pattern = pattern.replace('${version}', version_string)
-                pattern = pattern.replace('.', r'\.')
-                pattern = pattern.replace('?', r'.')
-                pattern = pattern.replace('*', r'.*?')
+                pattern = pattern.replace("${version}", version_string)
+                pattern = pattern.replace(".", r"\.")
+                pattern = pattern.replace("?", r".")
+                pattern = pattern.replace("*", r".*?")
                 regex = re.compile(pattern)
 
                 for asset_name, asset_url in assets:
                     if not regex.match(asset_name):
                         continue
 
-                    info = {'url': asset_url, 'version': version_string, 'date': timestamp}
+                    info = {"url": asset_url, "version": version_string, "date": timestamp}
                     info.update(selectors)
                     output.append(info)
                     num_releases[idx] += version.is_final
@@ -322,34 +317,30 @@ class GitLabClient(JSONApiClient):
               `date` - the ISO-8601 timestamp string when the version was published
         """
 
-        tags_match = re.match(r'https?://gitlab\.com/([^/#?]+)/([^/#?]+)(?:/-/tags)?/?$', url)
+        tags_match = re.match(r"https?://gitlab\.com/([^/#?]+)/([^/#?]+)(?:/-/tags)?/?$", url)
         if not tags_match:
             return None
 
         async def _get_releases(repo_id, tag_prefix=None, page_size=10):
             used_versions = set()
             for page in range(100):
-                query_string = urlencode({'page': page * page_size, 'per_page': page_size})
-                tags_url = self._api_url(repo_id, f'/repository/tags?{query_string}')
+                query_string = urlencode({"page": page * page_size, "per_page": page_size})
+                tags_url = self._api_url(repo_id, f"/repository/tags?{query_string}")
                 tags_json = await self.fetch_json(tags_url)
 
                 for tag in tags_json:
-                    version = version_match_prefix(tag['name'], tag_prefix)
+                    version = version_match_prefix(tag["name"], tag_prefix)
                     if version and version not in used_versions:
                         used_versions.add(version)
-                        yield (
-                            version,
-                            tag['name'],
-                            tag['commit']['committed_date'][0:19].replace('T', ' ')
-                        )
+                        yield (version, tag["name"], tag["commit"]["committed_date"][0:19].replace("T", " "))
 
                 if len(tags_json) < page_size:
                     return
 
         user_name, repo_name = tags_match.groups()
-        repo_id = f'{user_name}%2F{repo_name}'
+        repo_id = f"{user_name}%2F{repo_name}"
 
-        max_releases = self.settings.get('max_releases', 0)
+        max_releases = self.settings.get("max_releases", 0)
         num_releases = 0
 
         output = []
@@ -392,12 +383,12 @@ class GitLabClient(JSONApiClient):
         if not user_name or not repo_name:
             return None
 
-        repo_id = f'{user_name}%2F{repo_name}'
+        repo_id = f"{user_name}%2F{repo_name}"
         repo_url = self._api_url(repo_id)
         repo_info = await self.fetch_json(repo_url)
 
         if not branch:
-            branch = repo_info.get('default_branch', 'master')
+            branch = repo_info.get("default_branch", "master")
 
         return self._extract_repo_info(branch, repo_info)
 
@@ -423,25 +414,25 @@ class GitLabClient(JSONApiClient):
               `default_branch`
         """
 
-        user_name = result['owner']['username'] if result.get('owner') else result['namespace']['name']
-        repo_name = result['name']
-        user_repo = f'{user_name}/{repo_name}'
+        user_name = result["owner"]["username"] if result.get("owner") else result["namespace"]["name"]
+        repo_name = result["name"]
+        user_repo = f"{user_name}/{repo_name}"
 
         readme_url = None
-        if result['readme_url']:
-            readme_url = 'https://gitlab.com/{}/-/raw/{}/{}'.format(
-                user_repo, branch, result['readme_url'].split('/')[-1]
+        if result["readme_url"]:
+            readme_url = "https://gitlab.com/{}/-/raw/{}/{}".format(
+                user_repo, branch, result["readme_url"].split("/")[-1]
             )
 
         return {
-            'name': repo_name,
-            'description': result['description'] or 'No description provided',
-            'homepage': result['web_url'] or None,
-            'author': user_name,
-            'readme': readme_url,
-            'issues': result.get('issues', None) if result.get('_links') else None,
-            'donate': None,
-            'default_branch': branch
+            "name": repo_name,
+            "description": result["description"] or "No description provided",
+            "homepage": result["web_url"] or None,
+            "author": user_name,
+            "readme": readme_url,
+            "issues": result.get("issues", None) if result.get("_links") else None,
+            "donate": None,
+            "default_branch": branch,
         }
 
     def _make_download_info(self, user_name, repo_name, ref_name, version, timestamp):
@@ -475,12 +466,12 @@ class GitLabClient(JSONApiClient):
         """
 
         return {
-            'url': f'https://gitlab.com/{user_name}/{repo_name}/-/archive/{ref_name}/{repo_name}-{ref_name}.zip',
-            'version': version,
-            'date': timestamp
+            "url": f"https://gitlab.com/{user_name}/{repo_name}/-/archive/{ref_name}/{repo_name}-{ref_name}.zip",
+            "version": version,
+            "date": timestamp,
         }
 
-    def _api_url(self, project_id, suffix=''):
+    def _api_url(self, project_id, suffix=""):
         """
         Generate a URL for the GitLab API
 
@@ -494,7 +485,7 @@ class GitLabClient(JSONApiClient):
             The API URL
         """
 
-        return f'https://gitlab.com/api/v4/projects/{project_id}{suffix}'
+        return f"https://gitlab.com/api/v4/projects/{project_id}{suffix}"
 
     async def _extract_user_id(self, username):
         """
@@ -507,18 +498,18 @@ class GitLabClient(JSONApiClient):
             A user_id or None if no match
         """
 
-        user_url = f'https://gitlab.com/api/v4/users?username={username}'
+        user_url = f"https://gitlab.com/api/v4/users?username={username}"
         try:
             repos_info = await self.fetch_json(user_url)
-        except (DownloaderException) as e:
-            if str(e).find('HTTP error 404') != -1:
+        except DownloaderException as e:
+            if str(e).find("HTTP error 404") != -1:
                 return await self._extract_group_id(username)
             raise
 
         if not repos_info:
             return await self._extract_group_id(username)
 
-        return (repos_info[0]['id'], True)
+        return (repos_info[0]["id"], True)
 
     async def _extract_group_id(self, group_name):
         """
@@ -531,15 +522,15 @@ class GitLabClient(JSONApiClient):
             A group_id or (None, None) if no match
         """
 
-        group_url = f'https://gitlab.com/api/v4/groups?search={group_name}'
+        group_url = f"https://gitlab.com/api/v4/groups?search={group_name}"
         try:
             repos_info = await self.fetch_json(group_url)
-        except (DownloaderException) as e:
-            if str(e).find('HTTP error 404') != -1:
+        except DownloaderException as e:
+            if str(e).find("HTTP error 404") != -1:
                 return (None, None)
             raise
 
         if not repos_info:
             return (None, None)
 
-        return (repos_info[0]['id'], False)
+        return (repos_info[0]["id"], False)

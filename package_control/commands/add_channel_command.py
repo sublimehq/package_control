@@ -11,7 +11,6 @@ from ..show_error import show_error
 
 
 class AddChannelCommand(sublime_plugin.ApplicationCommand):
-
     """
     A command to add a new channel (list of repositories) to the user's machine
 
@@ -32,36 +31,30 @@ class AddChannelCommand(sublime_plugin.ApplicationCommand):
         if isinstance(url, str):
             url = url.strip()
 
-            if re.match(r'^(?:file:///|https?://)', url, re.IGNORECASE) is None:
+            if re.match(r"^(?:file:///|https?://)", url, re.IGNORECASE) is None:
                 if not isabs(url):
                     output_fn = console_write if unattended else show_error
                     output_fn(
-                        '''
+                        """
                         Unable to add the channel "%s" since it does not appear to be
                         a local URL (file://) or served via HTTP (http:// or https://).
-                        ''',
-                        url
+                        """,
+                        url,
                     )
                     return
 
                 url = "file:" + pathname2url(normcase(normpath(url)))
 
             settings = sublime.load_settings(pc_settings_filename())
-            channels = settings.get('channels')
+            channels = settings.get("channels")
             if not channels:
                 channels = []
             elif url in channels:
                 return
             channels.append(url)
-            settings.set('channels', channels)
+            settings.set("channels", channels)
             sublime.save_settings(pc_settings_filename())
-            sublime.status_message(f'Channel {url} successfully added')
+            sublime.status_message(f"Channel {url} successfully added")
             return
 
-        sublime.active_window().show_input_panel(
-            'Channel JSON URL',
-            '',
-            self.run,
-            None,
-            None
-        )
+        sublime.active_window().show_input_panel("Channel JSON URL", "", self.run, None, None)

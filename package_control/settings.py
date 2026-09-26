@@ -6,7 +6,7 @@ def preferences_filename():
     :return: The appropriate settings filename based on the version of Sublime Text
     """
 
-    return 'Preferences.sublime-settings'
+    return "Preferences.sublime-settings"
 
 
 def pc_settings_filename():
@@ -14,7 +14,7 @@ def pc_settings_filename():
     :return: The settings file for Package Control
     """
 
-    return 'Package Control.sublime-settings'
+    return "Package Control.sublime-settings"
 
 
 def load_list_setting(settings, name):

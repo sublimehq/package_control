@@ -2,7 +2,6 @@ from ..cmd import Cli
 
 
 class VcsUpgrader(Cli):
-
     """
     Base class for updating packages that are a version control repository on local disk
 

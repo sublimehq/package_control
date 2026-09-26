@@ -94,9 +94,7 @@ class AsyncClientFactory:
 
         # setup http(s) proxy
         proxy = None
-        if (proxy_url := settings.get("http_proxy")) and (
-            proxy_url := os.path.expandvars(proxy_url)
-        ):
+        if (proxy_url := settings.get("http_proxy")) and (proxy_url := os.path.expandvars(proxy_url)):
             proxy_url = httpx2.URL(proxy_url)
 
             # setup authentication

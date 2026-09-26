@@ -25,9 +25,9 @@ def get_cache(key, default=None):
     """
 
     struct = _channel_repository_cache.get(key, {})
-    expires = struct.get('expires')
+    expires = struct.get("expires")
     if expires and expires > time.time():
-        return struct.get('data', default)
+        return struct.get("data", default)
     return default
 
 
@@ -45,7 +45,4 @@ def set_cache(key, data, ttl=300):
         The integer number of second to cache the data for
     """
 
-    _channel_repository_cache[key] = {
-        'data': data,
-        'expires': time.time() + ttl
-    }
+    _channel_repository_cache[key] = {"data": data, "expires": time.time() + ttl}

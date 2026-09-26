@@ -10,9 +10,7 @@ class PackageControlMessageCommand(sublime_plugin.TextCommand):
 
         eof = self.view.size()
         if eof == 0:
-            message = "{}\n{}\n{}".format(
-                self.view_name, "=" * len(self.view_name), message
-            )
+            message = "{}\n{}\n{}".format(self.view_name, "=" * len(self.view_name), message)
 
         self.view.set_read_only(False)
         self.view.insert(edit, eof, message)

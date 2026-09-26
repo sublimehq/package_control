@@ -14,8 +14,7 @@ class HostSpecificBasicAuth(httpx2.Auth):
 
     def __init__(self, auth: dict[str, tuple[str, str]]) -> None:
         self._auth: dict[str, httpx2.BasicAuth] = {
-            host: httpx2.BasicAuth(*map(expandvars, user_password))
-            for host, user_password in auth.items()
+            host: httpx2.BasicAuth(*map(expandvars, user_password)) for host, user_password in auth.items()
         }
 
     def auth_flow(self, request: httpx2.Request) -> Generator[httpx2.Request, httpx2.Response, None]:

@@ -32,10 +32,7 @@ class AsyncRateLimitTransport(httpx2.AsyncBaseTransport):
 
         response = await self._transport.handle_async_request(request)
 
-        if (
-            response.status_code in (403, 429)
-            and int(response.headers.get("x-ratelimit-remaining", 1)) < 1
-        ):
+        if response.status_code in (403, 429) and int(response.headers.get("x-ratelimit-remaining", 1)) < 1:
             self._ratelimit_reset[host] = int(response.headers.get("x-ratelimit-reset", "0"))
             response.status_code = 429
 
