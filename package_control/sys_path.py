@@ -325,10 +325,11 @@ def shortpath(path):
     :returns:
         An unprefixed path string
     """
-    if path.startswith(UNC_PREFIX):
-        return '\\\\' + path[len(UNC_PREFIX):]
-    if path.startswith(PREFIX):
-        return path[len(PREFIX):]
+    if PREFIX:
+        if path.startswith(UNC_PREFIX):
+            return '\\\\' + path[len(UNC_PREFIX):]
+        if path.startswith(PREFIX):
+            return path[len(PREFIX):]
     return path
 
 
