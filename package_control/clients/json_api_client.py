@@ -84,11 +84,15 @@ class JSONApiClient:
               ``${platform}``
                 A platform-arch string as given in "platforms" list.
                 A separate explicit release is evaluated for each platform.
-                If "platforms": ['*'] is specified, variable is set to "any".
+                If no "platforms" key is specified or its value is ['*'],
+                variable resolves to "any".
 
               ``${py_version}``
                 Major and minor part of required python version without period.
                 One of "33", "38" or any other valid python version supported by ST.
+
+                If no "python_versions" key is specified or its value is ['*'],
+                variable resolves to "any".
 
               ``${st_build}``
                 Value of "st_specifier" stripped by leading operator
@@ -96,6 +100,9 @@ class JSONApiClient:
                 ">=4107"       => "4107"
                 "<4107"        => "4107"
                 "4107 - 4126"  => "4107"
+
+                Note: If no "sublime_text" key is specified, variable resolves
+                to "any"
 
         :returns:
             A list of asset templates with all variables (except ``${version}``) resolved.
@@ -122,41 +129,79 @@ class JSONApiClient:
             ```
         """
 
-        output = []
-        var = '${st_build}'
-        for pattern, selectors in asset_templates:
-            # resolve ${st_build}
-            if var in pattern:
-                # convert st_specifier version specifier to build number
-                st_specifier = selectors['sublime_text']
-                if st_specifier == '*':
-                    st_build = 'any'
-                elif st_specifier[0].isdigit():
-                    # 4107, 4107 - 4126
-                    st_build = st_specifier[:4]
-                elif st_specifier[1].isdigit():
-                    # <4107, >4107
-                    st_build = st_specifier[1:]
-                else:
-                    # ==4107, <=4107, >=4107
-                    st_build = st_specifier[2:]
+        def resolve_st_build(templates):
+            """
+            Resolve ``${st_build}`` using specified ``"sublime_text": "*"``.
 
-                pattern = pattern.replace(var, st_build)
+            If no sublime_text is present in selectors,
+            assumes ``"sublime_text": "*"``.
+            """
+            var = '${st_build}'
+            for pattern, selectors in templates:
+                if 'sublime_text' not in selectors:
+                    selectors['sublime_text'] = '*'
+                # resolve ${st_build}
+                if var in pattern:
+                    # convert st_specifier version specifier to build number
+                    st_specifier = selectors['sublime_text']
+                    if st_specifier == '*':
+                        st_build = 'any'
+                    elif st_specifier[0].isdigit():
+                        # 4107, 4107 - 4126
+                        st_build = st_specifier[:4]
+                    elif st_specifier[1].isdigit():
+                        # <4107, >4107
+                        st_build = st_specifier[1:]
+                    else:
+                        # ==4107, <=4107, >=4107
+                        st_build = st_specifier[2:]
 
-            output.append((pattern, selectors))
+                    pattern = pattern.replace(var, st_build)
 
-        def resolve(templates, var, key):
+                yield (pattern, selectors)
+
+        def resolve_platforms(templates):
+            """
+            Resolve ``${platform}`` using specified ``"platforms": []``.
+
+            If no platforms is present in selectors,
+            assumes ``"platforms": ["*"]``.
+            """
+            var = '${platform}'
             for pattern, selectors in templates:
                 if var not in pattern:
                     yield (pattern, selectors)
                     continue
 
-                for value in selectors[key]:
+                for value in selectors.get('platforms', ['*']):
                     new_selectors = selectors.copy()
-                    new_selectors[key] = [value]
-                    # remove `.` from python versions; n.r. for platforms
+                    new_selectors['platforms'] = [value]
+                    val = 'any' if value == '*' else value
+                    yield (pattern.replace(var, val), new_selectors)
+
+        def resolve_python_versions(templates):
+            """
+            Resolve ``${py_version}`` using specified ``"python_versions": []``.
+
+            If no python_versions is present in selectors, resolves ``${py_version}``
+            to "any" and returns template with unchanges selectors.
+            """
+            var = '${py_version}'
+            for pattern, selectors in templates:
+                if var not in pattern:
+                    yield (pattern, selectors)
+                    continue
+
+                if 'python_versions' not in selectors:
+                    yield (pattern.replace(var, 'any'), selectors)
+                    continue
+
+                for value in selectors.get('python_versions', []):
+                    new_selectors = selectors.copy()
+                    new_selectors['python_versions'] = [value]
                     yield (pattern.replace(var, value.replace('.', '')), new_selectors)
 
-        output = resolve(output, '${platform}', 'platforms')
-        output = resolve(output, '${py_version}', 'python_versions')
+        output = resolve_st_build(asset_templates)
+        output = resolve_platforms(output)
+        output = resolve_python_versions(output)
         return list(output)
