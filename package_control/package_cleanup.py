@@ -394,7 +394,7 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
 
                     It has been removed as migration was not possible!
                     ''',
-                    incompatible_packages
+                    next(iter(incompatible_packages))
                 )
             else:
                 message = text.format(
