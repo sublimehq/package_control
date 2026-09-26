@@ -17,7 +17,7 @@ import sublime
 
 from . import __version__, library, pep440, sys_path
 from .cache import clear_cache, get_cache, set_cache
-from .clear_directory import clear_directory, delete_directory
+from .clear_directory import clear_directory, delete_directory, is_symlink
 from .console_write import console_write
 from .download_manager import http_get
 from .downloaders.downloader_exception import DownloaderException
@@ -1650,8 +1650,11 @@ class PackageManager:
             return False
 
         try:
-            os.makedirs(backup_dir, exist_ok=True)
-            os.rename(package_dir, package_backup_dir)
+            if is_symlink(package_dir):
+                delete_directory(package_dir)
+            else:
+                os.makedirs(backup_dir, exist_ok=True)
+                os.rename(package_dir, package_backup_dir)
             return True
         except OSError as e:
             console_write(
