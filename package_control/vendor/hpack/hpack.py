@@ -16,7 +16,7 @@ from .table import HeaderTable, table_entry_size
 if TYPE_CHECKING:
     from collections.abc import Iterable  # pragma: no cover
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("hpack.hpack")
 
 INDEX_NONE = b"\x00"
 INDEX_NEVER = b"\x10"
