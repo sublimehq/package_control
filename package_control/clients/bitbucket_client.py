@@ -66,7 +66,7 @@ class BitBucketClient(JSONApiClient):
             The repository URL of given owner and repo name
         """
 
-        return 'https://bitbucket.com/{}/{}'.format(quote(user_name), quote(repo_name))
+        return 'https://bitbucket.org/{}/{}'.format(quote(user_name), quote(repo_name))
 
     def download_info(self, url, tag_prefix=None):
         """
