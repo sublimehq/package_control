@@ -59,6 +59,9 @@ def clear_directory(directory, ignored_files=None, ignore_errors=True):
     was_exception = False
 
     for root, dirs, files in os.walk(directory, topdown=False):
+        if root != os.path.realpath(root):
+            continue
+
         try:
             for f in files:
                 path = os.path.normcase(os.path.join(root, f))
