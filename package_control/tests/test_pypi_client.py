@@ -127,7 +127,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-cp33m-macosx_10_10_x86_64.whl",
                         "sha256": "b442440565e6a89dcf36a005fe50cdf235bc3c0dd23982d3bdb5fe4cd491d112",
                         "platforms": ["osx-x64"],
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     },
                     {
                         "date": "2015-09-20 15:40:53",
@@ -137,7 +138,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-none-win_amd64.whl",
                         "sha256": "fb4cbddbd0fcdc87df84f612c65f0240bfa60e595dea1666401817c10064ae31",
                         "platforms": ["windows-x64"],
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     }
                 ]
             ),
@@ -170,7 +172,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-cp33m-macosx_10_10_x86_64.whl",
                         "sha256": "b442440565e6a89dcf36a005fe50cdf235bc3c0dd23982d3bdb5fe4cd491d112",
                         "platforms": ["osx-x64"],
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     },
                     {
                         "date": "2015-09-20 15:40:53",
@@ -180,7 +183,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-none-win_amd64.whl",
                         "sha256": "fb4cbddbd0fcdc87df84f612c65f0240bfa60e595dea1666401817c10064ae31",
                         "platforms": ["windows-x64"],
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     }
                 ]
             ),
@@ -213,7 +217,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-cp33m-macosx_10_10_x86_64.whl",
                         "sha256": "b442440565e6a89dcf36a005fe50cdf235bc3c0dd23982d3bdb5fe4cd491d112",
                         "platforms": ["osx-x64"],
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     },
                     {
                         "date": "2015-09-20 15:40:53",
@@ -223,7 +228,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/coverage-4.0-cp33-none-win_amd64.whl",
                         "platforms": ["windows-x64"],
                         "sha256": "fb4cbddbd0fcdc87df84f612c65f0240bfa60e595dea1666401817c10064ae31",
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     }
                 ]
             ),
@@ -257,6 +263,7 @@ class PyPiClientTests(unittest.TestCase):
                         "sha256": "6b62544bb68106e3f00b21c8930e83e584fdca005d4fffd29bb39fb3ffa03cb5",
                         "platforms": ["osx-x64"],
                         "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     },
                     {
                         "date": "2016-07-26 21:09:17",
@@ -267,6 +274,7 @@ class PyPiClientTests(unittest.TestCase):
                         "sha256": "bd4eba631f07cae8cdb9c55c144f165649e6701b962f9d604b4e00cf8802406c",
                         "platforms": ["windows-x64"],
                         "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     }
                 ]
             ),
@@ -290,7 +298,8 @@ class PyPiClientTests(unittest.TestCase):
                                "/a2/6a/a3d20e80ee4fee7c55c022fb28d52239bd01171edd3c137dd1e2ef8b2a20"
                                "/arrow-0.14.2-py2.py3-none-any.whl",
                         "sha256": "03404b624e89ac5e4fc19c52045fa0f3203419fd4dd64f6e8958c522580a574a",
-                        "python_versions": ["3.3"]
+                        "python_versions": ["3.3"],
+                        "sublime_text": "*"
                     },
                 ]
             ),
