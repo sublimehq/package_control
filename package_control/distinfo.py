@@ -83,7 +83,6 @@ class DistInfoNotFoundError(FileNotFoundError):
     """
 
 
-
 class DistInfoDir:
     """
     This class describes a .dist-info directory.
@@ -426,7 +425,9 @@ class DistInfoDir:
                 elements = line.split(",")
                 if len(elements) != 3:
                     raise ValueError(f"Invalid record entry: {line}")
-                is_record_path = elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
+                is_record_path = (
+                    elements[0] == self.dir_name + "/RECORD" or elements[0] == self.dir_name + "\\RECORD"
+                )
                 if not elements[1].startswith("sha256=") and not is_record_path:
                     raise ValueError(f"Unabled to parse sha256 hash: {line}")
                 ri = RecordInfo(
@@ -551,7 +552,9 @@ class DistInfoDir:
         for specifier in version_specifier.split(","):
             if not pep440.check_version(specifier, python_version):
                 raise OSError(
-                    'The library "{}" is not compatible with Python {}'.format(metadata["name"], python_version)
+                    'The library "{}" is not compatible with Python {}'.format(
+                        metadata["name"], python_version
+                    )
                 )
 
     def verify_files(self, missing_ok=False):

@@ -15,10 +15,9 @@ from .package_disabler import PackageDisabler
 from .package_io import create_empty_file
 from .show_error import show_message
 
-LOADER_PACKAGE_NAME = '0_package_control_loader'
+LOADER_PACKAGE_NAME = "0_package_control_loader"
 LOADER_PACKAGE_PATH = os.path.join(
-    sys_path.installed_packages_path(),
-    LOADER_PACKAGE_NAME + '.sublime-package'
+    sys_path.installed_packages_path(), LOADER_PACKAGE_NAME + ".sublime-package"
 )
 
 
@@ -57,40 +56,40 @@ async def _migrate_dependencies():
     lib_path = sys_path.lib_paths()[python_version]
 
     try:
-        with zipfile.ZipFile(LOADER_PACKAGE_PATH, 'r') as z:
+        with zipfile.ZipFile(LOADER_PACKAGE_PATH, "r") as z:
             for path in z.namelist():
-                if path == 'dependency-metadata.json':
+                if path == "dependency-metadata.json":
                     continue
-                if path == '00-package_control.py':
+                if path == "00-package_control.py":
                     continue
 
                 name = path[3:-3]
                 try:
                     dep_path = os.path.join(sys_path.packages_path(), name)
-                    json_path = os.path.join(dep_path, 'dependency-metadata.json')
+                    json_path = os.path.join(dep_path, "dependency-metadata.json")
 
                     try:
-                        with open(json_path, 'r', encoding='utf-8') as fobj:
+                        with open(json_path, "r", encoding="utf-8") as fobj:
                             metadata = json.load(fobj)
                     except (OSError, ValueError) as e:
-                        console_write(f'Error loading dependency metadata during migration - {e}')
+                        console_write(f"Error loading dependency metadata during migration - {e}")
                         continue
 
                     did = library.convert_dependency(
                         dep_path,
                         python_version,
                         name,
-                        metadata['version'],
-                        metadata['description'],
-                        metadata['url']
+                        metadata["version"],
+                        metadata["description"],
+                        metadata["url"],
                     )
                     library.install(did, lib_path)
 
                     if not delete_directory(dep_path):
-                        create_empty_file(os.path.join(dep_path, 'package-control.cleanup'))
+                        create_empty_file(os.path.join(dep_path, "package-control.cleanup"))
 
-                except (Exception) as e:
-                    console_write(f'Error trying to migrate dependency {name} - {e}')
+                except Exception as e:
+                    console_write(f"Error trying to migrate dependency {name} - {e}")
 
         os.remove(LOADER_PACKAGE_PATH)
 
@@ -98,15 +97,15 @@ async def _migrate_dependencies():
 
         PackageDisabler.reenable_packages({PackageDisabler.LOADER: LOADER_PACKAGE_NAME})
         show_message(
-            '''
+            """
             Dependencies have just been migrated to python libraries.
 
             You may need to restart Sublime Text.
-            '''
+            """
         )
 
-    except (OSError) as e:
-        console_write(f'Error trying to migrate dependencies - {e}')
+    except OSError as e:
+        console_write(f"Error trying to migrate dependencies - {e}")
 
 
 def _install_injectors():
@@ -156,20 +155,20 @@ def _install_injectors():
     '''
 
     injector_code = dedent(injector_code).lstrip()
-    injector_code = injector_code.encode('utf-8')
+    injector_code = injector_code.encode("utf-8")
 
     for lib_path in sys_path.lib_paths().values():
-        injector_path = os.path.join(lib_path, 'package_control.py')
+        injector_path = os.path.join(lib_path, "package_control.py")
 
         try:
-            with open(injector_path, 'rb') as fobj:
+            with open(injector_path, "rb") as fobj:
                 if injector_code == fobj.read():
                     continue
         except FileNotFoundError:
             pass
 
         try:
-            with open(injector_path, 'wb') as fobj:
+            with open(injector_path, "wb") as fobj:
                 fobj.write(injector_code)
         except FileExistsError:
             pass

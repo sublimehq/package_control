@@ -61,7 +61,5 @@ async def http_get(
         except Exception as exc:
             raise DownloaderException(f"{error_message} {exc}") from exc
         if response.is_error:
-            raise DownloaderException(
-                f"{error_message} HTTP error {response.status_code} for {url}"
-            )
+            raise DownloaderException(f"{error_message} HTTP error {response.status_code} for {url}")
         return await response.aread()

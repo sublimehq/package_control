@@ -12,7 +12,6 @@ from ..show_error import show_message
 
 
 class ExistingPackagesCommand(sublime_aio.ApplicationCommand):
-
     """
     Allows listing installed packages and their current version
     """
@@ -22,55 +21,57 @@ class ExistingPackagesCommand(sublime_aio.ApplicationCommand):
 
         action = self.action()
         if action:
-            action += ' '
+            action += " "
 
         default_packages = await manager.list_default_packages()
-        default_version = 'built-in v' + sublime.version()
+        default_version = "built-in v" + sublime.version()
 
-        url_pattern = re.compile(r'^(?:file:///|https?://)')
+        url_pattern = re.compile(r"^(?:file:///|https?://)")
 
         package_list = []
         for package in sorted(await self.list_packages(manager), key=lambda s: s.lower()):
             if package in default_packages:
-                description = 'Bundled Sublime Text Package'
+                description = "Bundled Sublime Text Package"
                 installed_version = default_version
                 install_time = None
                 upgrade_time = None
-                url = ''
+                url = ""
 
             else:
                 metadata = manager.get_metadata(package)
                 package_dir = package_io.get_package_dir(package)
 
-                description = metadata.get('description')
+                description = metadata.get("description")
                 if not description:
-                    description = 'No description provided'
+                    description = "No description provided"
 
-                version = metadata.get('version')
-                if not version and os.path.exists(os.path.join(package_dir, '.git')):
-                    installed_version = 'git repository'
-                elif not version and os.path.exists(os.path.join(package_dir, '.hg')):
-                    installed_version = 'hg repository'
+                version = metadata.get("version")
+                if not version and os.path.exists(os.path.join(package_dir, ".git")):
+                    installed_version = "git repository"
+                elif not version and os.path.exists(os.path.join(package_dir, ".hg")):
+                    installed_version = "hg repository"
                 else:
-                    installed_version = 'v' + version if version else 'unknown version'
+                    installed_version = "v" + version if version else "unknown version"
 
-                install_time = metadata.get('install_time')
-                upgrade_time = metadata.get('upgrade_time')
+                install_time = metadata.get("install_time")
+                upgrade_time = metadata.get("upgrade_time")
 
-                url = metadata.get('url', '')
+                url = metadata.get("url", "")
 
-            description = f'<em>{html.escape(description)}</em>'
-            final_line = '<em>' + action + installed_version + '</em>'
+            description = f"<em>{html.escape(description)}</em>"
+            final_line = "<em>" + action + installed_version + "</em>"
             url = html.escape(url)
-            url_display = url_pattern.sub('', url)
+            url_display = url_pattern.sub("", url)
             if url_display:
                 final_line += f'; <a href="{url}">{url_display}</a>'
 
-            annotation = ''
+            annotation = ""
             if upgrade_time:
-                annotation = datetime.datetime.fromtimestamp(upgrade_time).strftime('Updated on %a %b %d, %Y')
+                annotation = datetime.datetime.fromtimestamp(upgrade_time).strftime("Updated on %a %b %d, %Y")
             elif install_time:
-                annotation = datetime.datetime.fromtimestamp(install_time).strftime('Installed on %a %b %d, %Y')
+                annotation = datetime.datetime.fromtimestamp(install_time).strftime(
+                    "Installed on %a %b %d, %Y"
+                )
 
             package_entry = sublime.QuickPanelItem(package, [description, final_line], annotation)
             package_list.append(package_entry)

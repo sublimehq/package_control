@@ -19,7 +19,6 @@ from .show_error import show_error, show_message
 
 
 class PackageCleanup(PackageTaskRunner):
-
     """
     Perform initial package maintenance tasks after start of ST.
 
@@ -49,14 +48,14 @@ class PackageCleanup(PackageTaskRunner):
         # This song and dance is necessary so Package Control doesn't try to clean
         # itself up, but also get properly marked as installed in the settings
         # Ensure we record the installation of Package Control itself
-        updated = await self.manager.update_installed_packages(add='Package Control')
+        updated = await self.manager.update_installed_packages(add="Package Control")
         if updated:
-            asyncio.create_task(self.manager.record_usage({
-                'package': 'Package Control',
-                'operation': 'install',
-                'version': __version__
-            }))
-            if self.manager.settings.get('debug'):
+            asyncio.create_task(
+                self.manager.record_usage(
+                    {"package": "Package Control", "operation": "install", "version": __version__}
+                )
+            )
+            if self.manager.settings.get("debug"):
                 console_write("Prevented Package Control from removing itself.")
 
         await asyncio.gather(
@@ -66,7 +65,7 @@ class PackageCleanup(PackageTaskRunner):
             sublime_aio.run_in_worker(clear_directory, sys_path.trash_path()),
             # Cleanup disabled python environments
             sublime_aio.run_in_worker(self.cleanup_python_environments),
-            return_exceptions=True
+            return_exceptions=True,
         )
 
         # Scan through packages and complete pending operations
@@ -84,13 +83,14 @@ class PackageCleanup(PackageTaskRunner):
         in_process = self.in_process_packages() - removed_packages
         if in_process:
             console_write(
-                'Re-enabling %d package%s after a Package Control operation was interrupted...',
-                (len(in_process), 's' if len(in_process) != 1 else '')
+                "Re-enabling %d package%s after a Package Control operation was interrupted...",
+                (len(in_process), "s" if len(in_process) != 1 else ""),
             )
 
         # Remove non-existing packages from ignored_packages list.
-        orphaned_ignored_packages = self.ignored_packages() - found_packages \
-            - await self.manager.list_default_packages()
+        orphaned_ignored_packages = (
+            self.ignored_packages() - found_packages - await self.manager.list_default_packages()
+        )
 
         if in_process or orphaned_ignored_packages:
             self.reenable_packages({self.ENABLE: in_process | orphaned_ignored_packages})
@@ -105,12 +105,12 @@ class PackageCleanup(PackageTaskRunner):
 
         await self.install_missing_packages(found_packages)
 
-        if self.manager.settings.get('remove_orphaned', True):
+        if self.manager.settings.get("remove_orphaned", True):
             await self.manager.cleanup_libraries()
 
         await self.install_missing_libraries()
 
-        if self.manager.settings.get('auto_upgrade'):
+        if self.manager.settings.get("auto_upgrade"):
             await AutomaticUpgrader(self.manager).run()
 
         # make sure to restore indexing state
@@ -119,36 +119,38 @@ class PackageCleanup(PackageTaskRunner):
 
         if self.failed_cleanup:
             show_error(
-                '''
+                """
                 Package clean-up could not be completed.
                 You may need to restart your OS to unlock relevant files and directories.
 
                 The following packages are affected: "%s"
-                ''',
-                '", "'.join(sorted(self.failed_cleanup, key=lambda s: s.lower()))
+                """,
+                '", "'.join(sorted(self.failed_cleanup, key=lambda s: s.lower())),
             )
             return
 
-        message = ''
+        message = ""
 
         in_process = self.in_process_packages()
         if in_process:
-            message += 'to complete pending package operations on "{}"'.format('", "'.join(sorted(in_process, key=lambda s: s.lower())))
+            message += 'to complete pending package operations on "{}"'.format(
+                '", "'.join(sorted(in_process, key=lambda s: s.lower()))
+            )
 
         if self.updated_libraries:
             if message:
-                message += ' and '
-            message += 'for installed or updated libraries to take effect.'
-            message += ' Otherwise some packages may not work properly.'
+                message += " and "
+            message += "for installed or updated libraries to take effect."
+            message += " Otherwise some packages may not work properly."
 
         if message:
-            show_message('Sublime Text needs to be restarted %s.', message)
+            show_message("Sublime Text needs to be restarted %s.", message)
 
     def cleanup_python_environments(self):
         """
         Remove library and cache folders of disabled or absent plugin_hosts.
         """
-        if not self.manager.settings.get('remove_orphaned_environments'):
+        if not self.manager.settings.get("remove_orphaned_environments"):
             return
 
         # actual library dir
@@ -196,7 +198,7 @@ class PackageCleanup(PackageTaskRunner):
             # the user was prompted to restart Sublime Text. Now that the
             # package is not loaded, we can replace the old version with the
             # new one.
-            if file_extension == '.sublime-package-new':
+            if file_extension == ".sublime-package-new":
                 new_file = os.path.join(sys_path.installed_packages_path(), file)
                 package_file = get_installed_package_path(package_name)
                 try:
@@ -207,34 +209,33 @@ class PackageCleanup(PackageTaskRunner):
 
                     os.rename(new_file, package_file)
                     console_write(
-                        '''
+                        """
                         Finished replacing %s.sublime-package
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
 
                 except OSError as e:
                     self.failed_cleanup.add(package_name)
                     console_write(
-                        '''
+                        """
                         Failed to replace %s.sublime-package with new package. %s
-                        ''',
-                        (package_name, e)
+                        """,
+                        (package_name, e),
                     )
 
                 found_packages.add(package_name)
 
-            elif file_extension == '.sublime-package':
+            elif file_extension == ".sublime-package":
                 found_packages.add(package_name)
 
         for package_name in os.listdir(sys_path.packages_path()):
-
             # Ignore `.`, `..` or hidden dot-directories
-            if package_name[0] == '.':
+            if package_name[0] == ".":
                 continue
 
             # Make sure not to clear user settings under all circumstances
-            if package_name.lower() == 'user':
+            if package_name.lower() == "user":
                 continue
 
             # Ignore files
@@ -243,45 +244,45 @@ class PackageCleanup(PackageTaskRunner):
                 continue
 
             # Ignore hidden packages
-            if os.path.exists(os.path.join(package_dir, '.hidden-sublime-package')):
+            if os.path.exists(os.path.join(package_dir, ".hidden-sublime-package")):
                 continue
 
             # Clean-up packages that could not be removed due to in-use files
-            cleanup_file = os.path.join(package_dir, 'package-control.cleanup')
+            cleanup_file = os.path.join(package_dir, "package-control.cleanup")
             if os.path.exists(cleanup_file):
                 if delete_directory(package_dir):
                     console_write(
-                        '''
+                        """
                         Removed old package directory %s
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
 
                 else:
                     self.failed_cleanup.add(package_name)
                     create_empty_file(cleanup_file)
                     console_write(
-                        '''
+                        """
                         Unable to remove old package directory "%s".
                         A restart of your computer may be required to unlock files.
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
 
                 continue
 
             # Finish reinstalling packages that could not be upgraded due to in-use files
-            reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
+            reinstall_file = os.path.join(package_dir, "package-control.reinstall")
             if os.path.exists(reinstall_file):
                 if not clear_directory(package_dir):
                     self.failed_cleanup.add(package_name)
                     create_empty_file(reinstall_file)
                     console_write(
-                        '''
+                        """
                         Unable to clear package directory "%s" for re-install.
                         A restart of your computer may be required to unlock files.
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
 
                 elif not await self.manager.install_package(package_name, unattended=True):
@@ -292,19 +293,19 @@ class PackageCleanup(PackageTaskRunner):
             # in order to avoid it being removed as orphaned.
             try:
                 clear = False
-                metadata_file = os.path.join(package_dir, 'package-metadata.json')
+                metadata_file = os.path.join(package_dir, "package-metadata.json")
 
-                with open(metadata_file, 'r', encoding='utf-8') as fobj:
+                with open(metadata_file, "r", encoding="utf-8") as fobj:
                     metadata = json.load(fobj)
-                    clear = metadata['name'] != package_name
+                    clear = metadata["name"] != package_name
 
                 if clear:
                     os.remove(metadata_file)
                     console_write(
-                        '''
+                        """
                         Package "%s" is now unmanaged as it was renamed by user.
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
 
             except (OSError, KeyError, ValueError):
@@ -325,22 +326,21 @@ class PackageCleanup(PackageTaskRunner):
             A set of invalid packages which are not available for current ST or OS.
         """
 
-        incompatible_packages = set(filter(
-            lambda p: not self.manager.is_compatible(p),
-            found_packages - self.ignored_packages()
-        ))
+        incompatible_packages = set(
+            filter(lambda p: not self.manager.is_compatible(p), found_packages - self.ignored_packages())
+        )
         if not incompatible_packages:
             return set()
 
-        if self.manager.settings.get('auto_migrate', True):
+        if self.manager.settings.get("auto_migrate", True):
             available_packages = await self.manager.registry.get_package_names()
             migrate_packages = incompatible_packages & available_packages
             if migrate_packages:
                 num_packages = len(migrate_packages)
                 if num_packages == 1:
-                    message = f'Migrating package {next(iter(migrate_packages))}'
+                    message = f"Migrating package {next(iter(migrate_packages))}"
                 else:
-                    message = f'Migrating {num_packages} packages...'
+                    message = f"Migrating {num_packages} packages..."
                     console_write(message)
 
                 with ActivityIndicator(message) as progress:
@@ -351,7 +351,7 @@ class PackageCleanup(PackageTaskRunner):
 
                     for package_name in sorted(migrate_packages, key=lambda s: s.lower()):
                         try:
-                            progress.set_label(f'Migrating package {package_name}...')
+                            progress.set_label(f"Migrating package {package_name}...")
                             result = await self.manager.install_package(package_name, unattended=True)
                             if result is True:
                                 num_success += 1
@@ -368,12 +368,12 @@ class PackageCleanup(PackageTaskRunner):
                             traceback.print_tb(e.__traceback__)
 
                     if num_packages == 1:
-                        message = f'Package {next(iter(migrate_packages))} successfully migrated'
+                        message = f"Package {next(iter(migrate_packages))} successfully migrated"
                     elif num_packages == num_success:
-                        message = 'All packages successfully migrated'
+                        message = "All packages successfully migrated"
                         console_write(message)
                     else:
-                        message = f'{num_success} of {num_packages} packages successfully migrated'
+                        message = f"{num_success} of {num_packages} packages successfully migrated"
                         console_write(message)
 
                     if reenable_packages:
@@ -383,33 +383,33 @@ class PackageCleanup(PackageTaskRunner):
                     progress.finish(message)
 
         if incompatible_packages:
-            await self.remove_packages(incompatible_packages, package_kind='incompatible')
+            await self.remove_packages(incompatible_packages, package_kind="incompatible")
 
             if len(incompatible_packages) == 1:
                 message = text.format(
-                    '''
+                    """
                     The following incompatible package was found installed:
 
                     - %s
 
                     It has been removed as migration was not possible!
-                    ''',
-                    next(iter(incompatible_packages))
+                    """,
+                    next(iter(incompatible_packages)),
                 )
             else:
                 message = text.format(
-                    '''
+                    """
                     The following incompatible packages were found installed:
 
                     - %s
 
                     They have been removed as migration was not possible!
-                    ''',
-                    ('\n- '.join(sorted(incompatible_packages, key=lambda s: s.lower())))
+                    """,
+                    ("\n- ".join(sorted(incompatible_packages, key=lambda s: s.lower()))),
                 )
 
             message += text.format(
-                '''
+                """
 
                 This is usually due to syncing packages across different
                 machines in a way that does not check package metadata for
@@ -418,7 +418,7 @@ class PackageCleanup(PackageTaskRunner):
                 Please visit https://packagecontrol.io/docs/syncing for
                 information about how to properly sync configuration and
                 packages across machines.
-                '''
+                """
             )
 
             show_message(message)
@@ -432,22 +432,21 @@ class PackageCleanup(PackageTaskRunner):
 
         num_libraries = len(missing_libraries)
         if num_libraries == 1:
-            message = f'Installing library {next(iter(missing_libraries))}'
+            message = f"Installing library {next(iter(missing_libraries))}"
         else:
-            message = f'Installing {num_libraries} libraries...'
+            message = f"Installing {num_libraries} libraries..."
             console_write(message)
 
         with ActivityIndicator(message) as progress:
             for result in await asyncio.gather(
-                *map(self.manager.install_library, missing_libraries),
-                return_exceptions=True
+                *map(self.manager.install_library, missing_libraries), return_exceptions=True
             ):
                 if isinstance(result, BaseException):
                     traceback.print_exception(None, result, result.__traceback__)
                 else:
                     self.updated_libraries |= result
 
-            progress.finish('Installed missing libraries!')
+            progress.finish("Installed missing libraries!")
 
     async def install_missing_packages(self, found_packages):
         """
@@ -461,17 +460,17 @@ class PackageCleanup(PackageTaskRunner):
             A set of packages found on filesystem.
         """
 
-        if not self.manager.settings.get('install_missing', True):
+        if not self.manager.settings.get("install_missing", True):
             return
 
         tasks = await self.create_package_tasks(
             actions=(self.INSTALL, self.OVERWRITE),
             include_packages=await self.manager.installed_packages(),
-            found_packages=found_packages
+            found_packages=found_packages,
         )
         if tasks:
-            with ActivityIndicator('Installing missing packages...') as progress:
-                await self.run_install_tasks(tasks, progress, unattended=True, package_kind='missing')
+            with ActivityIndicator("Installing missing packages...") as progress:
+                await self.run_install_tasks(tasks, progress, unattended=True, package_kind="missing")
 
     async def remove_orphaned_packages(self, found_packages):
         """
@@ -494,17 +493,16 @@ class PackageCleanup(PackageTaskRunner):
             A set of orphaned packages, which have successfully been removed.
         """
 
-        if not self.manager.settings.get('remove_orphaned', True):
+        if not self.manager.settings.get("remove_orphaned", True):
             return set()
 
         # find all managed orphaned packages
-        orphaned_packages = set(filter(
-            self.manager.is_managed,
-            found_packages - await self.manager.installed_packages()
-        ))
+        orphaned_packages = set(
+            filter(self.manager.is_managed, found_packages - await self.manager.installed_packages())
+        )
 
         if orphaned_packages:
-            with ActivityIndicator('Removing orphaned packages...') as progress:
-                await self.remove_packages(orphaned_packages, package_kind='orphaned', progress=progress)
+            with ActivityIndicator("Removing orphaned packages...") as progress:
+                await self.remove_packages(orphaned_packages, package_kind="orphaned", progress=progress)
 
         return orphaned_packages

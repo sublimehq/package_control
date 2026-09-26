@@ -18,48 +18,48 @@ def _st_dir():
             _ST_DIR = tempfile.mkdtemp(prefix="package_control-tests")
 
         os.makedirs(_ST_DIR, exist_ok=True)
-        os.mkdir(os.path.join(_ST_DIR, 'Data'))
-        os.mkdir(os.path.join(_ST_DIR, 'Data', 'Cache'))
-        os.mkdir(os.path.join(_ST_DIR, 'Data', 'Installed Packages'))
-        os.mkdir(os.path.join(_ST_DIR, 'Data', 'Packages'))
-        os.mkdir(os.path.join(_ST_DIR, 'Data', 'Packages', 'User'))
-        os.mkdir(os.path.join(_ST_DIR, 'Packages'))
+        os.mkdir(os.path.join(_ST_DIR, "Data"))
+        os.mkdir(os.path.join(_ST_DIR, "Data", "Cache"))
+        os.mkdir(os.path.join(_ST_DIR, "Data", "Installed Packages"))
+        os.mkdir(os.path.join(_ST_DIR, "Data", "Packages"))
+        os.mkdir(os.path.join(_ST_DIR, "Data", "Packages", "User"))
+        os.mkdir(os.path.join(_ST_DIR, "Packages"))
 
     return _ST_DIR
 
 
 def cache_path():
-    return os.path.join(_st_dir(), 'Data', 'Cache')
+    return os.path.join(_st_dir(), "Data", "Cache")
 
 
 def installed_packages_path():
-    return os.path.join(_st_dir(), 'Data', 'Installed Packages')
+    return os.path.join(_st_dir(), "Data", "Installed Packages")
 
 
 def packages_path():
-    return os.path.join(_st_dir(), 'Data', 'Packages')
+    return os.path.join(_st_dir(), "Data", "Packages")
 
 
 def executable_path():
-    if sys.platform == 'win32':
-        return os.path.join(_st_dir(), 'sublime_text.exe')
-    return os.path.join(_st_dir(), 'sublime_text')
+    if sys.platform == "win32":
+        return os.path.join(_st_dir(), "sublime_text.exe")
+    return os.path.join(_st_dir(), "sublime_text")
 
 
 def arch():
-    return 'x64'
+    return "x64"
 
 
 def platform():
-    if sys.platform == 'darwin':
-        return 'osx'
-    if sys.platform == 'win32':
-        return 'windows'
-    return 'linux'
+    if sys.platform == "darwin":
+        return "osx"
+    if sys.platform == "win32":
+        return "windows"
+    return "linux"
 
 
 def version():
-    return '4126'
+    return "4126"
 
 
 def _cleanup_temp_dir():

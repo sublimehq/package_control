@@ -2,10 +2,10 @@ import threading
 
 import sublime
 
-INSTALL = 'install'
-REMOVE = 'remove'
-PRE_UPGRADE = 'pre_upgrade'
-POST_UPGRADE = 'post_upgrade'
+INSTALL = "install"
+REMOVE = "remove"
+PRE_UPGRADE = "pre_upgrade"
+POST_UPGRADE = "post_upgrade"
 
 # This ensures we don't run into issues calling the event tracking methods
 # from threads

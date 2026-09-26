@@ -13,7 +13,6 @@ from ..sys_path import python_versions
 
 
 class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
-
     """
     A command that presents the list of available packages and allows the
     user to pick one to install.
@@ -51,23 +50,17 @@ class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
             issues = html.escape(info["issues"])
             issues_display = re.sub(r"^https?://", "", issues)
             if issues_display:
-                details.append(
-                    f'report bug: <a href="{issues}">{issues_display}</a>'
-                )
+                details.append(f'report bug: <a href="{issues}">{issues_display}</a>')
 
             try:
                 date = self.latest_release_date(info["releases"])
-                annotation = datetime.strptime(date, "%Y-%m-%d").strftime(
-                    "Updated on %a %b %d, %Y"
-                )
+                annotation = datetime.strptime(date, "%Y-%m-%d").strftime("Updated on %a %b %d, %Y")
             except (IndexError, KeyError, ValueError):
                 annotation = ""
 
             items.append(sublime.QuickPanelItem(display_name, details, annotation))
 
-        picked = await sublime_aio.active_window().show_quick_panel(
-            items, sublime.KEEP_OPEN_ON_FOCUS_LOST
-        )
+        picked = await sublime_aio.active_window().show_quick_panel(items, sublime.KEEP_OPEN_ON_FOCUS_LOST)
         if picked >= 0:
             sublime.set_clipboard(items[picked].trigger.split(" ", 1)[0])
 
@@ -84,10 +77,7 @@ class ListAvailableLibrariesCommand(sublime_aio.ApplicationCommand):
             return ""
 
         if len(versions) > 1 and versions[0][0] != versions[1][0]:
-            return ",".join(
-                f" v{ver} (py{pyver})"
-                for ver, pyver in versions
-            )
+            return ",".join(f" v{ver} (py{pyver})" for ver, pyver in versions)
 
         return " v" + versions[0][0]
 

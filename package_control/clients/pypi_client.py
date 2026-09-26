@@ -15,9 +15,7 @@ class Version(PEP440Version):
 class PyPiClient(JSONApiClient):
     @staticmethod
     def name_and_version(url):
-        match = re.match(
-            r"^https?://pypi\.org/project/([^/#?]+)(?:/([^/#?]+?))?/?$", url
-        )
+        match = re.match(r"^https?://pypi\.org/project/([^/#?]+)(?:/([^/#?]+?))?/?$", url)
         if match:
             return match.groups()
 
@@ -34,11 +32,9 @@ class PyPiClient(JSONApiClient):
         return {
             "name": name,
             "description": info["summary"],
-            "homepage": info["home_page"]
-            or info.get("project_urls", {}).get("Homepage"),
+            "homepage": info["home_page"] or info.get("project_urls", {}).get("Homepage"),
             "author": info["author"],
-            "issues": info["bugtrack_url"]
-            or info.get("project_urls", {}).get("Issues"),
+            "issues": info["bugtrack_url"] or info.get("project_urls", {}).get("Issues"),
         }
 
     async def download_info(self, url, tag_prefix=None):
@@ -147,9 +143,7 @@ class PyPiClient(JSONApiClient):
             return None
 
         if version:
-            return await self._download_info_from_fixed_version(
-                name, version, asset_templates
-            )
+            return await self._download_info_from_fixed_version(name, version, asset_templates)
 
         return await self._download_info_from_latest_version(name, asset_templates)
 
@@ -277,9 +271,7 @@ class PyPiClient(JSONApiClient):
 
             specs = asset["requires_python"]
             if specs and not all(
-                ver in PEP440VersionSpecifier(spec)
-                for spec in specs.split(",")
-                for ver in python_versions
+                ver in PEP440VersionSpecifier(spec) for spec in specs.split(",") for ver in python_versions
             ):
                 continue
 

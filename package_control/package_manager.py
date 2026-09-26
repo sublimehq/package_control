@@ -51,7 +51,6 @@ ZIP_UNIX_SYSTEM = 3
 
 
 class PackageManager:
-
     """
     Allows downloading, creating, installing, upgrading, and deleting packages
 
@@ -76,77 +75,73 @@ class PackageManager:
         logging.set_loglevels(settings)
 
         setting_names = [
-            'auto_migrate',
-            'auto_upgrade',
-            'auto_upgrade_frequency',
-            'auto_upgrade_ignore',
-            'cache_length',
-            'channels',
-            'debug',
-            'dirs_to_ignore',
-            'files_to_ignore',
-            'files_to_include',
-            'git_binary',
-            'git_update_command',
-            'hg_binary',
-            'hg_update_command',
-            'http_basic_auth',
-            'http_cache_max_age',
-            'http_cache_ttl',
-            'http_proxy',
-            'http_retries',
-            'http_timeout',
-            'ignore_vcs_packages',
-            'install_missing',
-            'install_prereleases',
-            'max_backup_age',
-            'package_destination',
-            'package_name_map',
-            'package_profiles',
-            'print_messages',
-            'proxy_password',
-            'proxy_username',
-            'remove_orphaned',
-            'remove_orphaned_environments',
-            'repositories',
-            'submit_url',
-            'submit_usage',
-            'submit_usage_url',
+            "auto_migrate",
+            "auto_upgrade",
+            "auto_upgrade_frequency",
+            "auto_upgrade_ignore",
+            "cache_length",
+            "channels",
+            "debug",
+            "dirs_to_ignore",
+            "files_to_ignore",
+            "files_to_include",
+            "git_binary",
+            "git_update_command",
+            "hg_binary",
+            "hg_update_command",
+            "http_basic_auth",
+            "http_cache_max_age",
+            "http_cache_ttl",
+            "http_proxy",
+            "http_retries",
+            "http_timeout",
+            "ignore_vcs_packages",
+            "install_missing",
+            "install_prereleases",
+            "max_backup_age",
+            "package_destination",
+            "package_name_map",
+            "package_profiles",
+            "print_messages",
+            "proxy_password",
+            "proxy_username",
+            "remove_orphaned",
+            "remove_orphaned_environments",
+            "repositories",
+            "submit_url",
+            "submit_usage",
+            "submit_usage_url",
         ]
-        self.settings = {
-            key: value
-            for key in setting_names
-            if (value := settings.get(key)) is not None
-        }
+        self.settings = {key: value for key in setting_names if (value := settings.get(key)) is not None}
 
         # Fetch least required information from code hosters to save some time
         # and fetch more packages/libraries before hitting rate limits.
-        self.settings['min_api_calls'] = True
-        self.settings['max_releases'] = 1
+        self.settings["min_api_calls"] = True
+        self.settings["max_releases"] = 1
 
         self.registry = PackageRegistry(self.settings)
 
         # Use the cache to see if settings have changed since the last
         # time the package manager was created, and clearing any cached
         # values if they have.
-        previous_settings = get_cache('filtered_settings', {})
+        previous_settings = get_cache("filtered_settings", {})
 
         # Reduce the settings down to exclude channel info since that will
         # make the settings always different
         filtered_settings = self.settings.copy()
-        for key in ('cache', 'package_name_map'):
+        for key in ("cache", "package_name_map"):
             if key in filtered_settings:
                 del filtered_settings[key]
 
         if filtered_settings != previous_settings:
             if previous_settings:
                 console_write(
-                    '''
+                    """
                     Settings change detected, clearing cache
-                    '''
+                    """
                 )
                 clear_cache()
-            set_cache('filtered_settings', filtered_settings)
+            set_cache("filtered_settings", filtered_settings)
 
     def get_metadata(self, package_name):
         """
@@ -163,16 +158,16 @@ class PackageManager:
             or an empty dict on error
         """
 
-        metadata_json = read_package_file(package_name, 'package-metadata.json')
+        metadata_json = read_package_file(package_name, "package-metadata.json")
         if metadata_json:
             try:
                 return json.loads(metadata_json)
-            except (ValueError):
+            except ValueError:
                 console_write(
-                    '''
+                    """
                     Failed to parse package metadata for "%s"
-                    ''',
-                    package_name
+                    """,
+                    package_name,
                 )
 
         return {}
@@ -193,22 +188,22 @@ class PackageManager:
 
         names = None
 
-        lib_info_json = read_package_file(package_name, 'dependencies.json')
+        lib_info_json = read_package_file(package_name, "dependencies.json")
         if lib_info_json:
             try:
                 names = self.select_libraries(json.loads(lib_info_json))
-            except (ValueError):
+            except ValueError:
                 console_write(
-                    '''
+                    """
                     Failed to parse the dependencies.json for "%s"
-                    ''',
-                    package_name
+                    """,
+                    package_name,
                 )
 
         if names is None:
             metadata = self.get_metadata(package_name)
             # "dependencies" key is for backwards compatibility
-            names = metadata.get('libraries', metadata.get('dependencies', []))
+            names = metadata.get("libraries", metadata.get("dependencies", []))
 
         if not names:
             return set()
@@ -252,7 +247,7 @@ class PackageManager:
             The package name
         """
 
-        version = self.get_metadata(package_name).get('version')
+        version = self.get_metadata(package_name).get("version")
 
         if version:
             return version
@@ -261,9 +256,9 @@ class PackageManager:
         if upgrader:
             version = await upgrader.latest_commit()
             if version:
-                return f'{upgrader.cli_name} commit {version}'
+                return f"{upgrader.cli_name} commit {version}"
 
-        return 'unknown version'
+        return "unknown version"
 
     def is_compatible(self, package_name):
         """
@@ -282,8 +277,8 @@ class PackageManager:
             # can't say something about compatibility, assume the best
             return True
 
-        sublime_text = metadata.get('sublime_text')
-        platforms = metadata.get('platforms', [])
+        sublime_text = metadata.get("sublime_text")
+        platforms = metadata.get("platforms", [])
 
         # This indicates the metadata is old, so we assume a match
         if not sublime_text and not platforms:
@@ -302,7 +297,7 @@ class PackageManager:
             ``True`` If the package is managed, ``False`` otherwise.
         """
 
-        return package_file_exists(package_name, 'package-metadata.json')
+        return package_file_exists(package_name, "package-metadata.json")
 
     def _is_git_package(self, package_name):
         """
@@ -313,7 +308,7 @@ class PackageManager:
             If the package is installed via git
         """
 
-        git_dir = os.path.join(get_package_dir(package_name), '.git')
+        git_dir = os.path.join(get_package_dir(package_name), ".git")
         return os.path.isdir(git_dir) or os.path.isfile(git_dir)
 
     def _is_hg_package(self, package_name):
@@ -325,7 +320,7 @@ class PackageManager:
             If the package is installed via hg
         """
 
-        hg_dir = os.path.join(get_package_dir(package_name), '.hg')
+        hg_dir = os.path.join(get_package_dir(package_name), ".hg")
         return os.path.isdir(hg_dir)
 
     def is_vcs_package(self, package_name):
@@ -355,20 +350,20 @@ class PackageManager:
 
         if self._is_git_package(package_name):
             return GitUpgrader(
-                self.settings['git_binary'],
-                self.settings['git_update_command'],
+                self.settings["git_binary"],
+                self.settings["git_update_command"],
                 get_package_dir(package_name),
-                self.settings['cache_length'],
-                self.settings['debug']
+                self.settings["cache_length"],
+                self.settings["debug"],
             )
 
         if self._is_hg_package(package_name):
             return HgUpgrader(
-                self.settings['hg_binary'],
-                self.settings['hg_update_command'],
+                self.settings["hg_binary"],
+                self.settings["hg_update_command"],
                 get_package_dir(package_name),
-                self.settings['cache_length'],
-                self.settings['debug']
+                self.settings["cache_length"],
+                self.settings["debug"],
             )
 
         return None
@@ -435,7 +430,7 @@ class PackageManager:
             packages = pkg1 | pkg2
         if ignored_packages:
             packages -= ignored_packages
-        packages -= {'User'}
+        packages -= {"User"}
         return packages
 
     async def list_default_packages(self):
@@ -453,7 +448,7 @@ class PackageManager:
             list_sublime_package_dirs(default_packages_path, True),
             list_sublime_package_files(default_packages_path, True),
         )
-        packages = pkg1 | pkg2 - {'User'}
+        packages = pkg1 | pkg2 - {"User"}
         return packages
 
     async def list_all_packages(self, include_hidden=False):
@@ -489,13 +484,13 @@ class PackageManager:
 
         def worker():
             merged = set()
-            for file_name in sublime.find_resources('Package Control.sublime-settings'):
-                if file_name.startswith('Packages/User/'):
+            for file_name in sublime.find_resources("Package Control.sublime-settings"):
+                if file_name.startswith("Packages/User/"):
                     continue
 
                 try:
                     content = sublime.decode_value(sublime.load_resource(file_name))
-                    package_namess = content.get('installed_packages')
+                    package_namess = content.get("installed_packages")
                     if isinstance(package_namess, list):
                         merged |= set(package_namess)
 
@@ -516,10 +511,7 @@ class PackageManager:
 
         with PackageManager.lock:
             settings = sublime.load_settings(pc_settings_filename())
-            return (
-                await self.predefined_packages() |
-                load_list_setting(settings, 'installed_packages')
-            )
+            return await self.predefined_packages() | load_list_setting(settings, "installed_packages")
 
     async def update_installed_packages(self, add=None, remove=None, persist=True):
         """
@@ -544,7 +536,7 @@ class PackageManager:
         with PackageManager.lock:
             file_name = pc_settings_filename()
             settings = sublime.load_settings(file_name)
-            names_at_start = load_list_setting(settings, 'installed_packages')
+            names_at_start = load_list_setting(settings, "installed_packages")
             names = names_at_start.copy()
 
             if add:
@@ -565,7 +557,7 @@ class PackageManager:
 
             result = names != names_at_start
             if result:
-                settings.set('installed_packages', sorted(names, key=lambda s: s.lower()))
+                settings.set("installed_packages", sorted(names, key=lambda s: s.lower()))
                 if persist:
                     sublime.save_settings(file_name)
 
@@ -585,7 +577,7 @@ class PackageManager:
         for package in await self.list_packages(include_hidden=True):
             output |= self.get_libraries(package)
 
-        output |= self.get_libraries('User')
+        output |= self.get_libraries("User")
         return output
 
     async def find_missing_libraries(self, required_libraries=None):
@@ -623,7 +615,7 @@ class PackageManager:
 
     async def _download_zip_file(self, name, url, sha256=None):
         try:
-            content = await http_get(url, self.settings, '', no_cache=True)
+            content = await http_get(url, self.settings, "", no_cache=True)
             if sha256:
                 content_hash = hashlib.sha256(content).hexdigest()
                 if content_hash.lower() != sha256.lower():
@@ -634,19 +626,19 @@ class PackageManager:
 
         except DownloaderException as e:
             console_write(
-                '''
+                """
                 Unable to download "%s": %s
-                ''',
-                (name, e)
+                """,
+                (name, e),
             )
             return False
 
         except zipfile.BadZipfile:
             console_write(
-                '''
+                """
                 Failed to unzip the file for "%s"
-                ''',
-                name
+                """,
+                name,
             )
             return False
 
@@ -666,9 +658,9 @@ class PackageManager:
             a folder name is returned, it will end in "/".
         """
 
-        sep = '/'
-        curdir = '.'
-        unsafe = ('../', ':/', '..\\', ':\\')
+        sep = "/"
+        curdir = "."
+        unsafe = ("../", ":/", "..\\", ":\\")
 
         split_paths = []
 
@@ -679,13 +671,13 @@ class PackageManager:
                 continue
 
             # Make sure there are no paths that look like security vulnerabilities
-            if path[0] == '/' or any(p in path for p in unsafe):
+            if path[0] == "/" or any(p in path for p in unsafe):
                 console_write(
-                    '''
+                    """
                     The archive for "%s" contains files that may traverse outside
                     of package root and cannot be safely installed, aborting
-                    ''',
-                    name
+                    """,
+                    name,
                 )
                 return False
 
@@ -693,7 +685,7 @@ class PackageManager:
 
         # An archive containing at most one file can't have a common directory
         if len(split_paths) < 2:
-            return ''
+            return ""
 
         split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
         s1 = min(split_paths)
@@ -704,7 +696,7 @@ class PackageManager:
                 common = s1[:i]
                 break
 
-        return sep.join(common) + sep if common else ''
+        return sep.join(common) + sep if common else ""
 
     def _extract_zip(self, name, zf, src_dir, dest_dir, exclude=None):
         """
@@ -732,7 +724,7 @@ class PackageManager:
 
         if exclude is None:
             exclude = []
-        is_win = os.name == 'nt'
+        is_win = os.name == "nt"
 
         # Here we don't use .extractall() since it was having issues on OS X
         for info in zf.infolist():
@@ -746,26 +738,25 @@ class PackageManager:
 
             if is_win and any(c in source for c in ':*?"<>|'):
                 console_write(
-                    '''
+                    """
                     Skipping file "%s" from archive for "%s" due to an invalid filename
-                    ''',
-                    (source, name)
+                    """,
+                    (source, name),
                 )
                 continue
 
             # If there was only a single directory in the package, we remove
             # that folder name from the paths as we extract entries
-            dest = sys_path.longpath(os.path.join(dest_dir, source[len(src_dir):]))
+            dest = sys_path.longpath(os.path.join(dest_dir, source[len(src_dir) :]))
             parent = os.path.dirname(dest)
             os.makedirs(parent, exist_ok=True)
 
             try:
-                with zf.open(info) as fsrc, open(dest, 'wb') as fdst:
+                with zf.open(info) as fsrc, open(dest, "wb") as fdst:
                     shutil.copyfileobj(fsrc, fdst)
 
                 # Restore executable permissions
-                if (info.create_system == ZIP_UNIX_SYSTEM
-                        and (info.external_attr >> 16) & S_IXUSR):
+                if info.create_system == ZIP_UNIX_SYSTEM and (info.external_attr >> 16) & S_IXUSR:
                     os.chmod(dest, os.stat(dest).st_mode | S_IXUSR)
 
             except OSError as e:
@@ -773,10 +764,10 @@ class PackageManager:
                     return True
 
                 console_write(
-                    '''
+                    """
                     Skipping file "%s" from archive for "%s" due to IO error: %s
-                    ''',
-                    (source, name, e)
+                    """,
+                    (source, name, e),
                 )
 
         return False
@@ -796,10 +787,7 @@ class PackageManager:
         """
         success = True
 
-        for result in await asyncio.gather(
-            *map(self.install_library, libraries),
-            return_exceptions=True
-        ):
+        for result in await asyncio.gather(*map(self.install_library, libraries), return_exceptions=True):
             if isinstance(result, BaseException):
                 traceback.print_exception(None, result, result.__traceback__)
             else:
@@ -819,12 +807,12 @@ class PackageManager:
             False, if library could not be installed
         """
 
-        debug = self.settings.get('debug')
+        debug = self.settings.get("debug")
 
         installed_version = None
         installed_library = library.find_installed(lib)
         if installed_library:
-            installed_version = installed_library.dist_info.read_metadata().get('version')
+            installed_version = installed_library.dist_info.read_metadata().get("version")
             if installed_version:
                 installed_version = pep440.PEP440Version(installed_version)
 
@@ -833,7 +821,7 @@ class PackageManager:
             if debug:
                 console_write(
                     'The library "%s" for Python %s was not installed by Package Control; leaving alone',
-                    (lib.name, lib.python_version)
+                    (lib.name, lib.python_version),
                 )
             return True
 
@@ -842,29 +830,29 @@ class PackageManager:
 
         available_library = await self.registry.get_library(lib.dist_name)
         if available_library:
-            for available_release in available_library['releases']:
-                if lib.python_version in available_release['python_versions']:
+            for available_release in available_library["releases"]:
+                if lib.python_version in available_release["python_versions"]:
                     # first found one is latest available
                     release = available_release
-                    available_version = pep440.PEP440Version(release['version'])
+                    available_version = pep440.PEP440Version(release["version"])
                     break
 
         if available_version is None:
             is_unavailable = lib.name in self.registry.unavailable_libraries
             if is_upgrade and is_unavailable:
-                message = '''
+                message = """
                     The library "%s" is installed, but not available for Python %s
                     on this platform, or for this version of Sublime Text; leaving alone
-                    '''
+                    """
             elif is_upgrade:
-                message = '''
+                message = """
                     The library "%s" is installed, but not available for Python %s; leaving alone
-                    '''
+                    """
             elif is_unavailable:
-                message = '''
+                message = """
                     The library "%s" is not available for Python %s on this platform,
                     or this version of Sublime Text
-                    '''
+                    """
             else:
                 message = 'The library "%s" is not available for Python %s'
 
@@ -875,12 +863,12 @@ class PackageManager:
             if debug:
                 console_write(
                     'The library "%s" for Python %s is installed and up to date',
-                    (lib.name, lib.python_version)
+                    (lib.name, lib.python_version),
                 )
             return True
 
         lib_path = sys_path.lib_paths()[lib.python_version]
-        tmp_dir = sys_path.longpath(tempfile.mkdtemp(''))
+        tmp_dir = sys_path.longpath(tempfile.mkdtemp(""))
         tmp_library_dir = os.path.join(tmp_dir, lib.name)
 
         # This is refers to the zipfile later on, so we define it here so we can
@@ -888,7 +876,7 @@ class PackageManager:
         library_zip = None
 
         try:
-            library_zip = await self._download_zip_file(lib.name, release['url'], release.get("sha256"))
+            library_zip = await self._download_zip_file(lib.name, release["url"], release.get("sha256"))
             if library_zip is False:
                 return False
 
@@ -904,7 +892,7 @@ class PackageManager:
                 # search '<name>-<version>.dist-info/RECORD' directory in archive
                 # be permissive with version part as it may have a different format as `available_version`
                 new_did_name = None
-                pattern = re.compile(rf'({lib.dist_name}-\S+\.dist-info)/RECORD', re.IGNORECASE)
+                pattern = re.compile(rf"({lib.dist_name}-\S+\.dist-info)/RECORD", re.IGNORECASE)
                 for i in library_zip.infolist():
                     match = pattern.match(i.filename)
                     if match:
@@ -917,16 +905,18 @@ class PackageManager:
                     modified_paths = {mri.absolute_path for mri in modified_ris}
                     if modified_paths:
                         console_write(
-                            '''
+                            """
                             Unable to %s library "%s" for Python %s because files in the archive have been modified:
                               %s
-                            ''',
+                            """,
                             (
-                                'upgrade' if is_upgrade else 'install',
+                                "upgrade" if is_upgrade else "install",
                                 lib.name,
                                 lib.python_version,
-                                '\n  '.join(sorted(map(sys_path.shortpath, modified_paths), key=lambda s: s.lower()))
-                            )
+                                "\n  ".join(
+                                    sorted(map(sys_path.shortpath, modified_paths), key=lambda s: s.lower())
+                                ),
+                            ),
                         )
                         return False
 
@@ -946,15 +936,15 @@ class PackageManager:
                             lib.python_version,
                             lib.name,
                             available_version,
-                            available_library.get('description'),
-                            available_library.get('homepage')
+                            available_library.get("description"),
+                            available_library.get("homepage"),
                         )
                     except ValueError as e:
                         console_write(
-                            '''
+                            """
                             Failed to install the library "%s" for Python %s: %s
-                            ''',
-                            (lib.name, lib.python_version, e)
+                            """,
+                            (lib.name, lib.python_version, e),
                         )
                         return False
 
@@ -963,10 +953,10 @@ class PackageManager:
                         library.remove(installed_library)
                     except OSError as e:
                         console_write(
-                            '''
+                            """
                             Failed to upgrade the library "%s" for Python %s: %s
-                            ''',
-                            (lib.name, lib.python_version, e)
+                            """,
+                            (lib.name, lib.python_version, e),
                         )
                         return False
 
@@ -977,11 +967,13 @@ class PackageManager:
             if is_upgrade:
                 console_write(
                     'Upgraded library "%s" from %s to %s for Python %s',
-                    (lib.name, installed_version, available_version, lib.python_version))
+                    (lib.name, installed_version, available_version, lib.python_version),
+                )
             else:
                 console_write(
                     'Installed library "%s" %s for Python %s',
-                    (lib.name, available_version, lib.python_version))
+                    (lib.name, available_version, lib.python_version),
+                )
 
             return True
 
@@ -1034,10 +1026,10 @@ class PackageManager:
 
         except library.distinfo.DistInfoNotFoundError:
             console_write(
-                '''
+                """
                 The library specified, "%s" for Python %s, is not installed
-                ''',
-                (lib.name, lib.python_version)
+                """,
+                (lib.name, lib.python_version),
             )
             return False
 
@@ -1048,20 +1040,20 @@ class PackageManager:
             # library is installed when ST restarts, and we can try removing
             # it again in the future.
             console_write(
-                '''
+                """
                 Failed to remove the library "%s" for Python %s -
                 deferring until next start
-                ''',
-                (lib.name, lib.python_version)
+                """,
+                (lib.name, lib.python_version),
             )
             return False
 
         else:
             console_write(
-                '''
+                """
                 Removed orphaned library "%s" for Python %s
-                ''',
-                (lib.name, lib.python_version)
+                """,
+                (lib.name, lib.python_version),
             )
             return True
 
@@ -1098,24 +1090,24 @@ class PackageManager:
         if upgrader:
             # We explicitly don't support the "libraries" key when dealing
             # with packages installed via VCS
-            to_ignore = self.settings.get('ignore_vcs_packages')
+            to_ignore = self.settings.get("ignore_vcs_packages")
             if to_ignore is True:
                 console_write(
-                    '''
+                    """
                     Skipping %s package "%s" since the setting
                     "ignore_vcs_packages" is set to true
-                    ''',
-                    (upgrader.cli_name, package_name)
+                    """,
+                    (upgrader.cli_name, package_name),
                 )
                 return False
 
             if isinstance(to_ignore, list) and package_name in to_ignore:
                 console_write(
-                    '''
+                    """
                     Skipping %s package "%s" since it is listed in the
                     "ignore_vcs_packages" setting
-                    ''',
-                    (upgrader.cli_name, package_name)
+                    """,
+                    (upgrader.cli_name, package_name),
                 )
                 return False
 
@@ -1123,25 +1115,25 @@ class PackageManager:
 
             # We are done here, if the package is an unmanaged VCS package.
             # Otherwise the package might just be an override.
-            if not zip_file_exists(package_name, 'package-metadata.json'):
-                console_write('Upgraded %s', package_name)
+            if not zip_file_exists(package_name, "package-metadata.json"):
+                console_write("Upgraded %s", package_name)
                 return result
 
         # package is to be renamed during upgrade
         old_package_name = package_name
         old_metadata = self.get_metadata(old_package_name)
-        old_version = old_metadata.get('version')
+        old_version = old_metadata.get("version")
         is_upgrade = old_version is not None
 
         package = await self.registry.get_package(package_name)
         if package is None:
             if package_name in self.registry.unavailable_packages:
                 console_write(
-                    '''
+                    """
                     The package "%s" is either not available on this platform or for
                     this version of Sublime Text
-                    ''',
-                    package_name
+                    """,
+                    package_name,
                 )
             else:
                 console_write('The package "%s" is not available', package_name)
@@ -1149,14 +1141,14 @@ class PackageManager:
             return False
 
         package_name = package["name"]
-        release = package['releases'][0]
-        new_version = release['version']
+        release = package["releases"][0]
+        new_version = release["version"]
 
         package_dir = get_package_dir(package_name)
         package_file = get_installed_package_path(package_name)
         package_filename = os.path.basename(package_file)
 
-        package_zip = await self._download_zip_file(package_name, release['url'], release.get("sha256"))
+        package_zip = await self._download_zip_file(package_name, release["url"], release.get("sha256"))
         if package_zip is False:
             return False
 
@@ -1172,10 +1164,10 @@ class PackageManager:
         #    to prevent core functionality breaking.
         # 2. Package maintainer wants it being installed as unpacked folder
         #    by adding a .no-sublime-package ile
-        unpack = package_name.lower() == 'default'
+        unpack = package_name.lower() == "default"
         if not unpack:
             try:
-                package_zip.getinfo(common_folder + '.no-sublime-package')
+                package_zip.getinfo(common_folder + ".no-sublime-package")
                 unpack = True
             except KeyError:
                 unpack = False
@@ -1184,8 +1176,8 @@ class PackageManager:
         have_python_version_file = False
 
         try:
-            python_version_file = common_folder + '.python-version'
-            python_version = package_zip.read(python_version_file).decode('utf-8').strip()
+            python_version_file = common_folder + ".python-version"
+            python_version = package_zip.read(python_version_file).decode("utf-8").strip()
             have_python_version_file = True
         except KeyError:
             # no .python-version found in archive,
@@ -1205,11 +1197,12 @@ class PackageManager:
             # Try to read .python-version from existing unpacked package directory to respect local
             # opt-in to certain plugin_host and to install correct libraries.
             try:
-                python_version_file = os.path.join(get_package_dir(old_package_name), '.python-version')
-                with open(python_version_file, 'r', encoding='utf-8') as fobj:
+                python_version_file = os.path.join(get_package_dir(old_package_name), ".python-version")
+                with open(python_version_file, "r", encoding="utf-8") as fobj:
                     python_version_raw = fobj.read().strip()
                     if python_version_raw in sys_path.python_versions() and (
-                        unpack or pep440.PEP440Version(python_version_raw) > pep440.PEP440Version(python_version)
+                        unpack
+                        or pep440.PEP440Version(python_version_raw) > pep440.PEP440Version(python_version)
                     ):
                         python_version = python_version_raw
             except FileNotFoundError:
@@ -1223,20 +1216,20 @@ class PackageManager:
             metadata = {
                 "name": package_name,
                 "version": new_version,
-                "sublime_text": release['sublime_text'],
-                "platforms": release['platforms'],
+                "sublime_text": release["sublime_text"],
+                "platforms": release["platforms"],
                 "python_version": original_python_version,
-                "url": package['homepage'],
-                "issues": package['issues'],
-                "author": package['author'],
-                "description": package['description'],
-                "labels": package['labels'],
-                "libraries": release.get('libraries', []),
+                "url": package["homepage"],
+                "issues": package["issues"],
+                "author": package["author"],
+                "description": package["description"],
+                "labels": package["labels"],
+                "libraries": release.get("libraries", []),
                 "install_time": old_metadata.get("install_time", now),
-                "release_time": release['date'],
+                "release_time": release["date"],
             }
             if is_upgrade:
-                metadata['upgrade_time'] = now
+                metadata["upgrade_time"] = now
 
             # files to ignore from downloaded archives
             ignored_files = [
@@ -1256,13 +1249,13 @@ class PackageManager:
                 # a) override for a *.sublime-package file.
                 # b) invisible helper package, which can't be enabled/disabled/removed
                 #    by user via API/GUI (if no corresponding *.sublime-package file exists)
-                if regular_file_exists(package_name, '.hidden-sublime-package'):
+                if regular_file_exists(package_name, ".hidden-sublime-package"):
                     console_write(
-                        '''
+                        """
                         Failed to %s %s -
                         Overwriting existing hidden package not allowed.
-                        ''',
-                        ('upgrade' if is_upgrade else 'install', package_name)
+                        """,
+                        ("upgrade" if is_upgrade else "install", package_name),
                     )
                     return False
 
@@ -1286,29 +1279,29 @@ class PackageManager:
                     # and we are not working with symlink here any more.
                     clear_directory(package_dir)
 
-                    reinstall_file = os.path.join(package_dir, 'package-control.reinstall')
+                    reinstall_file = os.path.join(package_dir, "package-control.reinstall")
                     create_empty_file(reinstall_file)
 
                     console_write(
-                        '''
+                        """
                         Failed to upgrade %s -
                         deferring until next start
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
                     return None
 
-                package_metadata_file = os.path.join(package_dir, 'package-metadata.json')
-                with open(package_metadata_file, 'w', encoding='utf-8') as fp:
+                package_metadata_file = os.path.join(package_dir, "package-metadata.json")
+                with open(package_metadata_file, "w", encoding="utf-8") as fp:
                     json.dump(metadata, fp)
 
                 # Create .python-version file to opt-in to certain plugin_host.
                 # It enables unmaintained packages/plugins to be opted-in to newer python version
                 # via upstream release information or via local settings.
-                if python_version != '3.3' and not have_python_version_file:
+                if python_version != "3.3" and not have_python_version_file:
                     try:
-                        python_version_file = os.path.join(package_dir, '.python-version')
-                        with open(python_version_file, 'x') as fobj:
+                        python_version_file = os.path.join(package_dir, ".python-version")
+                        with open(python_version_file, "x") as fobj:
                             fobj.write(python_version)
                     except FileExistsError:
                         pass
@@ -1321,10 +1314,10 @@ class PackageManager:
                     pass
                 except OSError as e:
                     console_write(
-                        '''
+                        """
                         Unable to remove "%s" after upgrade to unpacked package: %s
-                        ''',
-                        (package_filename, e)
+                        """,
+                        (package_filename, e),
                     )
 
             else:
@@ -1338,26 +1331,27 @@ class PackageManager:
                 #
                 # Note: move_package_dir_to_backup() already moves (and therefore removes)
                 #       loosen package directory.
-                if regular_file_exists(package_name, 'package-metadata.json') \
-                        and not self.move_package_dir_to_backup(package_name):
+                if regular_file_exists(
+                    package_name, "package-metadata.json"
+                ) and not self.move_package_dir_to_backup(package_name):
                     return False
 
                 # write archive to disk as new zipfile, to ensure modified metadata is updated
-                new_package_file = package_file + '-tmp'
-                with zipfile.ZipFile(new_package_file, 'w', zipfile.ZIP_DEFLATED) as pkg:
-                    if python_version != '3.3' and not have_python_version_file:
-                        pkg.writestr('.python-version', python_version)
-                    pkg.writestr('package-metadata.json', json.dumps(metadata))
+                new_package_file = package_file + "-tmp"
+                with zipfile.ZipFile(new_package_file, "w", zipfile.ZIP_DEFLATED) as pkg:
+                    if python_version != "3.3" and not have_python_version_file:
+                        pkg.writestr(".python-version", python_version)
+                    pkg.writestr("package-metadata.json", json.dumps(metadata))
                     for zipinfo in package_zip.infolist():
                         if not zipinfo.is_dir() and zipinfo.filename not in ignored_files:
                             pkg.writestr(
-                                zipinfo.filename[len(common_folder):],
+                                zipinfo.filename[len(common_folder) :],
                                 package_zip.read(zipinfo),
-                                zipfile.ZIP_STORED if zipinfo.file_size < 512 else None
+                                zipfile.ZIP_STORED if zipinfo.file_size < 512 else None,
                             )
 
                 # replace possibly existing <name>.sublime-package with <name>.sublime-package-tmp
-                old_package_file = package_file + '-old'
+                old_package_file = package_file + "-old"
                 try:
                     os.remove(old_package_file)
                 except FileNotFoundError:
@@ -1388,33 +1382,29 @@ class PackageManager:
         await self.update_installed_packages(
             add=package_name,
             remove=old_package_name if package_name != old_package_name else None,
-            persist=False
+            persist=False,
         )
 
         self.print_messages(package_name, package_dir, is_upgrade, old_version, new_version, unattended)
 
         if is_upgrade:
-            asyncio.create_task(self.record_usage({
-                'package': package_name,
-                'operation': 'upgrade',
-                'version': new_version,
-                'old_version': old_version
-            }))
-            console_write(
-                'Upgraded package "%s" from %s to %s',
-                (package_name, old_version, new_version)
+            asyncio.create_task(
+                self.record_usage(
+                    {
+                        "package": package_name,
+                        "operation": "upgrade",
+                        "version": new_version,
+                        "old_version": old_version,
+                    }
+                )
             )
+            console_write('Upgraded package "%s" from %s to %s', (package_name, old_version, new_version))
 
         else:
-            asyncio.create_task(self.record_usage({
-                'package': package_name,
-                'operation': 'install',
-                'version': new_version
-            }))
-            console_write(
-                'Installed package "%s" %s',
-                (package_name, new_version)
+            asyncio.create_task(
+                self.record_usage({"package": package_name, "operation": "install", "version": new_version})
             )
+            console_write('Installed package "%s" %s', (package_name, new_version))
 
         return True
 
@@ -1433,16 +1423,16 @@ class PackageManager:
         """
 
         # User package needs to be checked as it exists in Data/Packages/
-        if package_name.lower() == 'user' or new_package_name.lower() == 'user':
+        if package_name.lower() == "user" or new_package_name.lower() == "user":
             console_write(
-                '''
+                """
                 The package "%s" can not be renamed
-                ''',
-                package_name
+                """,
+                package_name,
             )
             return False
 
-        case_insensitive_fs = sublime.platform() in ('windows', 'osx')
+        case_insensitive_fs = sublime.platform() in ("windows", "osx")
         changing_case = case_insensitive_fs and package_name.lower() == new_package_name.lower()
 
         def do_rename(old, new):
@@ -1467,13 +1457,13 @@ class PackageManager:
             try:
                 os.remove(package_file)
             except OSError as e:
-                if self.settings.get('debug'):
+                if self.settings.get("debug"):
                     console_write(
-                        '''
+                        """
                         Unable to remove package "%s" -
                         deferring until next start: %s
-                        ''',
-                        (package_name, e)
+                        """,
+                        (package_name, e),
                     )
 
         package_dir = get_package_dir(package_name)
@@ -1489,15 +1479,15 @@ class PackageManager:
             # Note: move_package_dir_to_backup() already moves (and therefore removes)
             #       loosen package directory.
             if not self.move_package_dir_to_backup(package_name):
-                if self.settings.get('debug'):
+                if self.settings.get("debug"):
                     console_write(
-                        '''
+                        """
                         Unable to remove directory for package "%s" -
                         deferring until next start
-                        ''',
-                        package_name
+                        """,
+                        package_name,
                     )
-                create_empty_file(os.path.join(package_dir, 'package-control.cleanup'))
+                create_empty_file(os.path.join(package_dir, "package-control.cleanup"))
 
         # Remove optionally present cache if exists
         # ST will recreate cache for renamed packages, automatically
@@ -1528,15 +1518,11 @@ class PackageManager:
 
         await self.update_installed_packages(remove=package_name, persist=False)
 
-        version = self.get_metadata(package_name).get('version')
+        version = self.get_metadata(package_name).get("version")
 
         result = self.delete_package(package_name)
         if result is not False:
-            await self.record_usage({
-                'package': package_name,
-                'operation': 'remove',
-                'version': version
-            })
+            await self.record_usage({"package": package_name, "operation": "remove", "version": version})
 
             # Remove libraries that are no longer needed
             await self.cleanup_libraries()
@@ -1561,12 +1547,12 @@ class PackageManager:
         """
 
         # User package needs to be checked as it exists in Data/Packages/
-        if package_name.lower() == 'user':
+        if package_name.lower() == "user":
             console_write(
-                '''
+                """
                 The package "%s" can not be removed
-                ''',
-                package_name
+                """,
+                package_name,
             )
             return False
 
@@ -1578,10 +1564,10 @@ class PackageManager:
 
         if not can_delete_file and not can_delete_dir:
             console_write(
-                '''
+                """
                 The package "%s" is not installed
-                ''',
-                package_name
+                """,
+                package_name,
             )
             return False
 
@@ -1599,34 +1585,34 @@ class PackageManager:
                     # Note: Locked files on Windows OS can still be renamed.
                     trash_path = os.path.join(
                         trash_path,
-                        hashlib.sha1(
-                            (str(self.session_time) + package_file).encode('utf-8')
-                        ).hexdigest().lower()
+                        hashlib.sha1((str(self.session_time) + package_file).encode("utf-8"))
+                        .hexdigest()
+                        .lower(),
                     )
                     os.rename(package_file, trash_path)
                 except OSError as e:
-                    if self.settings.get('debug'):
+                    if self.settings.get("debug"):
                         console_write(
-                            '''
+                            """
                             Unable to remove package "%s" -
                             deferring until next start: %s
-                            ''',
-                            (package_name, e)
+                            """,
+                            (package_name, e),
                         )
                     result = None
 
         # Note: move_package_dir_to_backup() already moves (and therefore removes)
         #       loosen package directory.
         if can_delete_dir and not self.move_package_dir_to_backup(package_name):
-            if self.settings.get('debug'):
+            if self.settings.get("debug"):
                 console_write(
-                    '''
+                    """
                     Unable to remove directory for package "%s" -
                     deferring until next start
-                    ''',
-                    package_name
+                    """,
+                    package_name,
                 )
-            create_empty_file(os.path.join(package_dir, 'package-control.cleanup'))
+            create_empty_file(os.path.join(package_dir, "package-control.cleanup"))
             result = None
 
         # remove optionally present cache if exists
@@ -1635,7 +1621,7 @@ class PackageManager:
 
         message = f'Removed package "{package_name}"'
         if result is None:
-            message += ' and scheduled clean up on next restart'
+            message += " and scheduled clean up on next restart"
         console_write(message)
 
         return result
@@ -1655,9 +1641,7 @@ class PackageManager:
         if not os.path.exists(package_dir):
             return True
 
-        backup_dir = os.path.join(
-            sys_path.data_path(), 'Backup', self.session_time.strftime('%Y%m%d%H%M%S')
-        )
+        backup_dir = os.path.join(sys_path.data_path(), "Backup", self.session_time.strftime("%Y%m%d%H%M%S"))
         package_backup_dir = os.path.join(backup_dir, package_name)
 
         try:
@@ -1668,10 +1652,10 @@ class PackageManager:
             pass
         except OSError as e:
             console_write(
-                '''
+                """
                 Failed to backup the package directory for "%s": %s
-                ''',
-                (package_name, e)
+                """,
+                (package_name, e),
             )
             return False
 
@@ -1684,10 +1668,10 @@ class PackageManager:
             return True
         except OSError as e:
             console_write(
-                '''
+                """
                 Failed to backup the package directory for "%s": %s
-                ''',
-                (package_name, e)
+                """,
+                (package_name, e),
             )
             return False
 
@@ -1696,9 +1680,9 @@ class PackageManager:
         Remove all backups older than ``max_backup_age`` days.
         """
 
-        age = max(0, self.settings.get('max_backup_age', 14))
+        age = max(0, self.settings.get("max_backup_age", 14))
         today = datetime.datetime.now().date()
-        backup_dir = os.path.join(sys_path.data_path(), 'Backup')
+        backup_dir = os.path.join(sys_path.data_path(), "Backup")
 
         if not os.path.isdir(backup_dir):
             return
@@ -1750,44 +1734,44 @@ class PackageManager:
             unattended = False
 
         try:
-            messages_file = os.path.join(package_dir, 'messages.json')
-            with open(messages_file, 'r', encoding='utf-8') as fobj:
+            messages_file = os.path.join(package_dir, "messages.json")
+            with open(messages_file, "r", encoding="utf-8") as fobj:
                 message_info = json.load(fobj)
-        except (FileNotFoundError):
+        except FileNotFoundError:
             return
-        except (ValueError):
+        except ValueError:
             console_write(
-                '''
+                """
                 Error parsing messages.json for %s
-                ''',
-                package_name
+                """,
+                package_name,
             )
             return
 
         def read_message(message_path):
-            with open(sys_path.longpath(message_path), 'r', encoding='utf-8', errors='replace') as fobj:
-                return '\n  {}\n'.format(fobj.read().rstrip().replace('\n', '\n  '))
+            with open(sys_path.longpath(message_path), "r", encoding="utf-8", errors="replace") as fobj:
+                return "\n  {}\n".format(fobj.read().rstrip().replace("\n", "\n  "))
 
-        output = ''
+        output = ""
         if not is_upgrade:
-            install_file = message_info.get('install')
+            install_file = message_info.get("install")
             if install_file:
                 try:
                     install_path = os.path.join(package_dir, install_file)
                     output += read_message(install_path)
-                except (FileNotFoundError):
+                except FileNotFoundError:
                     console_write(
-                        '''
+                        """
                         Error opening install message for %s from %s
-                        ''',
-                        (package_name, install_file)
+                        """,
+                        (package_name, install_file),
                     )
 
         elif is_upgrade and old_version:
             old_version_cmp = PackageVersion(old_version)
             new_version_cmp = PackageVersion(new_version)
 
-            for version in version_sort(set(message_info) - {'install'}, reverse=True):
+            for version in version_sort(set(message_info) - {"install"}, reverse=True):
                 version_cmp = PackageVersion(version)
                 if version_cmp <= old_version_cmp:
                     break
@@ -1801,12 +1785,12 @@ class PackageManager:
 
                 try:
                     output += read_message(upgrade_path)
-                except (FileNotFoundError):
+                except FileNotFoundError:
                     console_write(
-                        '''
+                        """
                         Error opening %s message for %s from %s
-                        ''',
-                        (version, package_name, upgrade_file)
+                        """,
+                        (version, package_name, upgrade_file),
                     )
 
         if not output:
@@ -1829,11 +1813,11 @@ class PackageManager:
                 If `True` the message view is created in background without stealing focus
                 of active view.
             """
-            output = "\n\n{}\n{}\n{}".format(package_name, '-' * len(package_name), output)
+            output = "\n\n{}\n{}\n{}".format(package_name, "-" * len(package_name), output)
 
             window = None
             view = None
-            view_name = 'Package Control Messages'
+            view_name = "Package Control Messages"
 
             for _window in sublime.windows():
                 for _view in _window.views():
@@ -1858,26 +1842,26 @@ class PackageManager:
                 view.set_name(view_name)
                 view.set_scratch(True)
                 settings = view.settings()
-                settings.set('auto_complete', False)
-                settings.set('auto_indent', False)
-                settings.set('gutter', False)
-                settings.set('tab_width', 2)
-                settings.set('word_wrap', True)
+                settings.set("auto_complete", False)
+                settings.set("auto_indent", False)
+                settings.set("gutter", False)
+                settings.set("tab_width", 2)
+                settings.set("word_wrap", True)
 
             # As 'package_control_message' command is not available during
             # Package Control upgrade, fallback to built-in commands to insert message
-            if package_name == 'Package Control':
-                output = "{}\n{}\n{}".format(view_name, '=' * len(view_name), output)
-                view.run_command('move_to', {'to': 'eof'})
-                view.run_command('move_to', {'to': 'bof', 'extend': True})
+            if package_name == "Package Control":
+                output = "{}\n{}\n{}".format(view_name, "=" * len(view_name), output)
+                view.run_command("move_to", {"to": "eof"})
+                view.run_command("move_to", {"to": "bof", "extend": True})
                 view.set_read_only(False)
-                view.run_command('insert', {'characters': output})
+                view.run_command("insert", {"characters": output})
                 view.set_read_only(True)
-                view.run_command('move_to', {'to': 'bof'})
+                view.run_command("move_to", {"to": "bof"})
                 return
 
             # append message to view without touching scroll position or selection
-            view.run_command('package_control_message', {'message': output})
+            view.run_command("package_control_message", {"message": output})
 
         sublime.set_timeout(partial(print_message, package_name, output, unattended))
 

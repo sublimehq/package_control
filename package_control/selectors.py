@@ -4,11 +4,7 @@ import sublime
 
 from . import sys_path
 
-PLATFORM_SELECTORS = (
-    sublime.platform() + '-' + sublime.arch(),
-    sublime.platform(),
-    '*'
-)
+PLATFORM_SELECTORS = (sublime.platform() + "-" + sublime.arch(), sublime.platform(), "*")
 
 ST_VERSION = int(sublime.version())
 
@@ -90,22 +86,22 @@ def is_compatible_version(version_range, st_version=ST_VERSION):
         True if compatible version, False otherwise.
     """
 
-    if version_range == '*':
+    if version_range == "*":
         return True
 
-    match = re.match(r'([<>]=?)(\d{4})$', version_range)
+    match = re.match(r"([<>]=?)(\d{4})$", version_range)
     if match:
         op, ver = match.groups()
-        if op == '>':
+        if op == ">":
             return st_version > int(ver)
-        if op == '>=':
+        if op == ">=":
             return st_version >= int(ver)
-        if op == '<':
+        if op == "<":
             return st_version < int(ver)
-        if op == '<=':
+        if op == "<=":
             return st_version <= int(ver)
 
-    match = re.match(r'(\d{4}) - (\d{4})$', version_range)
+    match = re.match(r"(\d{4}) - (\d{4})$", version_range)
     if match:
         return st_version >= int(match.group(1)) and st_version <= int(match.group(2))
 
