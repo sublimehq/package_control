@@ -88,9 +88,12 @@ def list_sublime_package_files(path, include_hidden=False):
             if not os.path.isfile(file_path):
                 continue
             if not include_hidden:
-                with zipfile.ZipFile(file_path) as fobj:
-                    if '.hidden-sublime-package' in fobj.NameToInfo:
-                        continue
+                try:
+                    with zipfile.ZipFile(file_path) as fobj:
+                        if '.hidden-sublime-package' in fobj.NameToInfo:
+                            continue
+                except (OSError, zipfile.BadZipfile):
+                    pass
             yield name
 
     except FileNotFoundError:
