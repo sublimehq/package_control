@@ -159,7 +159,7 @@ class PackageCleanup(threading.Thread, PackageTaskRunner):
         cache2 = os.path.join(sys_path.cache_path(), "__pycache__", "data", "Lib", "python")
 
         supported_versions = sys_path.python_versions()
-        for pyver in ("3.3", "3.8", "3.13", "3.14"):
+        for pyver in ("3.3", "3.8", "3.14"):
             if pyver not in supported_versions:
                 pyver = pyver.replace(".", "")
                 clear_directory(libdir + pyver)

@@ -159,7 +159,7 @@ def lib_paths():
             if st_version >= 4203:
                 lib_paths.cache["3.14"] = os.path.join(__data_path, "Lib", "python314")
             elif st_version >= 4201:
-                lib_paths.cache["3.13"] = os.path.join(__data_path, "Lib", "python313")
+                raise ValueError("Unsupported ST build!")
             elif st_version >= 4000:
                 lib_paths.cache["3.8"] = os.path.join(__data_path, "Lib", "python38")
         else:

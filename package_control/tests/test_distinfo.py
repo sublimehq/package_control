@@ -16,7 +16,7 @@ def _tag(version):
             tag = "macosx_10_7_%s" % os.uname()[4]
         elif version == "3.8":
             tag = "macosx_10_9_%s" % os.uname()[4]
-        elif version == "3.13":
+        elif version == "3.14":
             tag = "macosx_10_13_%s" % os.uname()[4]
         else:
             raise ValueError("Invalid version")
