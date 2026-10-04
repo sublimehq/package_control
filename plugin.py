@@ -31,12 +31,12 @@ has_packed = os.path.exists(get_installed_package_path('Package Control'))
 has_unpacked = regular_file_exists('Package Control', 'plugin.py')
 
 # Ensure least requires ST version
-if int(sublime.version()) < 3143:
+if int(sublime.version()) < 3143 or sys.version_info[:2] not in ((3, 3), (3, 8), (3, 14)):
     message = text.format(
         '''
         Package Control
 
-        This package requires at least Sublime Text 3143.
+        This package requires at least Sublime Text 3143 and python 3.3, 3.8 or 3.14.
 
         Please consider updating ST or remove Package Control.
         '''
