@@ -47,14 +47,9 @@ To install a package:
 2. Choose `Package Control: Install Package`.
 3. Select a package from the list and hit <kbd>Enter</kbd>.
 
-For more features, see:
-
-- https://packagecontrol.io/docs/usage
-- [https://docs.sublimetext.io/guide/package-control/usage](https://docs.sublimetext.io/guide/package-control/usage.html)
-
 ## Documentation
 
-Original documentation can be found at https://packagecontrol.io/docs
+Original documentation can be found at https://packages.sublimetext.com/docs
 or community driven documentation at https://docs.sublimetext.io.
 
 ## Bug Reports

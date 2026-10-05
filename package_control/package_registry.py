@@ -10,8 +10,10 @@ from .providers import channel_provider_for, repo_provider_for
 from .providers.provider_exception import ProviderException
 from .selectors import is_compatible_platform, is_compatible_python, is_compatible_version
 
-DEFAULT_CHANNEL = "https://packagecontrol.io/channel_v3.json"
+DEFAULT_CHANNEL = "https://packages.sublimetext.com/channel_v4.json"
+DEFAULT_CHANNEL_ST3 = "https://packages.sublimetext.com/channel_v3.json"
 OLD_DEFAULT_CHANNELS = {
+    "https://packagecontrol.io/channel_v3.json",
     "https://packagecontrol.io/channel.json",
     "https://sublime.wbond.net/channel.json",
     "https://sublime.wbond.net/repositories.json",
@@ -119,6 +121,7 @@ class PackageRegistry:
             )
 
         found_default = False
+        is_st3 = int(sublime.version()) < 4000
 
         for url in reversed(self.settings.get("channels", [])):
             if url in OLD_DEFAULT_CHANNELS:
@@ -126,6 +129,9 @@ class PackageRegistry:
                     continue
                 found_default = True
                 url = DEFAULT_CHANNEL
+
+            if is_st3 and url.lower() == DEFAULT_CHANNEL:
+                url = DEFAULT_CHANNEL_ST3
 
             provider = channel_provider_for(update_url(url, False), self.settings)
             if provider:
