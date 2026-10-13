@@ -669,7 +669,7 @@ class PackageManager:
         for info in zf.infolist():
             path = info.filename
 
-            if not path or info.is_dir():
+            if not path or path.endswith("/"):
                 continue
 
             # Make sure there are no paths that look like security vulnerabilities
@@ -730,7 +730,7 @@ class PackageManager:
         for info in zf.infolist():
             source = info.filename
 
-            if not source or info.is_dir():
+            if not source or source.endswith("/"):
                 continue
 
             if source in exclude:
@@ -747,7 +747,7 @@ class PackageManager:
 
             # If there was only a single directory in the package, we remove
             # that folder name from the paths as we extract entries
-            dest = sys_path.longpath(os.path.join(dest_dir, source[len(src_dir):]))
+            dest = sys_path.longpath(os.path.normpath(os.path.join(dest_dir, source[len(src_dir):])))
             parent = os.path.dirname(dest)
             os.makedirs(parent, exist_ok=True)
 
@@ -1332,7 +1332,8 @@ class PackageManager:
                     pkg.writestr('.python-version', python_version)
                 pkg.writestr('package-metadata.json', json.dumps(metadata))
                 for zipinfo in package_zip.infolist():
-                    if not zipinfo.is_dir() and zipinfo.filename not in ignored_files:
+                    path = zipinfo.filename
+                    if path and not path.endswith("/") and path not in ignored_files:
                         pkg.writestr(
                             zipinfo.filename[len(common_folder):],
                             package_zip.read(zipinfo),
