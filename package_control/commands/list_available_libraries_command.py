@@ -43,9 +43,9 @@ class ListAvailableLibrariesCommand(sublime_plugin.ApplicationCommand):
                     return
 
             if USE_QUICK_PANEL_ITEM:
-                self.show_quick_panel_st4(libraries.values())
+                self.show_quick_panel_st4(libraries)
             else:
-                self.show_quick_panel_st3(libraries.values())
+                self.show_quick_panel_st3(libraries)
 
         threading.Thread(target=show_quick_panel).start()
 
