@@ -747,7 +747,7 @@ class PackageManager:
 
             # If there was only a single directory in the package, we remove
             # that folder name from the paths as we extract entries
-            dest = sys_path.longpath(os.path.normpath(os.path.join(dest_dir, source[len(src_dir):])))
+            dest = os.path.join(dest_dir, os.path.normpath(source[len(src_dir):]))
             parent = os.path.dirname(dest)
             os.makedirs(parent, exist_ok=True)
 
