@@ -1664,13 +1664,18 @@ class PackageManager:
                 os.makedirs(backup_dir, exist_ok=True)
                 os.rename(package_dir, package_backup_dir)
             return True
-        except OSError as e:
-            console_write(
-                '''
-                Failed to backup the package directory for "%s": %s
-                ''',
-                (package_name, e)
-            )
+        except OSError:
+            try:
+                shutil.copy(package_dir, package_backup_dir, follow_symlinks=False)
+                delete_directory(package_dir)
+                return True
+            except OSError as e:
+                console_write(
+                    '''
+                    Failed to backup the package directory for "%s": %s
+                    ''',
+                    (package_name, e),
+                )
             return False
 
     def prune_backup_dir(self):
