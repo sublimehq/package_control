@@ -12,6 +12,7 @@ from typing import Any
 from .. import __version__
 from ..sys_path import user_config_dir
 from ..vendor import httpx2
+from ..vendor.httpcore2 import default_ssl_context
 from ._auth import HostSpecificBasicAuth
 from ._cache import AsyncCacheTransport, AsyncHttpCache
 from ._file import AsyncFileTransport
@@ -157,9 +158,7 @@ class AsyncClientFactory:
 
 
 def create_ssl_context() -> ssl.SSLContext:
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ctx.load_default_certs()
-    ctx.check_hostname = True
+    ctx = default_ssl_context(_trust_env=False)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.verify_flags = ssl.VERIFY_X509_TRUSTED_FIRST | ssl.VERIFY_X509_STRICT
     ctx.verify_mode = ssl.CERT_REQUIRED
