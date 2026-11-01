@@ -1666,7 +1666,7 @@ class PackageManager:
             return True
         except OSError:
             try:
-                shutil.copy(package_dir, package_backup_dir, follow_symlinks=False)
+                shutil.copytree(package_dir, package_backup_dir)
                 delete_directory(package_dir)
                 return True
             except OSError as e:
